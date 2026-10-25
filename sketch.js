@@ -18,3 +18,27 @@ const GROUND = '#8bdc3f';
 const MOVE_EASING = 0.075;
 const ARRIVAL_DISTANCE = 2;
 
+class Figure {
+  constructor(x, y, colour) {
+    this.x = x;
+    this.y = y;
+    this.targetX = x;
+
+    this.colour = colour;
+    this.pose = 'standing';
+    this.facing = 1;
+    this.hasCandy = false;
+
+    // Shared movement properties
+    this.sway = 0;
+    this.walk = 0;
+    this.open = 0;
+    this.stand = 1;
+  }
+   draw() {
+    this.drawBody();
+    this.drawArms();
+    this.drawLegs();
+    this.drawHead();
+  }
+}
