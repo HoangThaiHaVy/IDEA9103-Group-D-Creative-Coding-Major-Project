@@ -17,7 +17,8 @@ can develop into a shared rhythm and collective choreography.
 
 # Project Structure
 
-- `Alice- Audio.js`: Alice's Audio interaction component.
+- `audio-mechanic.js`: Zicen's microphone, amplitude, and frequency analysis module.
+- `Alice.js`: Audio setup, update, drawing, and reset hooks for the shared scene.
 - `Emery- Time-Base.js`: Emery's time-based interaction component.
 - `LICENSE`: Project license and usage terms.
 - `README.md`: Project overview, setup instructions, and documentation.
