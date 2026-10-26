@@ -18,7 +18,7 @@ function setupUserInput() {
   statusText.style('margin', '10px 0 4px');
 
   restartButton = createButton('Start again');
-  restartButton.mousePressed(resetStory);
+  restartButton.mousePressed(resetAllMechanics);
 }
  // ========================================
 // INITIALISE FIVE CHARACTERS
@@ -280,6 +280,16 @@ function handleUserInput() {
     character2.offerCandy(candy);
 
   }
+
+  else if (storyStep === 6) {
+
+    statusText.html(
+      'Click 6: the first person accepts the candy and stands up.'
+    );
+
+    character1.standUpWithCandy(candy);
+
+  }
 }
 
 
@@ -403,7 +413,12 @@ class Figure {
   draw() {
     if (!this.visible) return;
     push();
-    translate(this.x, this.y);
+    // Zicen's shared audio data gives every visible figure the same pulse.
+    // With audio disabled all three values are zero, preserving the original pose.
+    const audioLift = audioData.intensity * 12 + audioData.bass * 18;
+    const audioTurn = sin(frameCount * 0.08) * audioData.treble * 0.12;
+    translate(this.x, this.y - audioLift);
+    rotate(audioTurn);
     scale(this.facing * 0.72, 0.72);
     stroke(INK);
     strokeWeight(5);
