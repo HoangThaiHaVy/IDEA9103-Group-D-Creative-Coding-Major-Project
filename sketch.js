@@ -17,6 +17,9 @@ const GROUND = '#8bdc3f';
 
 const MOVE_EASING = 0.075;
 const ARRIVAL_DISTANCE = 2;
+const PREFERS_REDUCED_MOTION = window.matchMedia(
+  '(prefers-reduced-motion: reduce)'
+).matches;
 
 // Shared story state. Individual mechanic files read and update these values.
 let storyStep = 0;

@@ -335,6 +335,8 @@ class Figure {
     this.hasCandy = false;
     this.facing = 1;
     this.targetY = groundY;
+    this.displayScale = 0.72;
+    this.motionPhase = random(TWO_PI);
   }
 
   walkTo(targetX) {
@@ -413,13 +415,19 @@ class Figure {
   draw() {
     if (!this.visible) return;
     push();
-    // Zicen's shared audio data gives every visible figure the same pulse.
-    // With audio disabled all three values are zero, preserving the original pose.
-    const audioLift = audioData.intensity * 12 + audioData.bass * 18;
-    const audioTurn = sin(frameCount * 0.08) * audioData.treble * 0.12;
-    translate(this.x, this.y - audioLift);
+    // Zicen's shared sound drives a staggered wave like the earlier image demo.
+    // A unique phase keeps the group coordinated without moving as one rigid block.
+    const motionAmount = PREFERS_REDUCED_MOTION ? 0 : 1;
+    const idleLift = collectiveStarted
+      ? sin(frameCount * 0.035 + this.motionPhase) * 2.5 * motionAmount
+      : 0;
+    const audioLift = sin(frameCount * 0.12 + this.motionPhase) *
+      (audioData.intensity * 22 + audioData.bass * 16) * motionAmount;
+    const audioTurn = sin(frameCount * 0.08 + this.motionPhase) *
+      audioData.treble * 0.14 * motionAmount;
+    translate(this.x, this.y + idleLift + audioLift);
     rotate(audioTurn);
-    scale(this.facing * 0.72, 0.72);
+    scale(this.facing * this.displayScale, this.displayScale);
     stroke(INK);
     strokeWeight(5);
     strokeCap(ROUND);
@@ -587,17 +595,25 @@ class Candy {
 
 function arrangeCollectiveCircle() {
   const centerX = width / 2;
-  const centerY = GROUND_Y - 105;
-  const radiusX = min(155, width * 0.25);
-  const radiusY = 82;
+  const centerY = height / 2 + 35;
+  const radiusX = min(width * 0.32, 255);
+  const radiusY = min(height * 0.25, 125);
   const total = collectiveFigures.length;
 
   collectiveTargets = collectiveFigures.map((figure, i) => {
     const angle = -HALF_PI + TWO_PI * i / total;
     const x = centerX + cos(angle) * radiusX;
     const y = centerY + sin(angle) * radiusY;
+    const depth = constrain(
+      map(y, centerY - radiusY, centerY + radiusY, 0, 1),
+      0,
+      1
+    );
+
     figure.facing = x < centerX ? 1 : -1;
-    return { x, y };
+    figure.displayScale = lerp(0.48, 0.58, depth);
+    figure.motionPhase = i * TWO_PI / total;
+    return { x, y, angle, depth };
   });
 }
 
@@ -717,21 +733,20 @@ function drawCollectiveScene() {
 
 
   // ----------------------------------------
-  // DRAW FIVE CHARACTERS
-  // ----------------------------------------
-
-  collectiveFigures.forEach((figure, index) => {
-
-    figure.draw();
-
-  });
-
-
-  // ----------------------------------------
-  // CONNECTIONS
+  // CONNECTIONS BEHIND THE FIGURES
   // ----------------------------------------
 
   drawCollectiveConnections();
+
+  // Draw back-to-front so the lower figures naturally overlap the upper row.
+  const figuresByDepth = [...collectiveFigures]
+    .sort((a, b) => a.y - b.y);
+  figuresByDepth.forEach(figure => figure.draw());
+
+  // ----------------------------------------
+  // HIGH-FIVE EFFECTS ABOVE THE FIGURES
+  // ----------------------------------------
+
   drawHighFiveInteraction();
 
 
@@ -777,20 +792,37 @@ function startGroupHighFive() {
   isAnimating = true;
 }
 
+function getHighFiveOrigin(figure, targetX) {
+  const direction = targetX >= figure.x ? 1 : -1;
+  return {
+    x: figure.x + direction * 78 * figure.displayScale,
+    y: figure.y - 142 * figure.displayScale
+  };
+}
+
+function drawHighFiveArm(origin, target, color, scaleAmount) {
+  strokeCap(ROUND);
+  stroke(INK);
+  strokeWeight(14 * scaleAmount);
+  line(origin.x, origin.y, target.x, target.y);
+  stroke(color);
+  strokeWeight(8 * scaleAmount);
+  line(origin.x, origin.y, target.x, target.y);
+}
+
 function drawGroupHighFive(progress) {
   const pulse = sin(constrain(progress, 0, 1) * PI);
   const handX = width / 2;
-  const handY = GROUND_Y - 205 - 22 * pulse;
+  const handY = height / 2 - 42 - 18 * pulse;
   push();
-  stroke(INK);
-  strokeWeight(18);
-  strokeCap(ROUND);
   for (const figure of collectiveFigures) {
-    const dx = handX - figure.x;
-    const dy = handY - (figure.y - 124);
-    const length = max(1, sqrt(dx * dx + dy * dy));
-    const reach = min(58 + pulse * 38, length * 0.72);
-    line(figure.x, figure.y - 124, figure.x + dx / length * reach, figure.y - 124 + dy / length * reach);
+    const origin = getHighFiveOrigin(figure, handX);
+    const reach = 0.58 + pulse * 0.42;
+    const target = {
+      x: lerp(origin.x, handX, reach),
+      y: lerp(origin.y, handY, reach)
+    };
+    drawHighFiveArm(origin, target, figure.color, figure.displayScale / 0.52);
   }
   noStroke();
   fill('#f4c7a1');
@@ -832,19 +864,28 @@ function drawHighFiveInteraction() {
   const progress = constrain(elapsed / duration, 0, 1);
   const clap = sin(progress * PI);
   const handX = lerp(a.x, b.x, 0.5);
-  const handY = lerp(a.y - 130, b.y - 130, 0.5) - 24 * clap;
-  const reach = 38 + 45 * clap;
+  const originA = getHighFiveOrigin(a, handX);
+  const originB = getHighFiveOrigin(b, handX);
+  const handY = lerp(originA.y, originB.y, 0.5) - 18 * clap;
+  const separation = lerp(16, 5, clap);
 
   push();
-  stroke(INK);
-  strokeWeight(18);
-  strokeCap(ROUND);
-  line(a.x, a.y - 124, handX - reach * 0.35, handY);
-  line(b.x, b.y - 124, handX + reach * 0.35, handY);
+  drawHighFiveArm(
+    originA,
+    { x: handX - separation, y: handY },
+    a.color,
+    a.displayScale / 0.52
+  );
+  drawHighFiveArm(
+    originB,
+    { x: handX + separation, y: handY },
+    b.color,
+    b.displayScale / 0.52
+  );
   noStroke();
   fill('#f4c7a1');
-  circle(handX - 5, handY, 17);
-  circle(handX + 5, handY, 17);
+  circle(handX - separation, handY, 14);
+  circle(handX + separation, handY, 14);
 
   // A quick sparkle marks the moment the palms meet.
   if (progress > 0.28 && progress < 0.72) {
