@@ -424,17 +424,50 @@ function drawCloud(x, y, cloudScale) {
 
 function drawWind(time) {
   push();
-  stroke('#8a9aa0');
-  strokeWeight(2);
+  noFill();
   strokeCap(ROUND);
-  for (let i = 0; i < 6; i++) {
-    const y = 120 + i * 38;
-    const x = (time * 100 + i * 145) % (width + 120) - 60;
-    line(x, y, x + 45, y);
-    line(x + 45, y, x + 58, y - 6);
+  strokeJoin(ROUND);
+
+  const flows = 7;
+  const spacing = height / (flows + 1);
+
+  for (let i = 0; i < flows; i++) {
+    const y = spacing * (i + 1);
+    const speed = 55 + (i % 3) * 18;
+    const travel = (time * speed + i * 173) % (width + 240);
+    const x = travel - 120;
+    const length = 90 + (i % 4) * 24;
+    const sway = 5 + (i % 3) * 2;
+
+    stroke(138, 154, 160, 95 + (i % 3) * 20);
+    strokeWeight(i % 3 === 0 ? 2.2 : 1.5);
+
+    beginShape();
+    curveVertex(x - 20, y);
+    curveVertex(x, y);
+
+    curveVertex(
+      x + length * 0.3,
+      y + sin(time * 2 + i) * sway
+    );
+    curveVertex(
+      x + length * 0.65,
+      y + sin(time * 2.5 + i * 1.7) * sway
+    );
+    curveVertex(
+      x + length,
+      y + sin(time * 2 + i * 0.8) * sway * 0.5
+    );
+
+    // The tail section tapers gently
+    curveVertex(x + length + 18, y);
+    curveVertex(x + length + 18, y);
+    endShape();
   }
+
   pop();
 }
+
 
 drawLandscape()
 drawMountainBackdrop()
