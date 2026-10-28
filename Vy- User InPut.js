@@ -185,9 +185,12 @@ function drawStartPrompt() {
 }
 
 function drawCharacterHint(label) {
-  noStroke();
+  push();
+  textFont('Georgia');
+  textStyle(BOLD);
+  textSize(12);
   textAlign(CENTER, CENTER);
-  textSize(13);
+
 
   const isStoryHint = [
     'Let the kite take flight (click figure). ',
@@ -195,23 +198,31 @@ function drawCharacterHint(label) {
     'One click, lets go fly a kite together!',
     'Windy~the kite floats higher'
   ].includes(label);
-  
+  const boxWidth = min(width - 32, textWidth(label) + 18);
+  const boxHeight = 32;
+  const boxX = width / 2;
+  const boxY = height - 28;
 
-  if (isStoryHint) {
-    fill('#ffffff');
-    textStyle(BOLD);
-  } else {
-    fill('#252525');
-    textStyle(NORMAL);
-  }
+rectMode(CENTER);
+fill('#ffffff');
+stroke('#000000');
+strokeWeight(1);
+rect(boxX, boxY, boxWidth, boxHeight, 8);
 
-  text(label, characterX, GROUND_Y + 70
-  );
-  textStyle(NORMAL);
+noStroke();
+fill('#000000');
+text(label, boxX, boxY, boxWidth - 12, boxHeight - 4);
+
+  // Bóng đổ nhẹ
+  drawingContext.shadowColor = 'rgba(80, 35, 45, 0.18)';
+  drawingContext.shadowBlur = 12;
+  drawingContext.shadowOffsetY = 4;
 
 
-  
+  pop();
 }
+
+
 function preloadCharacterImages() {
   standingImage = loadImage(
     'stand.png',
