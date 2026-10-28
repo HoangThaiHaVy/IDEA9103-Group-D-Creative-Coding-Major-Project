@@ -18,6 +18,8 @@ let storyStage = 'intro';
 let characterX = 105;
 let characterFade = 0;
 let finishedAt = 0;
+let arrivalAt = 0;
+let midpointReached = false;
 let lastStoryTime = 0;
 let walkFinished = false;
 
@@ -51,15 +53,22 @@ function draw() {
   if (storyStage === 'fadeIn') {
     characterFade = min(1, characterFade + dt / 1.8);
     if (characterFade >= 1) storyStage = 'holding';
+    
   }
   if (storyStage === 'walking') {
-    characterX = min(width - 85, characterX + dt * 48);
-    if (characterX >= width - 85) {
-      // Stop in the standing pose and wait for the next click.
-      storyStage = 'arrival';
-      walkFinished = true;
-      finishedAt = time;
-    }
+    const walkTargetX = midpointReached ? width - 85 : width / 2;
+    characterX = min(walkTargetX, characterX + dt * 48);
+    if (characterX >= walkTargetX) {
+      if (!midpointReached) {
+        // Pause at the midpoint while the tethered kite keeps rising.
+        storyStage = 'arrival';
+        arrivalAt = time;
+      } else 
+        // Finish the story only after Vy completes the second walk.
+        storyStage = 'finished';
+        walkFinished = true;
+        finishedAt = time;
+      }
   }
   updateAndDrawVy(time, dt);
 }

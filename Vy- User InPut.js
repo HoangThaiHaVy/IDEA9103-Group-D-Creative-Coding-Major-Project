@@ -1,9 +1,11 @@
 // User input and character/kite drawing.
 // Story states are controlled by sketch.js:
-// intro -> ready -> holding -> released -> walking -> finished
+// intro -> ready -> holding -> released -> walking -> arrival -> walking -> finished
 
 let standingImage;
 let surprisedImage;
+let walkImage;
+let walkImageReady = false;
 let walk1Image;
 let walk2Image;
 let standingImageReady = false;
@@ -18,7 +20,7 @@ function updateAndDrawVy(time, dt) {
   // Update walking movement.
   if (storyStage === 'walking') {
     characterX = min(width - 85, characterX + dt * 48);
-
+  
     if (characterX >= width - 85) {
       // Stop in the standing pose and wait for the next click.
       storyStage = 'arrival';
@@ -30,21 +32,23 @@ function updateAndDrawVy(time, dt) {
   // Determine the character and kite states.
   
   const walking = storyStage === 'walking';
-  const released = storyStage === 'released' || walking || storyStage === 'finished';
+  const released = storyStage === 'released' || walking || storyStage === 'arrival' || storyStage === 'finished';
   const finishedElapsed = storyStage === 'finished' ? max(0, time - finishedAt) : 0;
   const kiteEscaped = storyStage === 'finished' && finishedElapsed >= 0.8;
+  const kiteRise = arrivalAt > 0 ? min(120, max(0, time - arrivalAt) * 35) : 0;
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
     released,
     surprised: storyStage === 'finished',
     kiteEscaped,
     escapeTime: kiteEscaped ? finishedElapsed - 0.8 : 0,
+    kiteRise,
     fade: characterFade
   });
 
   if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
   if (storyStage === 'released') drawCharacterHint('One click, lets go fly a kite together!');
-  if (storyStage === 'arrival') drawCharacterHint('Click character to continue');
+  if (storyStage === 'arrival') drawCharacterHint('Click character to continue story');
   if (storyStage === 'finished') drawCharacterHint('Windy~the kite floats higher');
 }
 
@@ -58,6 +62,8 @@ function mousePressed() {
       storyStage = 'fadeIn';
       characterX = 105;
       characterFade = 0;
+      arrivalAt = 0;
+      midpointReached = false;
       walkFinished = false;
     }
   } else if (storyStage === 'holding' && clickOnCharacter()) {
@@ -65,8 +71,10 @@ function mousePressed() {
   } else if (storyStage === 'released' && clickOnCharacter()) {
     storyStage = 'walking';
     } else if (storyStage === 'arrival' && clickOnCharacter()) {
-    storyStage = 'finished';
-    finishedAt = millis() / 1000;
+    // Continue walking from the midpoint to the end of the path.
+    midpointReached = true;
+    storyStage = 'walking';
+    
   }
   return false;
 }
@@ -130,7 +138,7 @@ function drawCharacterHint(label) {
 
   const isStoryHint = [
     'Let the kite take flight (click figure). ',
-    'Click character to see her reaction',
+    'Click character to continue story',
     'One click, lets go fly a kite together!',
     'Windy~the kite floats higher'
   ].includes(label);
@@ -216,6 +224,7 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
     surprised = false,
     kiteEscaped = false,
     escapeTime = 0,
+    kiteRise = 0,
     fade = 1
   } = options;
   const bob = walking ? sin(time * 9) * 2 : 0;
@@ -233,7 +242,7 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
   const kiteY = kiteEscaped
     ? groundY - 165 - escapeTime * 100 + sin(time * 2.2) * 13
     : released
-      ? groundY - 165 + sin(time * 2.2) * 13
+      ? groundY - 165 - kiteRise + sin(time * 2.2) * 13
       : groundY - 90 + sin(time * 1.2) * 2;
 
   let imageToDraw = null;
