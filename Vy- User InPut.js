@@ -95,18 +95,39 @@ function clickOnCharacter() {
 function drawClickArrow() {
   push();
   translate(width / 2, height / 2 - 10);
-  stroke('#252525');
-  strokeWeight(5);
-  line(0, -30, 0, 24);
-  line(0, 24, -15, 8);
-  line(0, 24, 15, 8);
+
+  // Text that bobs slightly to catch the eye
+  const bob = sin(frameCount * 0.06) * 4;
+  translate(0, bob);
+
+  // Shadow behind the arrow
+  stroke(255, 210);
+  strokeWeight(12);
+  strokeCap(ROUND);
+  line(0, -38, 0, 24);
+  line(0, 24, -20, 3);
+  line(0, 24, 20, 3);
+
+  // Red arrow
+  stroke('#e53935');
+  strokeWeight(8);
+  line(0, -38, 0, 24);
+  line(0, 24, -20, 3);
+  line(0, 24, 20, 3);
+
+  // Instructional text
   noStroke();
-  fill('#252525');
+  fill('#000000');
   textAlign(CENTER, TOP);
-  textSize(17);
-  text('Click anywhere', 0, 43);
+  textFont('Georgia');
+  textStyle(BOLD);
+  textSize(21);
+  text('Click to start story', 0, 43);
+
   pop();
+  textStyle(NORMAL);
 }
+ 
 
 function drawStartPrompt() {
   noStroke();
