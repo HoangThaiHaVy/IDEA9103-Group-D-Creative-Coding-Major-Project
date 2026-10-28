@@ -93,28 +93,58 @@ function clickOnCharacter() {
 
 
 function drawClickArrow() {
+  const handBob = sin(frameCount * 0.04) * 4;
   push();
-  translate(width / 2, height / 2 - 10);
+  translate(width / 2, height / 2 - 15 + handBob);
+  scale(0.50);
 
-  // Text that bobs slightly to catch the eye
-  const bob = sin(frameCount * 0.06) * 4;
-  translate(0, bob);
-
-  // Shadow behind the arrow
-  stroke(255, 210);
-  strokeWeight(12);
-  strokeCap(ROUND);
-  line(0, -38, 0, 24);
-  line(0, 24, -20, 3);
-  line(0, 24, 20, 3);
-
-  // Red arrow
-  stroke('#e53935');
+  // Sparkles around the fingertip
+  stroke('#e85b79');
   strokeWeight(8);
-  line(0, -38, 0, 24);
-  line(0, 24, -20, 3);
-  line(0, 24, 20, 3);
+  strokeCap(ROUND);
+  line(-57, -73, -77, -81);
+  line(-20, -91, -25, -113);
+  line(14, -91, 22, -111);
+  line(48, -73, 68, -81);
+  line(-73, -43, -94, -39);
 
+  // Outer edge of the hand
+  fill('#ff91a7');
+  stroke('#e85b79');
+  strokeWeight(9);
+  beginShape();
+  vertex(-15, 80);                 
+  // left wrist
+  bezierVertex(-35, 68, -67, 48, -82, 34); 
+  // Thumb
+  bezierVertex(-97, 20, -84, 1, -66, 8);
+  vertex(-43, 20);
+  vertex(-68, -66);                
+  // Index finger
+  bezierVertex(-74, -87, -54, -96, -45, -78);
+  vertex(-23, -20);
+  vertex(-19, -35);                
+  // The space between the index finger and the middle finger
+  bezierVertex(-16, -48, -1, -51, 7, -42);
+  bezierVertex(17, -51, 31, -46, 37, -37);
+  bezierVertex(51, -43, 64, -34, 69, -21);
+  bezierVertex(82, 12, 87, 43, 70, 67);
+  bezierVertex(51, 91, 16, 96, -15, 80);
+  endShape(CLOSE);
+
+  // Finger-like folds
+  noFill();
+  stroke('#e85b79');
+  strokeWeight(7);
+  strokeCap(ROUND);
+  bezier(-23, -20, -16, -7, -11, 7, -7, 20);
+  bezier(8, -33, 13, -22, 17, -11, 20, 0);
+  bezier(39, -29, 43, -19, 47, -9, 49, 1);
+
+  
+// ... the part depicting the hand remains unchanged ...
+
+  pop();
   // Instructional text
   noStroke();
   fill('#000000');
@@ -122,10 +152,12 @@ function drawClickArrow() {
   textFont('Georgia');
   textStyle(BOLD);
   textSize(21);
-  text('Click to start story', 0, 43);
+  text('Click to start story', width / 2, height / 2 + 40);
 
-  pop();
+
+
   textStyle(NORMAL);
+  
 }
  
 
