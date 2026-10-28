@@ -20,6 +20,8 @@ function updateAndDrawVy(time, dt) {
     characterX = min(width - 85, characterX + dt * 48);
 
     if (characterX >= width - 85) {
+      // Stop in the standing pose and wait for the next click.
+      storyStage = 'arrival';
       storyStage = 'finished';
       walkFinished = true;
       finishedAt = time;
@@ -42,6 +44,7 @@ function updateAndDrawVy(time, dt) {
 
   if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
   if (storyStage === 'released') drawCharacterHint('One click, lets go fly a kite together!');
+  if (storyStage === 'arrival') drawCharacterHint('Click character to continue');
   if (storyStage === 'finished') drawCharacterHint('Windy~the kite floats higher');
 }
 
@@ -61,6 +64,9 @@ function mousePressed() {
     storyStage = 'released';
   } else if (storyStage === 'released' && clickOnCharacter()) {
     storyStage = 'walking';
+    } else if (storyStage === 'arrival' && clickOnCharacter()) {
+    storyStage = 'finished';
+    finishedAt = millis() / 1000;
   }
   return false;
 }
@@ -124,6 +130,7 @@ function drawCharacterHint(label) {
 
   const isStoryHint = [
     'Let the kite take flight (click figure). ',
+    'Click character to see her reaction',
     'One click, lets go fly a kite together!',
     'Windy~the kite floats higher'
   ].includes(label);

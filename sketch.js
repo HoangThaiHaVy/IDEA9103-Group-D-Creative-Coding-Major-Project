@@ -55,7 +55,8 @@ function draw() {
   if (storyStage === 'walking') {
     characterX = min(width - 85, characterX + dt * 48);
     if (characterX >= width - 85) {
-      storyStage = 'finished';
+      // Stop in the standing pose and wait for the next click.
+      storyStage = 'arrival';
       walkFinished = true;
       finishedAt = time;
     }
