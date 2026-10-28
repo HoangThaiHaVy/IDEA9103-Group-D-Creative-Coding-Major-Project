@@ -111,5 +111,165 @@ function drawCharacterHint(label) {
 
   
 }
+function preloadCharacterImages() {
+  standingImage = loadImage(
+    'stand.png',
+    (img) => {
+      // Crop away the black margin only when the source has the expected size.
+      // Smaller source images are drawn whole instead of producing an empty crop.
+      if (img.width >= 585 && img.height >= 1090) {
+        standingImage = img.get(195, 190, 390, 900);
+      } else {
+        standingImage = img;
+      }
+      standingImageReady = true;
+    },
+    () => {
+      standingImageFailed = true;
+      imageLoadFailed('stand.png');
+    }
+  );
+}
 
+surprisedImage = loadImage(
+    'stand-suprise 1.png',
+    (img) => {
+      surprisedImage = img;
+      surprisedImageReady = true;
+    },
+    () => {
+      surprisedImageFailed = true;
+      imageLoadFailed('stand-suprise 1.png');
+    }
+  );
+
+  let loadedWalkImages = 0;
+  const onWalkImageLoaded = () => {
+    loadedWalkImages++;
+    if (loadedWalkImages === 2) walkImagesReady = true;
+  };
+
+  const onWalkImageFailed = (filename) => {
+    walkImageFailed = true;
+    imageLoadFailed(filename);
+  };
+    walkImage = loadImage(
+    'walk.png',
+    () => {
+      walkImageReady = true;
+    },
+    () => {
+      walkImageFailed = true;
+      imageLoadFailed('walk.png');
+    }
+  );
+
+
+function imageLoadFailed(filename) {
+  console.warn(`Could not load ${filename}. Check that the filename and folder match exactly.`);
+}
+
+function drawCharacterAndKite(x, groundY, time, options = {}) {
+  const {
+    walking = false,
+    released = false,
+    surprised = false,
+    kiteEscaped = false,
+    escapeTime = 0,
+    fade = 1
+  } = options;
+  const bob = walking ? sin(time * 9) * 2 : 0;
+  const characterY = groundY - 48 + bob;
+  const handX = x + 19;
+  const handY = groundY - 74 + bob;
+  
+  // The kite drifts beside Vy after release, but its string stays in her hand
+  // until the finished scene starts the escape animation.
+  const kiteX = kiteEscaped
+    ? x + 120 + escapeTime * 120 + sin(time * 1.4) * 18
+    : released
+      ? x + 120 + sin(time * 1.4) * 18
+      : x + 27;
+  const kiteY = kiteEscaped
+    ? groundY - 165 - escapeTime * 100 + sin(time * 2.2) * 13
+    : released
+      ? groundY - 165 + sin(time * 2.2) * 13
+      : groundY - 90 + sin(time * 1.2) * 2;
+
+  let imageToDraw = null;
+  if (surprised && surprisedImageReady && !surprisedImageFailed) {
+    imageToDraw = surprisedImage;
+    } else if (walking && walkImageReady && !walkImageFailed) {
+    imageToDraw = walkImage;
+    } else if (standingImageReady && !standingImageFailed) {
+    imageToDraw = standingImage;
+  }
+
+  push();
+  tint(255, 255 * fade);
+  if (imageToDraw) {
+    imageMode(CENTER);
+    const imageHeight = 220;
+    const imageWidth = imageHeight * imageToDraw.width / imageToDraw.height;
+    image(imageToDraw, x, groundY - imageHeight / 2 + bob + 12, imageWidth, imageHeight);
+  } else {
+    drawFallbackCharacter(x, characterY, fade);
+  }
+  pop();
+
+  // The released kite remains tethered through the "walk together" prompt.
+  // In the finished scene the string is gone and the kite flies out of view.
+  if (!kiteEscaped || kiteY > -100) {
+    drawKite(kiteX, kiteY, time, handX, handY, !kiteEscaped, released ? 1.5 : 1);
+  }
+}
+
+function drawKite(x, y, time, handX, handY, tethered, kiteScale = 1) {
+  const sway = sin(time * 2.2) * (tethered ? 4 : 7);
+  const kx = x + sway;
+  const ky = y;
+  stroke('#292b35');
+  strokeWeight(1.5);
+  noFill();
+  if (tethered) {
+    bezier(handX, handY, handX + 20, handY - 45, kx - 15 * kiteScale, ky + 55 * kiteScale, kx, ky + 18 * kiteScale);
+  } else {
+    bezier(kx, ky + 18, kx - 15, ky + 53, x + 9, y + 47, x - 1, y + 91);
+  }
+
+  push();
+  translate(kx, ky);
+  scale(kiteScale);
+  rotate(PI / 4);
+  noStroke();
+  fill('#ed5364');
+  quad(0, -20, 15, 0, 0, 20, -15, 0);
+  stroke('#fff7e7');
+  strokeWeight(1.5);
+  line(0, -20, 0, 20);
+  line(-15, 0, 15, 0);
+  noStroke();
+  fill('#f5c84b');
+  triangle(-7, 27, 7, 27, 0, 37);
+  pop();
+}
+
+function drawFallbackCharacter(x, y, fade = 1) {
+  push();
+  translate(x, y);
+  scale(fade);
+  noStroke();
+  fill('#f2c7a5');
+  ellipse(0, -42, 23, 27);
+  fill('#292b35');
+  arc(0, -48, 25, 24, PI, TWO_PI);
+  fill('#ed5364');
+  rectMode(CENTER);
+  rect(0, -14, 28, 32, 8);
+  stroke('#292b35');
+  strokeWeight(4);
+  line(-7, 0, -9, 22);
+  line(7, 0, 9, 22);
+  pop();
+}
 
