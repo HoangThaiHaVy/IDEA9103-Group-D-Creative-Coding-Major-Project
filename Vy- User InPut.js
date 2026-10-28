@@ -232,17 +232,20 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
   let imageToDraw = null;
   if (surprised && surprisedImageReady && !surprisedImageFailed) {
     imageToDraw = surprisedImage;
-    } else if (walking && walkImageReady && !walkImageFailed) {
+  } else if (walking && walkImageReady && !walkImageFailed) {
     imageToDraw = walkImage;
-    } else if (standingImageReady && !standingImageFailed) {
+  } else if (standingImageReady && !standingImageFailed) {
     imageToDraw = standingImage;
   }
 
   push();
-    // Change this value to recolour the character image.
-  // Example: '#ef8f3c' = orange, '#8b6ac8' = purple, '#4f9d69' = green.
-  const characterTint = color('#ef8f3c');
-  tint(red(characterTint), green(characterTint), blue(characterTint), 255 * fade);
+  // Change this value to recolour the character image.
+  const characterTint = color('rgb(153, 83, 245)');
+  if (imageToDraw === surprisedImage) {
+    noTint(); // The 'surprised' image retains its original colors
+  } else {
+    tint(red(characterTint), green(characterTint), blue(characterTint), 300 * fade);
+  }
   if (imageToDraw) {
     imageMode(CENTER);
     const imageHeight = 220;
