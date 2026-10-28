@@ -60,23 +60,7 @@ function draw() {
       finishedAt = time;
     }
   }
-
-  const walking = storyStage === 'walking';
-  const released = storyStage === 'released' || walking || storyStage === 'finished';
-  const finishedElapsed = storyStage === 'finished' ? max(0, time - finishedAt) : 0;
-  const kiteEscaped = storyStage === 'finished' && finishedElapsed >= 0.8;
-  drawCharacterAndKite(characterX, GROUND_Y, time, {
-    walking,
-    released,
-    surprised: storyStage === 'finished',
-    kiteEscaped,
-    escapeTime: kiteEscaped ? finishedElapsed - 0.8 : 0,
-    fade: characterFade
-  });
-
-  if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
-  if (storyStage === 'released') drawCharacterHint('One click, lets go fly a kite together!');
-  if (storyStage === 'finished') drawCharacterHint('Windy~the kite floats higher');
+  updateAndDrawVy(time, dt);
 }
 
 function drawBackground(time, windy = false) {
