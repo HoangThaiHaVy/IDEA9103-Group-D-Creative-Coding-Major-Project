@@ -239,7 +239,10 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
   }
 
   push();
-  tint(255, 255 * fade);
+    // Change this value to recolour the character image.
+  // Example: '#ef8f3c' = orange, '#8b6ac8' = purple, '#4f9d69' = green.
+  const characterTint = color('#ef8f3c');
+  tint(red(characterTint), green(characterTint), blue(characterTint), 255 * fade);
   if (imageToDraw) {
     imageMode(CENTER);
     const imageHeight = 220;
