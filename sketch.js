@@ -432,52 +432,6 @@ function drawCloud(x, y, cloudScale) {
   pop();
 }
 
-function drawWind(time) {
-  push();
-  noFill();
-  strokeCap(ROUND);
-  strokeJoin(ROUND);
-
-  const flows = 7;
-  const spacing = height / (flows + 1);
-
-  for (let i = 0; i < flows; i++) {
-    const y = spacing * (i + 1);
-    const speed = 55 + (i % 3) * 18;
-    const travel = (time * speed + i * 173) % (width + 240);
-    const x = travel - 120;
-    const length = 90 + (i % 4) * 24;
-    const sway = 5 + (i % 3) * 2;
-
-    stroke(138, 154, 160, 95 + (i % 3) * 20);
-    strokeWeight(i % 3 === 0 ? 2.2 : 1.5);
-
-    beginShape();
-    curveVertex(x - 20, y);
-    curveVertex(x, y);
-
-    curveVertex(
-      x + length * 0.3,
-      y + sin(time * 2 + i) * sway
-    );
-    curveVertex(
-      x + length * 0.65,
-      y + sin(time * 2.5 + i * 1.7) * sway
-    );
-    curveVertex(
-      x + length,
-      y + sin(time * 2 + i * 0.8) * sway * 0.5
-    );
-
-    // The tail section tapers gently
-    curveVertex(x + length + 18, y);
-    curveVertex(x + length + 18, y);
-    endShape();
-  }
-
-  pop();
-}
-
 
 drawLandscape()
 drawMountainBackdrop()

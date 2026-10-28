@@ -203,17 +203,17 @@ function drawCharacterHint(label) {
   const boxX = width / 2;
   const boxY = height - 28;
 
-rectMode(CENTER);
-fill('#ffffff');
-stroke('#000000');
-strokeWeight(1);
-rect(boxX, boxY, boxWidth, boxHeight, 8);
+  rectMode(CENTER);
+  fill('#ffffff');
+  stroke('#000000');
+  strokeWeight(1);
+  rect(boxX, boxY, boxWidth, boxHeight, 8);
 
-noStroke();
-fill('#000000');
-text(label, boxX, boxY, boxWidth - 12, boxHeight - 4);
+  noStroke();
+  fill('#000000');
+  text(label, boxX, boxY, boxWidth - 12, boxHeight - 4);
 
-  // Bóng đổ nhẹ
+  // Soft shadow
   drawingContext.shadowColor = 'rgba(80, 35, 45, 0.18)';
   drawingContext.shadowBlur = 12;
   drawingContext.shadowOffsetY = 4;
@@ -392,3 +392,63 @@ function drawFallbackCharacter(x, y, fade = 1) {
   pop();
 }
 
+function drawWind(time) {
+  push();
+  noFill();
+  strokeCap(ROUND);
+  strokeJoin(ROUND);
+
+  const flows = 5;
+  const windAreaTop = 85;
+  const windAreaBottom = GROUND_Y - 55;
+  const spacing = (windAreaBottom - windAreaTop) / (flows - 1);
+
+  for (let i = 0; i < flows; i++) {
+    const y = windAreaTop + i * spacing;
+    const speed = 55 + (i % 3) * 18;
+    const travel = (time * speed + i * 173) % (width + 100);
+    const x = travel - 50;
+    const size = 0.55 + (i % 2) * 0.12;
+    const bob = sin(time * 2 + i) * 6;
+
+    drawWindGust(x, y + bob, size);
+  }
+
+  pop();
+}
+
+function drawWindGust(x, y, size) {
+  push();
+  translate(x, y);
+  scale(size);
+  noFill();
+  strokeCap(ROUND);
+  strokeJoin(ROUND);
+
+  // Luồng xoáy chính: nét xanh pastel dày
+  stroke('#9BD9E8');
+  strokeWeight(10);
+  bezier(-42, 0, -12, -28, 25, -23, 44, -7);
+  bezier(44, -7, 65, 11, 45, 30, 26, 19);
+  bezier(26, 19, 13, 12, 22, 1, 34, 6);
+
+  // Ánh sáng mảnh bên trong tạo cảm giác mềm và trong
+  stroke('#E8FAFC');
+  strokeWeight(3);
+  bezier(-39, -2, -10, -25, 22, -21, 41, -7);
+  bezier(42, -5, 59, 10, 43, 25, 27, 17);
+
+  // Những vệt gió phụ
+  stroke('#B8E8F0');
+  strokeWeight(7);
+  bezier(-27, -24, 2, -42, 35, -34, 52, -15);
+  bezier(-32, 12, -7, 31, 20, 39, 43, 31);
+
+  // Điểm sáng nhỏ tạo nét lung linh
+  noStroke();
+  fill('#DDF5F8');
+  circle(-17, -12, 4);
+  circle(3, 27, 3);
+
+  pop();
+}
