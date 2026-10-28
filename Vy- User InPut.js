@@ -240,7 +240,7 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
 
   push();
   // Change this value to recolour the character image.
-  const characterTint = color('rgb(153, 83, 245)');
+  const characterTint = color('rgb(83, 245, 110)');
   if (imageToDraw === surprisedImage) {
     noTint(); // The 'surprised' image retains its original colors
   } else {
