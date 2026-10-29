@@ -107,7 +107,10 @@ if (caveStage && caveRevealStartedAt > 0) {
   const caveFullyRevealed =
     caveRevealStartedAt > 0 &&
     time - caveRevealStartedAt >= 5;
+    drawCharacterHint('“The rain is pouring down… I need to find somewhere to hide!”\nClick to continue…');
+  
   } 
+   
 
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
