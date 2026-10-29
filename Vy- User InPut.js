@@ -32,6 +32,13 @@ function updateAndDrawVy(time, dt) {
   // Updated: let the kite finish flying away before the sad-story clicks begin.
   const kiteEscaped = ['finished', 'lostKite', 'rainStorm', 'rainFace'].includes(storyStage) && finishedElapsed >= 0.8;
   const kiteRise = arrivalAt > 0 ? min(120, max(0, time - arrivalAt) * 35) : 0;
+  // The wind begins to pick up while Vy is walking, near the edge of the screen.
+  const windStartsNearEnd =
+    walking && characterX >= width - 220;
+
+  if (windStartsNearEnd) {
+    drawWind(time);
+  }
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
     released,
@@ -392,29 +399,77 @@ function drawKite(x, y, time, handX, handY, tethered, kiteScale = 1) {
   const sway = sin(time * 2.2) * (tethered ? 4 : 7);
   const kx = x + sway;
   const ky = y;
-  stroke('#292b35');
-  strokeWeight(1.5);
+
+  // The kite's string
+  stroke('#51465f');
+  strokeWeight(2);
   noFill();
+
   if (tethered) {
-    bezier(handX, handY, handX + 20, handY - 45, kx - 15 * kiteScale, ky + 55 * kiteScale, kx, ky + 18 * kiteScale);
+    bezier(
+      handX, handY,
+      handX + 20, handY - 45,
+      kx - 15 * kiteScale, ky + 55 * kiteScale,
+      kx, ky + 18 * kiteScale
+    );
   } else {
-    bezier(kx, ky + 18, kx - 15, ky + 53, x + 9, y + 47, x - 1, y + 91);
+    bezier(
+      kx, ky + 18 * kiteScale,
+      kx - 15 * kiteScale, ky + 53 * kiteScale,
+      kx + 9 * kiteScale, ky + 47 * kiteScale,
+      kx - 1 * kiteScale, ky + 91 * kiteScale
+    );
   }
 
   push();
   translate(kx, ky);
   scale(kiteScale);
   rotate(PI / 4);
+
+  // A faint shadow behind the kite
   noStroke();
-  fill('#ed5364');
-  quad(0, -20, 15, 0, 0, 20, -15, 0);
-  stroke('#fff7e7');
-  strokeWeight(1.5);
-  line(0, -20, 0, 20);
-  line(-15, 0, 15, 0);
+  fill(40, 35, 60, 35);
+  quad(2, -21, 18, 0, 2, 21, -14, 0);
+
+  // The body of the kite with four colored panels
+  stroke('#fff8ed');
+  strokeWeight(2);
+  fill('#f05b78');
+  quad(0, 0, 0, -27, 19, 0, 0, 0);
+
+  fill('#ffc857');
+  quad(0, 0, 19, 0, 0, 27, 0, 0);
+
+  fill('#63c7c2');
+  quad(0, 0, 0, 27, -19, 0, 0, 0);
+
+  fill('#7b78d2');
+  quad(0, 0, -19, 0, 0, -27, 0, 0);
+
+  // The frame and decorative points in the center
+  stroke('#fff8ed');
+  strokeWeight(2);
+  line(0, -27, 0, 27);
+  line(-19, 0, 19, 0);
+
   noStroke();
-  fill('#f5c84b');
-  triangle(-7, 27, 7, 27, 0, 37);
+  fill('#fff8ed');
+  circle(0, 0, 5);
+
+  // The tail of the kite, gently curved, with a bow
+  noFill();
+  stroke('#f05b78');
+  strokeWeight(2);
+  bezier(0, 27, 9, 38, -8, 47, 1, 59);
+
+  noStroke();
+  fill('#ffc857');
+  triangle(-7, 37, 1, 42, 8, 36);
+  fill('#63c7c2');
+  triangle(-6, 49, 1, 54, 8, 48);
+  fill('#7b78d2');
+  triangle(-5, 60, 1, 65, 7, 59);
+
   pop();
 }
 
