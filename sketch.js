@@ -13,6 +13,7 @@ const CANVAS_HEIGHT = 500;
 const GROUND_Y = 369;
 const PAPER = '#FFDF2B';
 const GRASS = '#BCEB35';
+const WALK_END_X = 640;
 
 let storyStage = 'intro';
 let characterX = 105;
@@ -61,7 +62,7 @@ function draw() {
     
   }
   if (storyStage === 'walking') {
-    const walkTargetX = midpointReached ? width - 85 : width / 2;
+    const walkTargetX = midpointReached ? WALK_END_X : width / 2;
     characterX = min(walkTargetX, characterX + dt * 48);
     if (characterX >= walkTargetX) {
       if (!midpointReached) {
