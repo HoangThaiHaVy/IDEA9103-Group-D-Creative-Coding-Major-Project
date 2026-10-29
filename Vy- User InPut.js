@@ -6,8 +6,8 @@ let standingImage;
 let surprisedImage;
 let walkImage;
 let walkImageReady = false;
-let walk1Image;
-let walk2Image;
+let walk1ImageReady = false;
+let walk2ImageReady = false;
 let standingImageReady = false;
 let surprisedImageReady = false;
 let walkImagesReady = false;
@@ -265,15 +265,18 @@ surprisedImage = loadImage(
     walkImageFailed = true;
     imageLoadFailed(filename);
   };
-    walkImage = loadImage(
+  
+
+    walk1Image = loadImage(
     'walk.png',
-    () => {
-      walkImageReady = true;
-    },
-    () => {
-      walkImageFailed = true;
-      imageLoadFailed('walk.png');
-    }
+    () => { walk1ImageReady = true; },
+    () => imageLoadFailed('walk.png')
+   );
+
+   walk2Image = loadImage(
+   'walk2.png',
+   () => { walk2ImageReady = true; },
+   () => imageLoadFailed('walk2.png')
   );
 }
 
@@ -312,15 +315,25 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
   let imageToDraw = null;
   if (surprised && surprisedImageReady && !surprisedImageFailed) {
     imageToDraw = surprisedImage;
-  } else if (walking && walkImageReady && !walkImageFailed) {
-    imageToDraw = walkImage;
+ } else if (walking) {
+  const useWalk1 = floor(time / 0.18) % 2 === 0;
+
+  if (useWalk1 && walk1ImageReady) {
+    imageToDraw = walk1Image;
+  } else if (!useWalk1 && walk2ImageReady) {
+    imageToDraw = walk2Image;
+  } else if (walk1ImageReady) {
+    imageToDraw = walk1Image;
+  } else if (walk2ImageReady) {
+    imageToDraw = walk2Image;
+  }
   } else if (standingImageReady && !standingImageFailed) {
     imageToDraw = standingImage;
   }
 
   push();
   // Change this value to recolour the character image.
-  const characterTint = color('rgb(83, 245, 110)');
+  const characterTint = color('rgb(92, 255, 119)');
   if (imageToDraw === surprisedImage) {
     noTint(); // The 'surprised' image retains its original colors
   } else {
@@ -425,26 +438,26 @@ function drawWindGust(x, y, size) {
   strokeCap(ROUND);
   strokeJoin(ROUND);
 
-  // Luồng xoáy chính: nét xanh pastel dày
+  // Main swirl: thick pastel-green line
   stroke('#9BD9E8');
   strokeWeight(10);
   bezier(-42, 0, -12, -28, 25, -23, 44, -7);
   bezier(44, -7, 65, 11, 45, 30, 26, 19);
   bezier(26, 19, 13, 12, 22, 1, 34, 6);
 
-  // Ánh sáng mảnh bên trong tạo cảm giác mềm và trong
+  // Inner light rays creating a soft and translucent effect
   stroke('#E8FAFC');
   strokeWeight(3);
   bezier(-39, -2, -10, -25, 22, -21, 41, -7);
   bezier(42, -5, 59, 10, 43, 25, 27, 17);
 
-  // Những vệt gió phụ
+  // Additional wind streaks
   stroke('#B8E8F0');
   strokeWeight(7);
   bezier(-27, -24, 2, -42, 35, -34, 52, -15);
   bezier(-32, 12, -7, 31, 20, 39, 43, 31);
 
-  // Điểm sáng nhỏ tạo nét lung linh
+  // Small bright spot creating a shimmering effect
   noStroke();
   fill('#DDF5F8');
   circle(-17, -12, 4);
