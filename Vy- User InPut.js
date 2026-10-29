@@ -53,9 +53,9 @@ function updateAndDrawVy(time, dt) {
   const sadnessElapsed = sadnessStartedAt > 0
     ? time - sadnessStartedAt
     : 0;
-
+// Include soSad in the rain states and force heavy rain.
   if (
-    ['lostKite', 'rainStorm', 'rainFace'].includes(storyStage) &&
+    ['lostKite', 'rainStorm', 'soSad', 'rainFace'].includes(storyStage) &&
     sadnessElapsed >= 1.5
   ) {
     drawRain(time, storyStage !== 'lostKite');
@@ -65,6 +65,7 @@ function updateAndDrawVy(time, dt) {
     const caveProgress = constrain((time - sadRainStartedAt - 2.4) / 2.2, 0, 1);
     if (caveProgress > 0) drawCave(caveProgress);
   }
+
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
     released,
@@ -75,6 +76,8 @@ function updateAndDrawVy(time, dt) {
     sadRainProgress: storyStage === 'rainFace' ? min(1, max(0, (time - sadRainStartedAt) / 1.2)) : 0,
     // [EDITED]: the final click replaces the sad-rain face with So sad.png.
     soSad: storyStage === 'soSad',
+    // Do not draw the kite in the So sad scene.
+    hideKite: storyStage === 'soSad',
     kiteEscaped,
     escapeTime: kiteEscaped ? finishedElapsed - 0.8 : 0,
     kiteRise,
@@ -87,13 +90,17 @@ function updateAndDrawVy(time, dt) {
   if (storyStage === 'arrival') drawCharacterHint('Click character to continue story');
   if (storyStage === 'finished') drawCharacterHint('Windy~the kite floats higher');
   if (storyStage === 'lostKite') drawCharacterHint('Oh no! My kite is gone!');
-  // Updated: show the requested caption while the kite is gone and during rain.
+  // [EDITED] The rain is getting heavier...
   if (storyStage === 'rainStorm') drawCharacterHint('The rain is getting heavier...');
-  if (storyStage === 'rainFace') drawCharacterHint('Still raining...');
-  // [EDITED]: retain the heavy-rain scene after switching to So sad.png.
-  if (storyStage === 'soSad') drawCharacterHint('Still raining...');
-}
+  // [EDITED] So sad.png keeps the “Still raining...” caption.
+   if (storyStage === 'soSad') drawCharacterHint('Still raining...');
+  // [EDITED] The next click advances to the sad-rain face.
+   if (storyStage === 'rainFace') drawCharacterHint('Still raining...');
 
+   // Removed the duplicate drawKite() call here.
+  // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
+  // which already draws the kite; calling them here caused a ReferenceError.
+}
 
 
 function mousePressed() {
@@ -124,12 +131,15 @@ function mousePressed() {
     storyStage = 'lostKite';
     sadnessStartedAt = millis() / 1000;
     
-  } else if (storyStage === 'lostKite' && clickOnCharacter()) {
+    } else if (storyStage === 'lostKite' && clickOnCharacter()) {
     storyStage = 'rainStorm';
-  } else if (storyStage === 'rainStorm' && clickOnCharacter()) {
-    // [EDITED]: clicking the sad-rain face advances to So sad.png.
-    } else if (storyStage === 'rainFace' && clickOnCharacter()) {
+  // [EDITED] First click after “The rain is getting heavier...” shows So sad.png.
+    } else if (storyStage === 'rainStorm' && clickOnCharacter()) {
     storyStage = 'soSad';
+  // [EDITED] Second click shows sad-rain face; its caption is “Still raining...”.
+    } else if (storyStage === 'soSad' && clickOnCharacter()) {
+    storyStage = 'rainFace';
+    sadRainStartedAt = millis() / 1000;
   }
   
   return false;
@@ -357,6 +367,8 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
     sadness = false,
     sadRain = false,
     sadRainProgress = 0,
+      // Passed from the soSad story state.
+    hideKite = false,
     kiteEscaped = false,
     escapeTime = 0,
     kiteRise = 0,
@@ -382,7 +394,7 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
 
 
   let imageToDraw = null;
-// [FIXED]: show So sad.png only in the soSad stage, after the face is clicked.
+// show So sad.png only in the soSad stage, after the face is clicked.
   if (options.soSad && soSadImageReady) {
     imageToDraw = soSadImage;
   } else if (sadRain && sadRainImageReady) {
@@ -432,7 +444,8 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
   pop();
   // The released kite remains tethered through the "walk together" prompt.
   // In the finished scene the string is gone and the kite flies out of view.
-  if (!kiteEscaped || kiteY > -100) {
+  // Hide it for So sad; otherwise keep the escape animation.
+  if (!hideKite && (!kiteEscaped || kiteY > -100)) {
     drawKite(kiteX, kiteY, time, handX, handY, !kiteEscaped, released ? 1.5 : 1);
   }
  }
