@@ -1,7 +1,11 @@
 // User input and character/kite drawing.
 // Story states are controlled by sketch.js:
 // intro -> ready -> holding -> released -> walking -> arrival -> walking -> finished
-
+// ========================================
+// So sad.png as the next image after sad-rain face.png is clicked.
+// The soSad story state keeps heavy rain running and draws the new image.
+// Search for "[EDITED]" below to jump to every changed section.
+// ========================================
 let standingImage;
 let surprisedImage;
 let walkImage;
@@ -9,8 +13,13 @@ let walk1Image;
 let walk2Image;
 let sadnessImage;
 let sadRainImage;
+// Image shown after the user clicks the sad-rain face.
+let soSadImage;
 let sadnessImageReady = false;
 let sadRainImageReady = false;
+// Declare the load flag used by the So sad.png callback.
+let soSadImageReady = false;
+// Track loading so So sad.png is drawn only after it is ready.
 let walkImageReady = false;
 let walk1ImageReady = false;
 let walk2ImageReady = false;
@@ -21,6 +30,7 @@ let standingImageFailed = false;
 let surprisedImageFailed = false;
 let walkImageFailed = false;
 let sadnessStartedAt = 0;
+
 
 
 function updateAndDrawVy(time, dt) {
@@ -59,16 +69,17 @@ function updateAndDrawVy(time, dt) {
     walking,
     released,
     surprised: storyStage === 'finished',
-    sad: storyStage === 'lostKite',
-    sadness: storyStage === 'rainStorm',
-    // Updated: the first click after the kite escapes uses stand-sadness.png.
     sadness: storyStage === 'lostKite' || storyStage === 'rainStorm',
+    // Updated: the first click after the kite escapes uses stand-sadness.png.
     sadRain: storyStage === 'rainFace',
     sadRainProgress: storyStage === 'rainFace' ? min(1, max(0, (time - sadRainStartedAt) / 1.2)) : 0,
+    // [EDITED]: the final click replaces the sad-rain face with So sad.png.
+    soSad: storyStage === 'soSad',
     kiteEscaped,
     escapeTime: kiteEscaped ? finishedElapsed - 0.8 : 0,
     kiteRise,
-    fade: characterFade
+    fade: characterFade,
+    
   });
  
   if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
@@ -79,7 +90,10 @@ function updateAndDrawVy(time, dt) {
   // Updated: show the requested caption while the kite is gone and during rain.
   if (storyStage === 'rainStorm') drawCharacterHint('The rain is getting heavier...');
   if (storyStage === 'rainFace') drawCharacterHint('Still raining...');
+  // [EDITED]: retain the heavy-rain scene after switching to So sad.png.
+  if (storyStage === 'soSad') drawCharacterHint('Still raining...');
 }
+
 
 
 function mousePressed() {
@@ -113,9 +127,11 @@ function mousePressed() {
   } else if (storyStage === 'lostKite' && clickOnCharacter()) {
     storyStage = 'rainStorm';
   } else if (storyStage === 'rainStorm' && clickOnCharacter()) {
-    storyStage = 'rainFace';
-    sadRainStartedAt = millis() / 1000;
+    // [EDITED]: clicking the sad-rain face advances to So sad.png.
+    } else if (storyStage === 'rainFace' && clickOnCharacter()) {
+    storyStage = 'soSad';
   }
+  
   return false;
 }
 
@@ -282,6 +298,7 @@ function preloadCharacterImages() {
       standingImageFailed = true;
       imageLoadFailed('stand.png');
     }
+    
   );
 
 
@@ -323,7 +340,10 @@ surprisedImage = loadImage(
    //  Updated: load the three requested emotional poses.
    sadnessImage = loadImage('stand-sadness.png', () => { sadnessImageReady = true; }, () => imageLoadFailed('stand-sadness.png'));
    sadRainImage = loadImage('sad-rain face.png', () => { sadRainImageReady = true; }, () => imageLoadFailed('sad-rain face.png'));
+  // [EDITED]: preload the final image used after clicking sad-rain face.
+   soSadImage = loadImage('So sad.png', () => { soSadImageReady = true; }, () => imageLoadFailed('So sad.png'));
 }
+
 
 function imageLoadFailed(filename) {
   console.warn(`Could not load ${filename}. Check that the filename and folder match exactly.`);
@@ -362,7 +382,10 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
 
 
   let imageToDraw = null;
- if (sadRain && sadRainImageReady) {
+// [FIXED]: show So sad.png only in the soSad stage, after the face is clicked.
+  if (options.soSad && soSadImageReady) {
+    imageToDraw = soSadImage;
+  } else if (sadRain && sadRainImageReady) {
     imageToDraw = sadRainImage;
   } else if (sadness && sadnessImageReady) {
     imageToDraw = sadnessImage;
