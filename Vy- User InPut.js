@@ -20,6 +20,7 @@ let walkImagesReady = false;
 let standingImageFailed = false;
 let surprisedImageFailed = false;
 let walkImageFailed = false;
+let sadnessStartedAt = 0;
 
 
 function updateAndDrawVy(time, dt) {
@@ -39,6 +40,17 @@ function updateAndDrawVy(time, dt) {
   if (windStartsNearEnd) {
     drawWind(time);
   }
+  const sadnessElapsed = sadnessStartedAt > 0
+    ? time - sadnessStartedAt
+    : 0;
+
+  if (
+    ['lostKite', 'rainStorm', 'rainFace'].includes(storyStage) &&
+    sadnessElapsed >= 1.5
+  ) {
+    drawRain(time, storyStage !== 'lostKite');
+  }
+  
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
     released,
@@ -89,8 +101,12 @@ function mousePressed() {
     midpointReached = true;
     storyStage = 'walking';
     // Updated: clicks on Vy advance the three post-escape emotional beats.
-      } else if (storyStage === 'finished' && millis() / 1000 - finishedAt >= 1.8 && clickOnCharacter()) {
+    } else if (storyStage === 'finished' &&
+             millis() / 1000 - finishedAt >= 1.8 &&
+             clickOnCharacter()) {
     storyStage = 'lostKite';
+    sadnessStartedAt = millis() / 1000;
+    
   } else if (storyStage === 'lostKite' && clickOnCharacter()) {
     storyStage = 'rainStorm';
   } else if (storyStage === 'rainStorm' && clickOnCharacter()) {
@@ -343,10 +359,11 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
 
 
   let imageToDraw = null;
-  if (sadRain && sadnessImageReady) {
-    imageToDraw = sadnessImage; // base pose; sad-rain face fades in below
+ if (sadRain && sadRainImageReady) {
+    imageToDraw = sadRainImage;
   } else if (sadness && sadnessImageReady) {
     imageToDraw = sadnessImage;
+  
   } else if (surprised && surprisedImageReady && !surprisedImageFailed) {
     imageToDraw = surprisedImage;
   } else if (walking) {
