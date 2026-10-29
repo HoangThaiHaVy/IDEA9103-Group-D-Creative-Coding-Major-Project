@@ -5,6 +5,12 @@
 let standingImage;
 let surprisedImage;
 let walkImage;
+let walk1Image;
+let walk2Image;
+let sadnessImage;
+let sadRainImage;
+let sadnessImageReady = false;
+let sadRainImageReady = false;
 let walkImageReady = false;
 let walk1ImageReady = false;
 let walk2ImageReady = false;
@@ -17,39 +23,40 @@ let walkImageFailed = false;
 
 
 function updateAndDrawVy(time, dt) {
-  // Update walking movement.
-  if (storyStage === 'walking') {
-    characterX = min(width - 85, characterX + dt * 48);
-  
-    if (characterX >= width - 85) {
-      // Stop in the standing pose and wait for the next click.
-      storyStage = 'arrival';
-      storyStage = 'finished';
-      walkFinished = true;
-      finishedAt = time;
-    }
-  }
-  // Determine the character and kite states.
+  // Character and kite visuals follow the current story stage.
   
   const walking = storyStage === 'walking';
-  const released = storyStage === 'released' || walking || storyStage === 'arrival' || storyStage === 'finished';
-  const finishedElapsed = storyStage === 'finished' ? max(0, time - finishedAt) : 0;
-  const kiteEscaped = storyStage === 'finished' && finishedElapsed >= 0.8;
+  // Updated: keep the kite's escape animation active throughout the sad scenes.
+  const released = storyStage === 'released' || walking || storyStage === 'arrival' || ['finished', 'lostKite', 'rainStorm', 'rainFace'].includes(storyStage);
+  const finishedElapsed = finishedAt > 0 ? max(0, time - finishedAt) : 0;
+  // Updated: let the kite finish flying away before the sad-story clicks begin.
+  const kiteEscaped = ['finished', 'lostKite', 'rainStorm', 'rainFace'].includes(storyStage) && finishedElapsed >= 0.8;
   const kiteRise = arrivalAt > 0 ? min(120, max(0, time - arrivalAt) * 35) : 0;
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
     released,
     surprised: storyStage === 'finished',
+    sad: storyStage === 'lostKite',
+    sadness: storyStage === 'rainStorm',
+    // Updated: the first click after the kite escapes uses stand-sadness.png.
+    sadness: storyStage === 'lostKite' || storyStage === 'rainStorm',
+    sadRain: storyStage === 'rainFace',
+    sadRainProgress: storyStage === 'rainFace' ? min(1, max(0, (time - sadRainStartedAt) / 1.2)) : 0,
     kiteEscaped,
     escapeTime: kiteEscaped ? finishedElapsed - 0.8 : 0,
     kiteRise,
     fade: characterFade
   });
 
+
   if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
   if (storyStage === 'released') drawCharacterHint('One click, lets go fly a kite together!');
   if (storyStage === 'arrival') drawCharacterHint('Click character to continue story');
   if (storyStage === 'finished') drawCharacterHint('Windy~the kite floats higher');
+  if (storyStage === 'lostKite') drawCharacterHint('Oh no! My kite is gone!');
+  // Updated: show the requested caption while the kite is gone and during rain.
+  if (storyStage === 'rainStorm') drawCharacterHint('The rain is getting heavier...');
+  if (storyStage === 'rainFace') drawCharacterHint('Still raining...');
 }
 
 
@@ -74,10 +81,19 @@ function mousePressed() {
     // Continue walking from the midpoint to the end of the path.
     midpointReached = true;
     storyStage = 'walking';
-    
+    // Updated: clicks on Vy advance the three post-escape emotional beats.
+      } else if (storyStage === 'finished' && millis() / 1000 - finishedAt >= 1.8 && clickOnCharacter()) {
+    storyStage = 'lostKite';
+  } else if (storyStage === 'lostKite' && clickOnCharacter()) {
+    storyStage = 'rainStorm';
+  } else if (storyStage === 'rainStorm' && clickOnCharacter()) {
+    storyStage = 'rainFace';
+    sadRainStartedAt = millis() / 1000;
   }
   return false;
 }
+
+
 function clickOnCharacter() {
   const clickedCharacter =
     abs(mouseX - characterX) < 55 &&
@@ -278,6 +294,9 @@ surprisedImage = loadImage(
    () => { walk2ImageReady = true; },
    () => imageLoadFailed('walk2.png')
   );
+   //  Updated: load the three requested emotional poses.
+   sadnessImage = loadImage('stand-sadness.png', () => { sadnessImageReady = true; }, () => imageLoadFailed('stand-sadness.png'));
+   sadRainImage = loadImage('sad-rain face.png', () => { sadRainImageReady = true; }, () => imageLoadFailed('sad-rain face.png'));
 }
 
 function imageLoadFailed(filename) {
@@ -285,10 +304,13 @@ function imageLoadFailed(filename) {
 }
 
 function drawCharacterAndKite(x, groundY, time, options = {}) {
-  const {
+ const {
     walking = false,
     released = false,
     surprised = false,
+    sadness = false,
+    sadRain = false,
+    sadRainProgress = 0,
     kiteEscaped = false,
     escapeTime = 0,
     kiteRise = 0,
@@ -312,21 +334,25 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
       ? groundY - 165 - kiteRise + sin(time * 2.2) * 13
       : groundY - 90 + sin(time * 1.2) * 2;
 
-  let imageToDraw = null;
-  if (surprised && surprisedImageReady && !surprisedImageFailed) {
-    imageToDraw = surprisedImage;
- } else if (walking) {
-  const useWalk1 = floor(time / 0.18) % 2 === 0;
 
-  if (useWalk1 && walk1ImageReady) {
-    imageToDraw = walk1Image;
-  } else if (!useWalk1 && walk2ImageReady) {
-    imageToDraw = walk2Image;
-  } else if (walk1ImageReady) {
-    imageToDraw = walk1Image;
-  } else if (walk2ImageReady) {
-    imageToDraw = walk2Image;
-  }
+  let imageToDraw = null;
+  if (sadRain && sadnessImageReady) {
+    imageToDraw = sadnessImage; // base pose; sad-rain face fades in below
+  } else if (sadness && sadnessImageReady) {
+    imageToDraw = sadnessImage;
+  } else if (surprised && surprisedImageReady && !surprisedImageFailed) {
+    imageToDraw = surprisedImage;
+  } else if (walking) {
+    const useWalk1 = floor(time / 0.18) % 2 === 0;
+    if (useWalk1 && walk1ImageReady) {
+      imageToDraw = walk1Image;
+    } else if (!useWalk1 && walk2ImageReady) {
+      imageToDraw = walk2Image;
+    } else if (walk1ImageReady) {
+      imageToDraw = walk1Image;
+    } else if (walk2ImageReady) {
+      imageToDraw = walk2Image;
+    }
   } else if (standingImageReady && !standingImageFailed) {
     imageToDraw = standingImage;
   }
@@ -344,17 +370,23 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
     const imageHeight = 220;
     const imageWidth = imageHeight * imageToDraw.width / imageToDraw.height;
     image(imageToDraw, x, groundY - imageHeight / 2 + bob + 12, imageWidth, imageHeight);
+    //  Updated: fade sad-rain face in over stand-sadness during the third beat.
+    if (sadRain && sadRainImageReady) {
+      tint(255, 255 * sadRainProgress);
+      const rainFaceWidth = imageHeight * sadRainImage.width / sadRainImage.height;
+      image(sadRainImage, x, groundY - imageHeight / 2 + bob + 12, rainFaceWidth, imageHeight);
+    }
   } else {
     drawFallbackCharacter(x, characterY, fade);
   }
   pop();
-
   // The released kite remains tethered through the "walk together" prompt.
   // In the finished scene the string is gone and the kite flies out of view.
   if (!kiteEscaped || kiteY > -100) {
     drawKite(kiteX, kiteY, time, handX, handY, !kiteEscaped, released ? 1.5 : 1);
   }
-}
+ }
+
 
 function drawKite(x, y, time, handX, handY, tethered, kiteScale = 1) {
   const sway = sin(time * 2.2) * (tethered ? 4 : 7);
@@ -463,5 +495,20 @@ function drawWindGust(x, y, size) {
   circle(-17, -12, 4);
   circle(3, 27, 3);
 
+  pop();
+}
+
+ // Updated: rain continues in both later sadness stages; no wind is drawn there.
+function drawRain(time, heavy = true) {
+  push();
+  stroke('#77B9D1');
+  strokeWeight(heavy ? 2 : 1.4);
+  strokeCap(ROUND);
+  const count = heavy ? 105 : 55;
+  for (let i = 0; i < count; i++) {
+    const x = (i * 97 + 37) % width;
+    const y = (i * 53 + time * (heavy ? 310 : 220)) % (height + 28) - 14;
+    line(x, y, x - (heavy ? 5 : 3), y + (heavy ? 14 : 10));
+  }
   pop();
 }

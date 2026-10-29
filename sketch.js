@@ -40,6 +40,11 @@ function draw() {
   const dt = min(0.05, max(0, time - lastStoryTime));
   lastStoryTime = time;
 
+  //Updated: wind stops after the kite escapes; rain starts on the next click.
+  drawBackground(time, storyStage === 'finished');
+  //Updated: keep rain running through both sad-rain scenes.
+  if (storyStage === 'rainStorm' || storyStage === 'rainFace') drawRain(time, true);
+
   drawBackground(time, storyStage === 'finished');
   if (storyStage === 'intro') {
     drawClickArrow();
