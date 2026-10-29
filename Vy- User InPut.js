@@ -33,7 +33,7 @@ function updateAndDrawVy(time, dt) {
   // Updated: let the kite finish flying away before the sad-story clicks begin.
   const kiteEscaped = ['finished', 'lostKite', 'rainStorm', 'rainFace'].includes(storyStage) && finishedElapsed >= 0.8;
   const kiteRise = arrivalAt > 0 ? min(120, max(0, time - arrivalAt) * 35) : 0;
-  // The wind begins to pick up while Vy is walking, near the edge of the screen.
+  // The wind begins to pick up while character is walking, near the edge of the screen.
   const windStartsNearEnd =
     walking && characterX >= width - 220;
 
@@ -50,7 +50,7 @@ function updateAndDrawVy(time, dt) {
   ) {
     drawRain(time, storyStage !== 'lostKite');
   }
-    // The cave grows out of the existing lawn, over the rain and behind Vy.
+    // The cave grows out of the existing lawn, over the rain and behind character.
   if (storyStage === 'rainFace') {
     const caveProgress = constrain((time - sadRainStartedAt - 2.4) / 2.2, 0, 1);
     if (caveProgress > 0) drawCave(caveProgress);
@@ -103,7 +103,7 @@ function mousePressed() {
     // Continue walking from the midpoint to the end of the path.
     midpointReached = true;
     storyStage = 'walking';
-    // Updated: clicks on Vy advance the three post-escape emotional beats.
+    // Updated: clicks on character advance the three post-escape emotional beats.
     } else if (storyStage === 'finished' &&
              millis() / 1000 - finishedAt >= 1.8 &&
              clickOnCharacter()) {
@@ -209,7 +209,7 @@ function drawStartPrompt() {
   textAlign(CENTER, CENTER);
   textStyle(BOLD);
   textSize(34);
-  text('Move together to', width / 2, 205);
+  text('"Move Together" Story', width / 2, 205);
   textStyle(NORMAL);
   fill('#ffffff');
   rectMode(CENTER);
@@ -347,7 +347,7 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
   const handX = x + 19;
   const handY = groundY - 74 + bob;
   
-  // The kite drifts beside Vy after release, but its string stays in her hand
+  // The kite drifts beside character after release, but its string stays in her hand
   // until the finished scene starts the escape animation.
   const kiteX = kiteEscaped
     ? x + 120 + escapeTime * 120 + sin(time * 1.4) * 18
