@@ -44,7 +44,8 @@ function draw() {
   //Updated: wind stops after the kite escapes; rain starts on the next click.
   drawBackground(time, storyStage === 'finished');
   //Updated: keep rain running through both sad-rain scenes.
-  if (storyStage === 'rainStorm' || storyStage === 'rainFace') drawRain(time, true);
+  // CHANGED: keep heavy rain visible after the final So sad image appears.
+  if (['rainStorm', 'rainFace', 'soSad'].includes(storyStage)) drawRain(time, true);
 
   drawBackground(time, storyStage === 'finished');
   if (storyStage === 'intro') {

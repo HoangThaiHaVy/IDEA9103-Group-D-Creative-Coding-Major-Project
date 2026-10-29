@@ -30,6 +30,7 @@ let standingImageFailed = false;
 let surprisedImageFailed = false;
 let walkImageFailed = false;
 let sadnessStartedAt = 0;
+let caveRevealStartedAt = 0;
 
 
 
@@ -60,10 +61,11 @@ function updateAndDrawVy(time, dt) {
   ) {
     drawRain(time, storyStage !== 'lostKite');
   }
-    // The cave grows out of the existing lawn, over the rain and behind character.
-  if (storyStage === 'rainFace') {
-    const caveProgress = constrain((time - sadRainStartedAt - 2.4) / 2.2, 0, 1);
-    if (caveProgress > 0) drawCave(caveProgress);
+  
+  // The cave appears only after the user clicks the continue prompt.
+  if (storyStage === 'rainFace' && caveRevealStartedAt > 0) {
+    const caveProgress = constrain((time - caveRevealStartedAt) / 5, 0, 1);
+    drawCave(caveProgress);
   }
 
   drawCharacterAndKite(characterX, GROUND_Y, time, {
@@ -95,7 +97,11 @@ function updateAndDrawVy(time, dt) {
   // [EDITED] So sad.png keeps the “Still raining...” caption.
    if (storyStage === 'soSad') drawCharacterHint('Still raining...');
   // [EDITED] The next click advances to the sad-rain face.
-   if (storyStage === 'rainFace') drawCharacterHint('Still raining...');
+  // Keep the "sad-rain" image and the prompt on the screen until the next click.
+if (storyStage === 'rainFace') {
+  drawCharacterHint(
+    'The rain is pouring down… I need to find somewhere to hide!\nClick to continue…');
+}
 
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
@@ -140,7 +146,15 @@ function mousePressed() {
     } else if (storyStage === 'soSad' && clickOnCharacter()) {
     storyStage = 'rainFace';
     sadRainStartedAt = millis() / 1000;
+    caveRevealStartedAt = 0;
+ 
+  caveRevealStartedAt = 0;
+  } else if (storyStage === 'rainFace' && clickOnCharacter()) {
+  if (caveRevealStartedAt === 0) {
+    caveRevealStartedAt = millis() / 1000;
   }
+}
+
   
   return false;
 }
@@ -627,8 +641,8 @@ function drawRain(time, heavy = true) {
 // A compact, storybook cave grows from the lawn in the lower-left corner, with its mouth facing right.
 function drawCave(progress = 1) {
   push();
-  const caveScale = min(width * 0.50 / 520, GROUND_Y * 0.70 / 360);
-  translate(width * 0.025, GROUND_Y - 360 * caveScale);
+  const caveScale = min(width * 0.44 / 520, GROUND_Y * 0.70 / 360);
+  translate(width * 0.00, GROUND_Y - 360 * caveScale);
   scale(caveScale);
   translate(520, 0);
   scale(-1, 1);
