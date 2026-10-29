@@ -588,80 +588,89 @@ function drawRain(time, heavy = true) {
   pop();
 }
 
-// A storybook cave scene, drawn in a 800 x 500 coordinate space and fitted to the canvas.
-// Draw the cave as a foreground feature on the current lawn; leave the scene around it visible.
+// A compact, storybook cave grows from the lawn in the lower-right corner, with its mouth facing right.
 function drawCave(progress = 1) {
   push();
-  const sx = width / 800;
-  const sy = height / 500;
-  translate((width - 800 * min(sx, sy)) / 2, (height - 500 * min(sx, sy)) / 2);
-  scale(min(sx, sy));
-  const caveScale = min(width * 0.88 / 800, GROUND_Y * 0.90 / 465);
-  translate((width - 800 * caveScale) / 2, GROUND_Y - 465 * caveScale);
+  const caveScale = min(width * 0.58 / 520, GROUND_Y * 0.78 / 360);
+  translate(width - width * 0.025 - 520 * caveScale, GROUND_Y - 360 * caveScale);
   scale(caveScale);
+  translate(520, 0);
+  scale(-1, 1);
   drawingContext.save();
   drawingContext.globalAlpha = progress;
 
-  // Deep dusk behind the cave.
-  noStroke();
-  fill('#26313c');
-  rect(0, 0, 800, 500);
-  // Broad stone outcrop with a rounded, uneven silhouette.
-  stroke('#17191c');
-  strokeWeight(5);
+
   strokeJoin(ROUND);
-  fill('#858b8c');
-  beginShape();
-  vertex(90, 465); bezierVertex(80, 385, 115, 310, 115, 240);
-  bezierVertex(120, 165, 165, 130, 230, 105);
-  bezierVertex(275, 35, 360, 40, 420, 42);
-  bezierVertex(505, 38, 570, 72, 645, 105);
-  bezierVertex(705, 132, 718, 190, 730, 250);
-  bezierVertex(770, 300, 760, 390, 780, 465);
-  vertex(90, 465);
-  endShape(CLOSE);
+  // Rounded rocky hill, open toward the right side after the horizontal flip.
+  vertex(24, 356); bezierVertex(20, 305, 32, 260, 37, 214);
+  bezierVertex(40, 162, 69, 120, 119, 105);
+  bezierVertex(164, 46, 248, 40, 303, 59);
+  bezierVertex(384, 51, 456, 91, 481, 155);
+  bezierVertex(507, 211, 497, 291, 510, 356);
+  vertex(24, 356); endShape(CLOSE);
 
-  // Rock strata.
-  noFill(); stroke('#34383c'); strokeWeight(4);
-  bezier(120, 205, 230, 230, 310, 215, 390, 225);
-  bezier(390, 225, 510, 235, 610, 200, 728, 208);
-  bezier(105, 295, 215, 325, 270, 290, 355, 312);
-  bezier(430, 305, 555, 285, 670, 320, 755, 290);
-  bezier(105, 390, 220, 415, 295, 380, 365, 405);
-  bezier(435, 402, 560, 380, 670, 415, 770, 390);
+  // Layered stone bands make the rock read as a rounded cave mound.
+  noFill(); stroke('#454b4e'); strokeWeight(4);
+  bezier(47, 167, 132, 187, 193, 161, 260, 171);
+  bezier(260, 171, 345, 181, 411, 150, 486, 177);
+  bezier(34, 247, 115, 267, 193, 232, 247, 250);
+  bezier(360, 247, 414, 232, 463, 255, 502, 239);
+  bezier(27, 310, 105, 329, 168, 299, 223, 316);
+  bezier(390, 317, 439, 302, 472, 323, 507, 309);
+ // Fine pale seams and cool shadows give the stone more dimension.
+  stroke('#b1b6b2'); strokeWeight(2.5);
+  bezier(145, 82, 206, 58, 266, 69, 302, 87);
+  bezier(325, 105, 376, 90, 418, 112, 443, 145);
+  stroke('#60686a'); strokeWeight(3);
+  bezier(74, 194, 92, 210, 77, 232, 63, 245);
+  bezier(280, 189, 266, 210, 285, 224, 302, 231);
+  bezier(436, 270, 421, 285, 438, 296, 451, 302);
 
-  // Dark arched entrance and lighter stone rim.
-  stroke('#151719'); strokeWeight(6); fill('#535a5d');
+  // Thick stone rim around the arched entrance.
+  stroke('#17191c'); strokeWeight(6); fill('#596164');
   beginShape();
-  vertex(320, 430); vertex(320, 270);
-  bezierVertex(320, 175, 365, 135, 430, 132);
-  bezierVertex(500, 130, 545, 178, 548, 270);
-  vertex(548, 430); endShape(CLOSE);
-  noStroke(); fill('#282b2e');
+  vertex(48, 355); vertex(48, 223);
+  bezierVertex(48, 158, 76, 122, 128, 119);
+  bezierVertex(181, 119, 207, 159, 207, 223);
+  vertex(207, 355); endShape(CLOSE);
+  noStroke(); fill('#25292c');
   beginShape();
-  vertex(348, 430); vertex(348, 275);
-  bezierVertex(348, 202, 381, 163, 430, 160);
-  bezierVertex(479, 162, 518, 205, 520, 275);
-  vertex(520, 430); endShape(CLOSE);
-  noFill(); stroke('#737a7c'); strokeWeight(5);
-  bezier(493, 192, 540, 250, 535, 350, 536, 428);
+  vertex(67, 355); vertex(67, 225);
+  bezierVertex(67, 175, 88, 144, 128, 141);
+  bezierVertex(166, 143, 188, 176, 188, 225);
+  vertex(188, 355); endShape(CLOSE);
+  // A soft amber glimmer gives the deep entrance a little warmth.
+  noStroke(); fill('rgba(207, 132, 72, 0.20)'); ellipse(142, 257, 45, 105);
+  fill('rgba(232, 171, 104, 0.16)'); ellipse(151, 279, 24, 62);
+  // Narrow side highlight gives the entrance depth.
+  noFill(); stroke('#9ba0a0'); strokeWeight(5);
+  bezier(172, 159, 201, 205, 194, 280, 194, 340);
 
-  // Fern-like shrubs around the entrance.
+  // Layered teal and leaf-green bushes frame the cave without filling the scene background.
   noStroke();
-  fill('#117f70'); ellipse(270, 395, 150, 92); ellipse(570, 392, 130, 102);
-  fill('#568c13'); ellipse(300, 390, 105, 72); ellipse(545, 380, 110, 82);
-  fill('#159c83'); ellipse(205, 455, 190, 76); ellipse(665, 430, 155, 102);
-  fill('#72ae21'); ellipse(152, 430, 95, 64); ellipse(615, 435, 100, 70);
 
-  // Foreground stone ledge and small grass tufts.
-  stroke('#17191c'); strokeWeight(4); fill('#a0a4a2');
-  beginShape(); vertex(280, 430); bezierVertex(380, 414, 500, 414, 610, 430);
-  vertex(670, 455); bezierVertex(540, 475, 390, 472, 255, 450); endShape(CLOSE);
-  noFill(); stroke('#5a6061'); strokeWeight(3);
-  bezier(300, 463, 420, 478, 550, 478, 660, 458);
-  stroke('#9acb35'); strokeWeight(7); strokeCap(ROUND);
-  line(330, 432, 320, 405); line(335, 432, 343, 398); line(340, 432, 357, 411);
-  line(610, 438, 603, 407); line(615, 438, 627, 400); line(619, 438, 640, 412);
+  fill('#087c70'); ellipse(236, 316, 145, 86); ellipse(412, 302, 132, 100);
+  fill('#168f7c'); ellipse(306, 291, 118, 84); ellipse(460, 339, 114, 86);
+  fill('#558b16'); ellipse(267, 318, 106, 74); ellipse(402, 325, 104, 76);
+  fill('#71a91e'); ellipse(343, 337, 98, 65);
+  // Scalloped leaf crowns and a few bright leaf tips.
+  fill('#0b8878');
+  for (let i = 0; i < 7; i++) ellipse(205 + i * 18, 283 - (i % 2) * 9, 34, 34);
+  for (let i = 0; i < 6; i++) ellipse(377 + i * 17, 279 - (i % 2) * 8, 32, 32);
+  fill('#8dc62d');
+  ellipse(238, 291, 16, 12); ellipse(335, 303, 14, 11); ellipse(421, 294, 15, 12);
+
+  // Small stones and grass tufts sit directly on the existing lawn.
+  stroke('#17191c'); strokeWeight(4); fill('#b4a089');
+  beginShape(); vertex(194, 347); bezierVertex(205, 333, 230, 335, 246, 348);
+  vertex(255, 356); vertex(188, 356); endShape(CLOSE);
+  fill('#e9ad45');
+  beginShape(); vertex(206, 346); bezierVertex(215, 331, 232, 334, 242, 349);
+  vertex(206, 346); endShape(CLOSE);
+  stroke('#91c832'); strokeWeight(7); strokeCap(ROUND);
+  line(271, 350, 264, 326); line(278, 350, 286, 319); line(283, 350, 300, 331);
+  line(451, 348, 446, 323); line(458, 348, 467, 316); line(464, 348, 481, 328);
+  noStroke(); fill('#fa7769'); ellipse(495, 349, 34, 17);
 
   drawingContext.restore();
   pop();
