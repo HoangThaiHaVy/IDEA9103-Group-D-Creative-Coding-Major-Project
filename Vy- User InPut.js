@@ -50,7 +50,11 @@ function updateAndDrawVy(time, dt) {
   ) {
     drawRain(time, storyStage !== 'lostKite');
   }
-  
+    // The cave grows out of the existing lawn, over the rain and behind Vy.
+  if (storyStage === 'rainFace') {
+    const caveProgress = constrain((time - sadRainStartedAt - 2.4) / 2.2, 0, 1);
+    if (caveProgress > 0) drawCave(caveProgress);
+  }
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
     released,
@@ -66,8 +70,7 @@ function updateAndDrawVy(time, dt) {
     kiteRise,
     fade: characterFade
   });
-
-
+ 
   if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
   if (storyStage === 'released') drawCharacterHint('One click, lets go fly a kite together!');
   if (storyStage === 'arrival') drawCharacterHint('Click character to continue story');
@@ -582,5 +585,84 @@ function drawRain(time, heavy = true) {
     const y = (i * 53 + time * (heavy ? 310 : 220)) % (height + 28) - 14;
     line(x, y, x - (heavy ? 5 : 3), y + (heavy ? 14 : 10));
   }
+  pop();
+}
+
+// A storybook cave scene, drawn in a 800 x 500 coordinate space and fitted to the canvas.
+// Draw the cave as a foreground feature on the current lawn; leave the scene around it visible.
+function drawCave(progress = 1) {
+  push();
+  const sx = width / 800;
+  const sy = height / 500;
+  translate((width - 800 * min(sx, sy)) / 2, (height - 500 * min(sx, sy)) / 2);
+  scale(min(sx, sy));
+  const caveScale = min(width * 0.88 / 800, GROUND_Y * 0.90 / 465);
+  translate((width - 800 * caveScale) / 2, GROUND_Y - 465 * caveScale);
+  scale(caveScale);
+  drawingContext.save();
+  drawingContext.globalAlpha = progress;
+
+  // Deep dusk behind the cave.
+  noStroke();
+  fill('#26313c');
+  rect(0, 0, 800, 500);
+  // Broad stone outcrop with a rounded, uneven silhouette.
+  stroke('#17191c');
+  strokeWeight(5);
+  strokeJoin(ROUND);
+  fill('#858b8c');
+  beginShape();
+  vertex(90, 465); bezierVertex(80, 385, 115, 310, 115, 240);
+  bezierVertex(120, 165, 165, 130, 230, 105);
+  bezierVertex(275, 35, 360, 40, 420, 42);
+  bezierVertex(505, 38, 570, 72, 645, 105);
+  bezierVertex(705, 132, 718, 190, 730, 250);
+  bezierVertex(770, 300, 760, 390, 780, 465);
+  vertex(90, 465);
+  endShape(CLOSE);
+
+  // Rock strata.
+  noFill(); stroke('#34383c'); strokeWeight(4);
+  bezier(120, 205, 230, 230, 310, 215, 390, 225);
+  bezier(390, 225, 510, 235, 610, 200, 728, 208);
+  bezier(105, 295, 215, 325, 270, 290, 355, 312);
+  bezier(430, 305, 555, 285, 670, 320, 755, 290);
+  bezier(105, 390, 220, 415, 295, 380, 365, 405);
+  bezier(435, 402, 560, 380, 670, 415, 770, 390);
+
+  // Dark arched entrance and lighter stone rim.
+  stroke('#151719'); strokeWeight(6); fill('#535a5d');
+  beginShape();
+  vertex(320, 430); vertex(320, 270);
+  bezierVertex(320, 175, 365, 135, 430, 132);
+  bezierVertex(500, 130, 545, 178, 548, 270);
+  vertex(548, 430); endShape(CLOSE);
+  noStroke(); fill('#282b2e');
+  beginShape();
+  vertex(348, 430); vertex(348, 275);
+  bezierVertex(348, 202, 381, 163, 430, 160);
+  bezierVertex(479, 162, 518, 205, 520, 275);
+  vertex(520, 430); endShape(CLOSE);
+  noFill(); stroke('#737a7c'); strokeWeight(5);
+  bezier(493, 192, 540, 250, 535, 350, 536, 428);
+
+  // Fern-like shrubs around the entrance.
+  noStroke();
+  fill('#117f70'); ellipse(270, 395, 150, 92); ellipse(570, 392, 130, 102);
+  fill('#568c13'); ellipse(300, 390, 105, 72); ellipse(545, 380, 110, 82);
+  fill('#159c83'); ellipse(205, 455, 190, 76); ellipse(665, 430, 155, 102);
+  fill('#72ae21'); ellipse(152, 430, 95, 64); ellipse(615, 435, 100, 70);
+
+  // Foreground stone ledge and small grass tufts.
+  stroke('#17191c'); strokeWeight(4); fill('#a0a4a2');
+  beginShape(); vertex(280, 430); bezierVertex(380, 414, 500, 414, 610, 430);
+  vertex(670, 455); bezierVertex(540, 475, 390, 472, 255, 450); endShape(CLOSE);
+  noFill(); stroke('#5a6061'); strokeWeight(3);
+  bezier(300, 463, 420, 478, 550, 478, 660, 458);
+  stroke('#9acb35'); strokeWeight(7); strokeCap(ROUND);
+  line(330, 432, 320, 405); line(335, 432, 343, 398); line(340, 432, 357, 411);
+  line(610, 438, 603, 407); line(615, 438, 627, 400); line(619, 438, 640, 412);
+
+  drawingContext.restore();
   pop();
 }
