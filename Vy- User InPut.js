@@ -31,6 +31,8 @@ let surprisedImageFailed = false;
 let walkImageFailed = false;
 let sadnessStartedAt = 0;
 let caveRevealStartedAt = 0;
+let pointingForwardImage;
+let pointingForwardImageReady = false;
 
 
 
@@ -62,11 +64,13 @@ function updateAndDrawVy(time, dt) {
     drawRain(time, storyStage !== 'lostKite');
   }
   
-  // The cave appears only after the user clicks the continue prompt.
-  if (storyStage === 'rainFace' && caveRevealStartedAt > 0) {
-    const caveProgress = constrain((time - caveRevealStartedAt) / 5, 0, 1);
-    drawCave(caveProgress);
-  }
+
+  const caveStage = storyStage === 'rainFace' || storyStage === 'caveEntered';
+
+if (caveStage && caveRevealStartedAt > 0) {
+  const caveProgress = constrain((time - caveRevealStartedAt) / 5, 0, 1);
+  drawCave(caveProgress);
+}
 
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
@@ -84,6 +88,7 @@ function updateAndDrawVy(time, dt) {
     escapeTime: kiteEscaped ? finishedElapsed - 0.8 : 0,
     kiteRise,
     fade: characterFade,
+    pointingForward: storyStage === 'caveEntered',
     
   });
  
@@ -98,10 +103,11 @@ function updateAndDrawVy(time, dt) {
    if (storyStage === 'soSad') drawCharacterHint('Still raining...');
   // [EDITED] The next click advances to the sad-rain face.
   // Keep the "sad-rain" image and the prompt on the screen until the next click.
-if (storyStage === 'rainFace') {
-  drawCharacterHint(
-    'The rain is pouring down… I need to find somewhere to hide!\nClick to continue…');
-}
+  if (storyStage === 'rainFace') {
+  const caveFullyRevealed =
+    caveRevealStartedAt > 0 &&
+    time - caveRevealStartedAt >= 5;
+  } 
 
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
@@ -148,11 +154,17 @@ function mousePressed() {
     sadRainStartedAt = millis() / 1000;
     caveRevealStartedAt = 0;
  
-  caveRevealStartedAt = 0;
-  } else if (storyStage === 'rainFace' && clickOnCharacter()) {
-  if (caveRevealStartedAt === 0) {
-    caveRevealStartedAt = millis() / 1000;
-  }
+  } else if (storyStage === 'rainFace' && caveRevealStartedAt === 0 && clickOnCharacter()) {
+  // Tap the character to trigger the appearance of the cave.
+  caveRevealStartedAt = millis() / 1000;
+  } else if (
+  storyStage === 'rainFace' &&
+  caveRevealStartedAt > 0 &&
+  millis() / 1000 - caveRevealStartedAt >= 5 &&
+  clickOnCave()
+) {
+  // Once the cave has fully appeared, tap on it to continue.
+  storyStage = 'caveEntered';
 }
 
   
@@ -366,6 +378,8 @@ surprisedImage = loadImage(
    sadRainImage = loadImage('sad-rain face.png', () => { sadRainImageReady = true; }, () => imageLoadFailed('sad-rain face.png'));
   // [EDITED]: preload the final image used after clicking sad-rain face.
    soSadImage = loadImage('So sad.png', () => { soSadImageReady = true; }, () => imageLoadFailed('So sad.png'));
+   pointingForwardImage = loadImage('Pointing forward.png', () => { pointingForwardImageReady = true; }, () => imageLoadFailed('Pointing forward.png')
+);
 }
 
 
@@ -409,8 +423,10 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
 
   let imageToDraw = null;
 // show So sad.png only in the soSad stage, after the face is clicked.
-  if (options.soSad && soSadImageReady) {
-    imageToDraw = soSadImage;
+  if (options.pointingForward && pointingForwardImageReady) {
+  imageToDraw = pointingForwardImage;
+  } else if (options.soSad && soSadImageReady) {
+  imageToDraw = soSadImage;
   } else if (sadRain && sadRainImageReady) {
     imageToDraw = sadRainImage;
   } else if (sadness && sadnessImageReady) {
@@ -742,4 +758,13 @@ function drawCave(progress = 1) {
 
   drawingContext.restore();
   pop();
+}
+
+function clickOnCave() {
+  const caveScale = min(width * 0.44 / 520, GROUND_Y * 0.70 / 360);
+
+  return mouseX >= 0 &&
+    mouseX <= 520 * caveScale &&
+    mouseY >= GROUND_Y - 360 * caveScale &&
+    mouseY <= GROUND_Y;
 }
