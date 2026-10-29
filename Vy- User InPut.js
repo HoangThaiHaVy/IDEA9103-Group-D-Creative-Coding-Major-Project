@@ -588,26 +588,42 @@ function drawRain(time, heavy = true) {
   pop();
 }
 
-// A compact, storybook cave grows from the lawn in the lower-right corner, with its mouth facing right.
+// A compact, storybook cave grows from the lawn in the lower-left corner, with its mouth facing right.
 function drawCave(progress = 1) {
   push();
-  const caveScale = min(width * 0.58 / 520, GROUND_Y * 0.78 / 360);
-  translate(width - width * 0.025 - 520 * caveScale, GROUND_Y - 360 * caveScale);
+  const caveScale = min(width * 0.50 / 520, GROUND_Y * 0.70 / 360);
+  translate(width * 0.025, GROUND_Y - 360 * caveScale);
   scale(caveScale);
   translate(520, 0);
   scale(-1, 1);
   drawingContext.save();
   drawingContext.globalAlpha = progress;
-
-
+  drawingContext.filter = `blur(${(1 - progress) * 7}px)`;
   strokeJoin(ROUND);
+
   // Rounded rocky hill, open toward the right side after the horizontal flip.
+  stroke('#17191c'); strokeWeight(5); fill('#858b8c');
+  beginShape();
   vertex(24, 356); bezierVertex(20, 305, 32, 260, 37, 214);
   bezierVertex(40, 162, 69, 120, 119, 105);
   bezierVertex(164, 46, 248, 40, 303, 59);
   bezierVertex(384, 51, 456, 91, 481, 155);
   bezierVertex(507, 211, 497, 291, 510, 356);
   vertex(24, 356); endShape(CLOSE);
+
+  // Faceted planes catch a little cool daylight across the rounded rock.
+  noStroke(); fill('rgba(220, 226, 222, 0.22)');
+  beginShape();
+  vertex(135, 105); bezierVertex(169, 60, 227, 48, 270, 58);
+  bezierVertex(240, 78, 214, 91, 183, 94); endShape(CLOSE);
+  fill('rgba(57, 64, 68, 0.20)');
+  beginShape();
+  vertex(306, 75); bezierVertex(376, 61, 438, 98, 466, 146);
+  bezierVertex(419, 125, 377, 117, 337, 124); endShape(CLOSE);
+  fill('rgba(223, 226, 218, 0.15)');
+  beginShape();
+  vertex(39, 270); bezierVertex(78, 281, 121, 273, 151, 286);
+  vertex(151, 303); bezierVertex(105, 292, 70, 303, 36, 293); endShape(CLOSE);
 
   // Layered stone bands make the rock read as a rounded cave mound.
   noFill(); stroke('#454b4e'); strokeWeight(4);
@@ -617,7 +633,8 @@ function drawCave(progress = 1) {
   bezier(360, 247, 414, 232, 463, 255, 502, 239);
   bezier(27, 310, 105, 329, 168, 299, 223, 316);
   bezier(390, 317, 439, 302, 472, 323, 507, 309);
- // Fine pale seams and cool shadows give the stone more dimension.
+
+  // Fine pale seams and cool shadows give the stone more dimension.
   stroke('#b1b6b2'); strokeWeight(2.5);
   bezier(145, 82, 206, 58, 266, 69, 302, 87);
   bezier(325, 105, 376, 90, 418, 112, 443, 145);
@@ -627,12 +644,12 @@ function drawCave(progress = 1) {
   bezier(436, 270, 421, 285, 438, 296, 451, 302);
 
   // Thick stone rim around the arched entrance.
-  stroke('#17191c'); strokeWeight(6); fill('#596164');
+  stroke('#272b2d'); strokeWeight(7); fill('#747c7e');
   beginShape();
-  vertex(48, 355); vertex(48, 223);
-  bezierVertex(48, 158, 76, 122, 128, 119);
-  bezierVertex(181, 119, 207, 159, 207, 223);
-  vertex(207, 355); endShape(CLOSE);
+  vertex(34, 355); vertex(34, 224);
+  bezierVertex(34, 151, 72, 109, 128, 108);
+  bezierVertex(188, 109, 222, 153, 222, 224);
+  vertex(222, 355); endShape(CLOSE);
   noStroke(); fill('#25292c');
   beginShape();
   vertex(67, 355); vertex(67, 225);
@@ -671,6 +688,7 @@ function drawCave(progress = 1) {
   line(271, 350, 264, 326); line(278, 350, 286, 319); line(283, 350, 300, 331);
   line(451, 348, 446, 323); line(458, 348, 467, 316); line(464, 348, 481, 328);
   noStroke(); fill('#fa7769'); ellipse(495, 349, 34, 17);
+  fill('#ffcf64'); ellipse(82, 349, 28, 15); ellipse(357, 352, 22, 12);
 
   drawingContext.restore();
   pop();
