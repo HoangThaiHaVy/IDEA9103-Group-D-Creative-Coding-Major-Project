@@ -30,10 +30,9 @@ let standingImageFailed = false;
 let surprisedImageFailed = false;
 let walkImageFailed = false;
 let sadnessStartedAt = 0;
-let caveRevealStartedAt = 0;
-
 let pointingForwardImage;
 let pointingForwardImageReady = false;
+let rainDropsPromptVisible = false;
 
 const rainDropCount = 5;
 let rainDrops = Array.from({ length: rainDropCount }, () => ({
@@ -116,7 +115,9 @@ function updateAndDrawVy(time, dt) {
   // [EDITED] The next click advances to the sad-rain face.
   // Keep the "sad-rain" image and the prompt on the screen until the next click.
   if (storyStage === 'rainFace') {
-  drawCharacterHint('Slowly reaching out a hand to catch the raindrops');
+  drawCharacterHint(rainDropsPromptVisible
+  ? 'Click each blue circle to discover what the rain brings'
+  : 'Slowly reaching out a hand to catch the raindrops');
   drawRainDropsAndPuddles(time);
 }
   // Lightning begins when a current flow emerges。“Slowly reaching out...”
@@ -170,25 +171,30 @@ function mousePressed() {
     
     } else if (storyStage === 'lostKite' && clickOnCharacter()) {
     storyStage = 'rainStorm';
-  // [EDITED] First click after “The rain is getting heavier...” shows So sad.png.
-    } else if (storyStage === 'rainStorm' && clickOnCharacter()) {
-    storyStage = 'soSad';
-  // [EDITED] Second click shows sad-rain face; its caption is “Still raining...”.
-    } else if (storyStage === 'soSad' && clickOnCharacter()) {
-    storyStage = 'rainFace';
-    sadRainStartedAt = millis() / 1000;
-    } else if (storyStage === 'soSad' && clickOnCharacter()) {
-    storyStage = 'rainFace';
-    sadRainStartedAt = millis() / 1000;
-    rainDrops = Array.from({ length: rainDropCount }, () => ({ clicked: false, clickedAt: 0 }));
-  
+  // Click nhân vật khi đang mưa lớn để hiện cảnh So sad.
+} else if (storyStage === 'rainStorm' && clickOnCharacter()) {
+  storyStage = 'soSad';
 
- 
-    } else if (storyStage === 'rainFace') {
-    if (clickRainDot()) return false;
-    if (clickOnCharacter()) startStarGather();
+// Click nhân vật ở cảnh So sad để vào rainFace.
+} else if (storyStage === 'soSad' && clickOnCharacter()) {
+  storyStage = 'rainFace';
+  sadRainStartedAt = millis() / 1000;
+  rainDropsPromptVisible = false;
+  rainDrops = Array.from({ length: rainDropCount }, () => ({
+    clicked: false,
+    clickedAt: 0
+  }));
+
+// Click tiếp theo đổi chú thích; các click sau dùng cho vòng tròn xanh.
+} else if (storyStage === 'rainFace') {
+  if (!rainDropsPromptVisible) {
+    rainDropsPromptVisible = true;
+  } else if (clickRainDot()) {
+    return false;
+  } else if (clickOnCharacter()) {
+    startStarGather();
+  }
 }
-  
   return false;
 }
 
