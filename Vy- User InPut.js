@@ -30,6 +30,7 @@ let standingImageFailed = false;
 let surprisedImageFailed = false;
 let walkImageFailed = false;
 let sadnessStartedAt = 0;
+let sadRainStartedAt = 0;
 let pointingForwardImage;
 let pointingForwardImageReady = false;
 let rainDropsPromptVisible = false;
@@ -37,6 +38,9 @@ let wetImage;
 let wetImageReady = false;
 let wetStartedAt = 0;
 let pinkDotStartedAt = null;
+let character2PinkImage;
+let character2PinkImageReady = false;
+let character2PinkRevealStartedAt = null;
 
 const rainDropCount = 5;
 let rainDrops = Array.from({ length: rainDropCount }, () => ({
@@ -71,8 +75,9 @@ function updateAndDrawVy(time, dt) {
 
 // Include soSad in the rain states and force heavy rain.
 // keep the heavy rain running after the character points toward the cave.
- if (
-  ['lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered', 'wet'].includes(storyStage) &&
+if (
+  ['lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered', 'wet', 'pinkReveal']
+    .includes(storyStage) &&
   sadnessElapsed >= 1.5
 ) {
   drawRain(time, storyStage !== 'lostKite');
@@ -92,7 +97,7 @@ function updateAndDrawVy(time, dt) {
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
     released,
-    
+
     surprised: storyStage === 'finished',
     sadness: storyStage === 'lostKite' || storyStage === 'rainStorm',
     // Updated: the first click after the kite escapes uses stand-sadness.png.
@@ -100,20 +105,15 @@ function updateAndDrawVy(time, dt) {
     sadRainProgress: storyStage === 'rainFace' ? min(1, max(0, (time - sadRainStartedAt) / 1.2)) : 0,
     // [EDITED]: the final click replaces the sad-rain face with So sad.png.
     soSad: storyStage === 'soSad',
-    
-  // Hide the kite while the character points forward toward the cave.
-    hideKite: storyStage === 'soSad' || storyStage === 'caveEntered',
+
+    // Hide the kite while the character points forward toward the cave.
+    hideKite: storyStage === 'soSad' || storyStage === 'caveEntered' || storyStage === 'wet' || storyStage === 'pinkReveal',
     kiteEscaped,
     escapeTime: kiteEscaped ? finishedElapsed - 0.8 : 0,
     kiteRise,
     fade: characterFade,
     pointingForward: storyStage === 'caveEntered',
-    wet: storyStage === 'wet',
-    hideKite: storyStage === 'soSad' ||
-          storyStage === 'caveEntered' ||
-          storyStage === 'wet',
-
-    
+    wet: storyStage === 'wet' || storyStage === 'pinkReveal'
   });
   
   if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
@@ -129,6 +129,7 @@ function updateAndDrawVy(time, dt) {
   // Keep the "sad-rain" image and the prompt on the screen until the next click.
   if (storyStage === 'rainFace') {
   const allRainDropsClicked = rainDrops.every(drop => drop.clicked);
+  
 
   drawCharacterHint(
     allRainDropsClicked
@@ -148,12 +149,14 @@ function updateAndDrawVy(time, dt) {
   if (storyStage === 'caveEntered') {
     drawCharacterHint('Click to gather everyone around the light');
   }
-  if (storyStage === 'wet') {
-  if (pinkDotStartedAt === null) {
-    pinkDotStartedAt = time;
-  }
+if (storyStage === 'wet' && pinkDotStartedAt === null) {
+  pinkDotStartedAt = time;
+}
 
+if (storyStage === 'wet' || storyStage === 'pinkReveal') {
   drawRainDropsAndPuddles(time);
+}
+if (storyStage === 'wet') {
   drawPinkSparkleDot(time);
 
   if (time - pinkDotStartedAt < 5) {
@@ -164,6 +167,11 @@ function updateAndDrawVy(time, dt) {
     );
   }
 }
+
+if (storyStage === 'pinkReveal') {
+  drawPinkCharacterReveal(time);
+}
+
 
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
@@ -234,9 +242,26 @@ function mousePressed() {
   storyStage = 'wet';
   wetStartedAt = millis() / 1000;
 }
-  return false;
+} else if (storyStage === 'wet') {
+  const dotX = max(40, width * 0.08);
+  const dotY = GROUND_Y - 120;
+
+  // Chỉ cho bấm sau khi chú thích chuyển sang “Look to the left...”
+  const canClickPinkDot =
+    pinkDotStartedAt !== null &&
+    millis() / 1000 - pinkDotStartedAt >= 5;
+
+  if (
+    canClickPinkDot &&
+    dist(mouseX, mouseY, dotX, dotY) < 40
+  ) {
+    storyStage = 'pinkReveal';
+    character2PinkRevealStartedAt = millis() / 1000;
+  }
 }
+ return false;
 }
+
 
 
 function clickOnCharacter() {
@@ -448,6 +473,8 @@ surprisedImage = loadImage(
    soSadImage = loadImage('So sad.png', () => { soSadImageReady = true; }, () => imageLoadFailed('So sad.png'));
    pointingForwardImage = loadImage('Pointing forward.png', () => { pointingForwardImageReady = true; }, () => imageLoadFailed('Pointing forward.png'));
    wetImage = loadImage('wet.png', () => { wetImageReady = true; }, () => imageLoadFailed('wet.png'));
+   character2PinkImage = loadImage('character 2 pink.png', () => { character2PinkImageReady = true; }, () => imageLoadFailed('character 2 pink.png')
+);
 }
 
 
@@ -923,6 +950,31 @@ function drawPinkSparkleDot(time) {
   line(x + ray - 7, y, x + ray, y);
   line(x, y - ray, x, y - ray + 7);
   line(x, y + ray - 7, x, y + ray);
+
+  pop();
+}
+
+function drawPinkCharacterReveal(appear) {
+  if (!character2PinkImageReady) return;
+
+  const alpha = 255;
+
+  push();
+  imageMode(CENTER);
+  tint(255, alpha);
+
+  const imageHeight = 270;
+  const imageWidth =
+    imageHeight * character2PinkImage.width / character2PinkImage.height;
+
+  // Hiện nhân vật ở bên trái, gần vị trí chấm hồng.
+  image(
+    character2PinkImage,
+    max(40, width * 0.08),
+    GROUND_Y - imageHeight / 2 +30,
+    imageWidth,
+    imageHeight
+  );
 
   pop();
 }
