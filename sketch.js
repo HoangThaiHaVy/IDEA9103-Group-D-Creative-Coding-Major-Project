@@ -36,6 +36,7 @@ function setup() {
   strokeJoin(ROUND);
   textFont('Arial, sans-serif');
   setupAudio();
+  setupAudioTestMode();
 }
 
 function draw() {
@@ -43,6 +44,14 @@ function draw() {
   const dt = min(0.05, max(0, time - lastStoryTime));
   lastStoryTime = time;
   updateAudio();
+
+  // The final audio scene owns the whole canvas after the character enters
+  // the cave, so the outdoor story is intentionally skipped in these states.
+  if (isAudioFinaleStage()) {
+    drawAudioFinale(time);
+    drawAudio();
+    return;
+  }
 
   // Wind stops after the kite escapes; rain starts on the next click.
   drawBackground(time, storyStage === 'finished');

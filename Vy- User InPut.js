@@ -129,6 +129,10 @@ if (storyStage === 'caveEntered') {
 
 
 function mousePressed() {
+  // Zicen's finale handles the cave and campfire clicks without adding more
+  // audio-specific conditions to the user-input story controller.
+  if (handleAudioSceneClick()) return false;
+
   if (storyStage === 'intro') {
     storyStage = 'ready';
   } else if (storyStage === 'ready') {
