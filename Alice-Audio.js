@@ -10,16 +10,13 @@ let audioStatus;
 let audioSunImage;
 let audioCloudImage;
 let audioPsychedelicCaveImage;
-let audioCampfireImage;
 let audioDancerImages = [];
 let audioSunReady = false;
 let audioCloudReady = false;
 let audioPsychedelicCaveReady = false;
-let audioCampfireReady = false;
 let audioDancersReady = false;
 let audioCloudOffset = 0;
-let caveTransitionStartedAt = 0;
-let audioCaveStartedAt = 0;
+let starGatherStartedAt = 0;
 let audioDanceStartedAt = 0;
 let audioReducedMotion = false;
 
@@ -48,12 +45,6 @@ function preloadAudioAssets() {
     () => { audioPsychedelicCaveReady = true; },
     () => { audioPsychedelicCaveReady = false; }
   );
-  audioCampfireImage = loadImage(
-    'assets/audio/campfire.png',
-    () => { audioCampfireReady = true; },
-    () => { audioCampfireReady = false; }
-  );
-
   let loadedDancers = 0;
   audioDancerImages = AUDIO_DANCER_PATHS.map((path) => loadImage(
     path,
@@ -88,7 +79,7 @@ function enableAudioInput() {
     () => {
       audioButton.html('Microphone active');
       audioButton.attribute('disabled', '');
-      const inFinale = ['caveTransition', 'audioCave', 'audioDance'].includes(storyStage);
+      const inFinale = ['starGather', 'audioDance'].includes(storyStage);
       audioStatus.html(inFinale
         ? 'Speak, clap, or play music to control the dance.'
         : 'Speak, clap, or play music to move the sky.');
@@ -102,26 +93,19 @@ function enableAudioInput() {
 function setupAudioTestMode() {
   const params = new URLSearchParams(window.location.search);
   const testMode = params.get('audioTest');
-  if (testMode === 'entry') startCaveTransition();
+  if (testMode === 'entry' || testMode === 'star' || testMode === '1') startStarGather();
   else if (testMode === 'dance') startAudioDance();
-  else if (params.has('audioTest')) startAudioCave();
 }
 
 function isAudioFinaleStage() {
-  return ['caveTransition', 'audioCave', 'audioDance'].includes(storyStage);
+  return ['starGather', 'audioDance'].includes(storyStage);
 }
 
-function startCaveTransition() {
-  storyStage = 'caveTransition';
-  caveTransitionStartedAt = millis() / 1000;
-  if (audioStatus) audioStatus.html('Follow the character into the cave...');
-}
-
-function startAudioCave() {
-  storyStage = 'audioCave';
-  audioCaveStartedAt = millis() / 1000;
+function startStarGather() {
+  storyStage = 'starGather';
+  starGatherStartedAt = millis() / 1000;
   audioDanceStartedAt = 0;
-  if (audioStatus) audioStatus.html('The firelight is revealing someone...');
+  if (audioStatus) audioStatus.html('A star is rising between the dancers...');
 }
 
 function startAudioDance() {
@@ -135,19 +119,11 @@ function startAudioDance() {
 }
 
 function handleAudioSceneClick() {
-  if (storyStage === 'caveEntered' && clickOnCave()) {
-    startCaveTransition();
-    return true;
-  }
-  if (storyStage === 'audioCave' && audioDiscoveryComplete() && clickOnAudioCampfire()) {
-    startAudioDance();
+  if (storyStage === 'caveEntered') {
+    startStarGather();
     return true;
   }
   return false;
-}
-
-function clickOnAudioCampfire() {
-  return dist(mouseX, mouseY, width / 2, height * 0.64) < 105;
 }
 
 function updateAudio() {
@@ -189,8 +165,8 @@ function drawAudioSky(time) {
 }
 
 function drawAudioFinale(time) {
-  if (storyStage === 'caveTransition') {
-    drawCaveEntryTransition(time);
+  if (storyStage === 'starGather') {
+    drawStarGathering(time);
     return;
   }
 
@@ -201,143 +177,87 @@ function drawAudioFinale(time) {
     : 0;
   const revealProgress = strongEaseOut(rawProgress);
 
-  drawDarkAudioCave(time, 1 - revealProgress);
-
-  if (storyStage === 'audioDance') {
-    drawPsychedelicCave(revealProgress);
-    drawAudioDancers(time, elapsed, revealProgress);
-  } else {
-    drawDiscoveredDancers(time);
-    drawAudioCavePrompt(time);
-  }
+  drawBackground(time, false);
+  drawGatheredDancers(time, 1 - revealProgress);
+  drawRisingStar(time, width / 2, 82, 1 - revealProgress, 1);
+  drawPsychedelicCave(revealProgress);
+  drawAudioDancers(time, elapsed, revealProgress);
 }
 
-function drawCaveEntryTransition(time) {
-  const duration = audioReducedMotion ? 0.35 : 1.65;
-  const progress = constrain((time - caveTransitionStartedAt) / duration, 0, 1);
-  const movement = strongEaseInOut(progress);
+function drawStarGathering(time) {
+  const elapsed = max(0, time - starGatherStartedAt);
+  const totalDuration = audioReducedMotion ? 0.8 : 4.8;
+  const riseStart = audioReducedMotion ? 0.1 : 0.9;
+  const riseDuration = audioReducedMotion ? 0.5 : 3.35;
+  const rise = strongEaseInOut(constrain((elapsed - riseStart) / riseDuration, 0, 1));
 
   drawBackground(time, false);
-  drawRain(time, true);
-  drawCave(1);
-
-  const startX = characterX;
-  const targetX = width * 0.17;
-  const startY = GROUND_Y - 98;
-  const targetY = GROUND_Y - 70;
-  const x = lerp(startX, targetX, movement);
-  const y = lerp(startY, targetY, movement);
-  const characterScale = lerp(1, 0.24, movement);
-
-  if (pointingForwardImageReady) {
-    push();
-    imageMode(CENTER);
-    tint(92, 255, 119, 255 * (1 - max(0, progress - 0.78) / 0.22));
-    const imageHeight = 220 * characterScale;
-    const imageWidth = imageHeight * pointingForwardImage.width / pointingForwardImage.height;
-    image(pointingForwardImage, x, y, imageWidth, imageHeight);
-    noTint();
-    pop();
-  }
+  drawGatheredDancers(time, 1);
+  const starY = audioReducedMotion ? 82 : lerp(318, 82, rise);
+  const starScale = lerp(0.72, 1.08, strongEaseOut(rise));
+  drawRisingStar(time, width / 2, starY, 1, starScale);
 
   push();
+  textAlign(CENTER, CENTER);
+  textSize(17);
+  textStyle(BOLD);
+  fill('#241A4A');
   noStroke();
-  fill(23, 20, 38, 255 * strongEaseOut(constrain((progress - 0.68) / 0.32, 0, 1)));
-  rect(0, 0, width, height);
+  text(rise < 0.9 ? 'Together, they lift a light into the sky' : 'The world begins to change...', width / 2, height - 30);
   pop();
 
-  if (progress >= 1) startAudioCave();
+  if (elapsed >= totalDuration) startAudioDance();
 }
 
-function drawDarkAudioCave(time, fireOpacity) {
-  background('#171426');
-
-  // Layered arches create depth without using pure black.
-  push();
-  noFill();
-  strokeCap(ROUND);
-  const caveColours = ['#211B36', '#2B2344', '#352950'];
-  for (let i = 0; i < caveColours.length; i += 1) {
-    stroke(caveColours[i]);
-    strokeWeight(58 - i * 13);
-    arc(width / 2, height * 0.64, width * (1.1 - i * 0.12), height * (1.2 - i * 0.12), PI, TWO_PI);
-  }
-
-  noStroke();
-  fill('#3C3158');
-  const rockPositions = [[72, 92], [150, 55], [680, 68], [742, 130], [90, 408], [718, 420]];
-  for (const rock of rockPositions) circle(rock[0], rock[1], 13);
-  pop();
-
-  drawAudioCampfire(time, fireOpacity);
-}
-
-function drawAudioCampfire(time, opacityAmount) {
-  const idlePulse = audioReducedMotion ? 1 : 1 + sin(time * 3.2) * 0.018;
-  const soundPulse = 1 + audioData.bass * 0.16 + audioData.intensity * 0.08;
-  const fireSize = 190 * idlePulse * soundPulse;
-
-  push();
-  imageMode(CENTER);
-  tint(255, 255 * constrain(opacityAmount, 0, 1));
-  if (audioCampfireReady) {
-    image(audioCampfireImage, width / 2, height * 0.64, fireSize, fireSize);
-  } else {
-    noStroke();
-    fill(255, 101, 52, 255 * opacityAmount);
-    triangle(width / 2, height * 0.45, width / 2 - 55, height * 0.7, width / 2 + 55, height * 0.7);
-  }
-  noTint();
-  pop();
-}
-
-function audioDiscoveryComplete() {
-  const revealDuration = audioReducedMotion ? 0.3 : 2.25;
-  return audioCaveStartedAt > 0 && millis() / 1000 - audioCaveStartedAt >= revealDuration;
-}
-
-function drawDiscoveredDancers(time) {
-  if (!audioDancersReady) return;
-
-  const elapsed = max(0, time - audioCaveStartedAt);
+function drawGatheredDancers(time, opacityAmount) {
+  if (!audioDancersReady || opacityAmount <= 0) return;
   const positions = [
-    [106, 385, 116], [238, 335, 110], [400, 312, 122],
-    [562, 335, 110], [694, 385, 116]
+    [400, 444, 134], [265, 400, 126], [535, 400, 126],
+    [300, 284, 118], [500, 284, 118]
   ];
-  const stagger = audioReducedMotion ? 0 : 0.22;
-  const duration = audioReducedMotion ? 0.2 : 0.55;
 
   for (let i = 0; i < audioDancerImages.length; i += 1) {
-    const reveal = strongEaseOut(constrain((elapsed - 0.28 - i * stagger) / duration, 0, 1));
-    if (reveal <= 0) continue;
     const asset = audioDancerImages[i];
     const targetHeight = positions[i][2];
     const targetWidth = targetHeight * asset.width / asset.height;
-    const fireFlicker = audioReducedMotion ? 1 : 0.96 + sin(time * 3.1 + i) * 0.04;
+    const entranceDelay = audioReducedMotion ? 0 : i * 0.06;
+    const elapsed = max(0, time - starGatherStartedAt - entranceDelay);
+    const entrance = strongEaseOut(constrain(elapsed / (audioReducedMotion ? 0.2 : 0.5), 0, 1));
+    const breathe = audioReducedMotion ? 1 : 1 + sin(time * 1.8 + i * 0.7) * 0.015;
 
     push();
-    imageMode(CENTER);
     translate(positions[i][0], positions[i][1]);
-    scale((0.86 + reveal * 0.14) * fireFlicker);
-    tint(255, 255 * reveal);
+    scale((0.95 + entrance * 0.05) * breathe);
+    imageMode(CENTER);
+    tint(255, 255 * opacityAmount * entrance);
     image(asset, 0, -targetHeight / 2, targetWidth, targetHeight);
     noTint();
     pop();
   }
 }
 
-function drawAudioCavePrompt(time) {
-  const complete = audioDiscoveryComplete();
+function drawRisingStar(time, x, y, opacityAmount, scaleAmount) {
+  const pulse = audioReducedMotion ? 1 : 1 + sin(time * 2.4) * 0.045;
   push();
-  textAlign(CENTER, CENTER);
-  textSize(18);
-  textStyle(BOLD);
-  fill('#FFF1CF');
+  translate(x, y);
+  scale(scaleAmount * pulse);
   noStroke();
-  text(complete ? 'You are not alone — click the fire' : 'Shapes emerge from the firelight...', width / 2, height - 48);
+  fill(255, 239, 112, 42 * opacityAmount);
+  circle(0, 0, 118);
+  fill(255, 232, 74, 80 * opacityAmount);
+  circle(0, 0, 78);
+  stroke('#1A1438');
+  strokeWeight(5);
+  strokeJoin(ROUND);
+  fill(255, 242, 89, 255 * opacityAmount);
+  beginShape();
+  for (let i = 0; i < 10; i += 1) {
+    const angle = -HALF_PI + i * PI / 5;
+    const radius = i % 2 === 0 ? 34 : 15;
+    vertex(cos(angle) * radius, sin(angle) * radius);
+  }
+  endShape(CLOSE);
   pop();
-
-  if (complete && audioStatus) audioStatus.html('You found the others. Click the campfire to begin.');
 }
 
 function drawPsychedelicCave(progress) {
@@ -389,8 +309,7 @@ function drawAudioDancers(time, elapsed, backgroundProgress) {
   }
 }
 
-// Evaluates the exact cubic-bezier(0.23, 1, 0.32, 1) ease-out curve used
-// for the rare, explanatory transition from the dark cave to the finale.
+// Evaluates the exact cubic-bezier(0.23, 1, 0.32, 1) ease-out curve.
 function strongEaseOut(progress) {
   const x1 = 0.23;
   const y1 = 1;
@@ -415,7 +334,7 @@ function strongEaseOut(progress) {
     3 * inverse * parameter * parameter * y2 + parameter * parameter * parameter;
 }
 
-// Exact cubic-bezier(0.77, 0, 0.175, 1) for the deliberate journey into the cave.
+// Exact cubic-bezier(0.77, 0, 0.175, 1) for the star's deliberate rise.
 function strongEaseInOut(progress) {
   const x1 = 0.77;
   const y1 = 0;
@@ -460,8 +379,7 @@ function resetAudio() {
   if (audioMechanic) audioMechanic.stopAudio();
   audioData = { intensity: 0, bass: 0, treble: 0 };
   audioCloudOffset = 0;
-  caveTransitionStartedAt = 0;
-  audioCaveStartedAt = 0;
+  starGatherStartedAt = 0;
   audioDanceStartedAt = 0;
 
   if (audioButton) {
