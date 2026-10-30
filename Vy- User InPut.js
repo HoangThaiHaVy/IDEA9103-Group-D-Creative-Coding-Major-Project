@@ -35,6 +35,8 @@ let pointingForwardImageReady = false;
 let rainDropsPromptVisible = false;
 let wetImage;
 let wetImageReady = false;
+let wetStartedAt = 0;
+let pinkDotStartedAt = null;
 
 const rainDropCount = 5;
 let rainDrops = Array.from({ length: rainDropCount }, () => ({
@@ -147,8 +149,22 @@ function updateAndDrawVy(time, dt) {
     drawCharacterHint('Click to gather everyone around the light');
   }
   if (storyStage === 'wet') {
-  drawCharacterHint('... hoping the rain stops soon so I can go home ...');
+  if (pinkDotStartedAt === null) {
+    pinkDotStartedAt = time;
+  }
+
+  drawRainDropsAndPuddles(time);
+  drawPinkSparkleDot(time);
+
+  if (time - pinkDotStartedAt < 5) {
+    drawCharacterHint('... hoping the rain stops soon so I can go home ...');
+  } else {
+    drawCharacterHint(
+      'Look to the left and click the pink dot (a hint for what happens next)'
+    );
+  }
 }
+
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
   // which already draws the kite; calling them here caused a ReferenceError.
@@ -214,9 +230,12 @@ function mousePressed() {
     return false;
   } else if (rainDrops.every(drop => drop.clicked) && clickOnCharacter()) {
     storyStage = 'wet';
-  }
+  } else if (rainDrops.every(drop => drop.clicked) && clickOnCharacter()) {
+  storyStage = 'wet';
+  wetStartedAt = millis() / 1000;
 }
   return false;
+}
 }
 
 
@@ -873,7 +892,39 @@ function drawRainDropsAndPuddles(time) {
       fill('#DDF8FF');
       circle(x - 3, y - 3, 5);
     }
+    }
+   pop();
   }
+
+function drawPinkSparkleDot(time) {
+  const x = max(40, width * 0.08); 
+  // on the left side of the screen
+  const y = GROUND_Y - 120;         
+  // descend onto the grassy area
+
+  const pulse = 1 + 0.18 * sin(time * 4);
+
+  push();
+  noStroke();
+  fill(255, 105, 190, 55);
+  circle(x, y, 70 * pulse);        
+  // larger halo
+  fill('#ea0088');
+  circle(x, y, 26 * pulse);        
+  // larger pink dot
+  fill('#fff4fb');
+  circle(x - 5, y - 5, 7);
+
+  stroke('#ffd5ef');
+  strokeWeight(3);
+  strokeCap(ROUND);
+  const ray = 24 + 3 * sin(time * 5);
+  line(x - ray, y, x - ray + 7, y);
+  line(x + ray - 7, y, x + ray, y);
+  line(x, y - ray, x, y - ray + 7);
+  line(x, y + ray - 7, x, y + ray);
 
   pop();
 }
+
+
