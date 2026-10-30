@@ -33,6 +33,8 @@ let sadnessStartedAt = 0;
 let pointingForwardImage;
 let pointingForwardImageReady = false;
 let rainDropsPromptVisible = false;
+let wetImage;
+let wetImageReady = false;
 
 const rainDropCount = 5;
 let rainDrops = Array.from({ length: rainDropCount }, () => ({
@@ -67,13 +69,19 @@ function updateAndDrawVy(time, dt) {
 
 // Include soSad in the rain states and force heavy rain.
 // keep the heavy rain running after the character points toward the cave.
-  if (
-    ['lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered'].includes(storyStage) &&
-    sadnessElapsed >= 1.5
-  ) {
-    drawRain(time, storyStage !== 'lostKite');
-  }
-  
+ if (
+  ['lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered', 'wet'].includes(storyStage) &&
+  sadnessElapsed >= 1.5
+) {
+  drawRain(time, storyStage !== 'lostKite');
+}
+  if ([
+  'holding', 'released', 'walking', 'arrival', 'finished',
+  'lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered', 'wet'
+].includes(storyStage)) {
+  drawCharacterGlow(characterX, GROUND_Y, time, characterFade, storyStage);
+}
+
   // [EDITED] Magical glow makes the character stand out as clickable.
   if (['holding', 'released', 'walking', 'arrival', 'finished', 'lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered'].includes(storyStage)) {
    drawCharacterGlow(characterX, GROUND_Y, time, characterFade, storyStage);
@@ -82,6 +90,7 @@ function updateAndDrawVy(time, dt) {
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
     released,
+    
     surprised: storyStage === 'finished',
     sadness: storyStage === 'lostKite' || storyStage === 'rainStorm',
     // Updated: the first click after the kite escapes uses stand-sadness.png.
@@ -97,9 +106,11 @@ function updateAndDrawVy(time, dt) {
     kiteRise,
     fade: characterFade,
     pointingForward: storyStage === 'caveEntered',
+    wet: storyStage === 'wet',
+    hideKite: storyStage === 'soSad' ||
+          storyStage === 'caveEntered' ||
+          storyStage === 'wet',
 
-    
-    
     
   });
   
@@ -135,6 +146,9 @@ function updateAndDrawVy(time, dt) {
   if (storyStage === 'caveEntered') {
     drawCharacterHint('Click to gather everyone around the light');
   }
+  if (storyStage === 'wet') {
+  drawCharacterHint('... hoping the rain stops soon so I can go home ...');
+}
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
   // which already draws the kite; calling them here caused a ReferenceError.
@@ -198,8 +212,8 @@ function mousePressed() {
     rainDropsPromptVisible = true;
   } else if (clickRainDot()) {
     return false;
-  } else if (clickOnCharacter()) {
-    startStarGather();
+  } else if (rainDrops.every(drop => drop.clicked) && clickOnCharacter()) {
+    storyStage = 'wet';
   }
 }
   return false;
@@ -369,6 +383,7 @@ function preloadCharacterImages() {
       imageLoadFailed('stand.png');
     }
     
+    
   );
 
 
@@ -412,8 +427,8 @@ surprisedImage = loadImage(
    sadRainImage = loadImage('sad-rain face.png', () => { sadRainImageReady = true; }, () => imageLoadFailed('sad-rain face.png'));
   // [EDITED]: preload the final image used after clicking sad-rain face.
    soSadImage = loadImage('So sad.png', () => { soSadImageReady = true; }, () => imageLoadFailed('So sad.png'));
-   pointingForwardImage = loadImage('Pointing forward.png', () => { pointingForwardImageReady = true; }, () => imageLoadFailed('Pointing forward.png')
-);
+   pointingForwardImage = loadImage('Pointing forward.png', () => { pointingForwardImageReady = true; }, () => imageLoadFailed('Pointing forward.png'));
+   wetImage = loadImage('wet.png', () => { wetImageReady = true; }, () => imageLoadFailed('wet.png'));
 }
 
 
@@ -457,7 +472,9 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
 
   let imageToDraw = null;
 // show So sad.png only in the soSad stage, after the face is clicked.
-  if (options.pointingForward && pointingForwardImageReady) {
+  if (options.wet && wetImageReady) {
+  imageToDraw = wetImage;
+  } else if (options.pointingForward && pointingForwardImageReady) {
   imageToDraw = pointingForwardImage;
   } else if (options.soSad && soSadImageReady) {
   imageToDraw = soSadImage;
@@ -490,20 +507,25 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
     noTint(); // The 'surprised' image retains its original colors
   } else {
     tint(red(characterTint), green(characterTint), blue(characterTint), 300 * fade);
-  }
+  } 
   if (imageToDraw) {
-    imageMode(CENTER);
-    const imageHeight = 220;
-    const imageWidth = imageHeight * imageToDraw.width / imageToDraw.height;
-    image(imageToDraw, x, groundY - imageHeight / 2 + bob + 12, imageWidth, imageHeight);
+  imageMode(CENTER);
+  const imageHeight = 220;
+  const imageWidth = imageHeight * imageToDraw.width / imageToDraw.height;
+  const wetOffset = imageToDraw === wetImage ? -25 : 0;
+
+  image(imageToDraw,
+    x,
+    groundY - imageHeight / 2 + bob + 12 - wetOffset,
+    imageWidth,
+    imageHeight
+  );
     //  Updated: fade sad-rain face in over stand-sadness during the third beat.
     if (sadRain && sadRainImageReady) {
       tint(255, 255 * sadRainProgress);
       const rainFaceWidth = imageHeight * sadRainImage.width / sadRainImage.height;
       image(sadRainImage, x, groundY - imageHeight / 2 + bob + 12, rainFaceWidth, imageHeight);
-    }
-  } else {
-    drawFallbackCharacter(x, characterY, fade);
+    
   }
   pop();
   // The released kite remains tethered through the "walk together" prompt.
@@ -512,7 +534,8 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
   if (!hideKite && (!kiteEscaped || kiteY > -100)) {
     drawKite(kiteX, kiteY, time, handX, handY, !kiteEscaped, released ? 1.5 : 1);
   }
- }
+}
+}
 
 
 function drawKite(x, y, time, handX, handY, tethered, kiteScale = 1) {
@@ -717,18 +740,19 @@ function drawLightning(time) {
 function drawCharacterGlow(x, y, time, fade = 1, stage = '') {
   const pulse = (sin(time * 2.8) + 1) / 2;
   const purpleGlow = [
-    'lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered'
+    'lostKite', 'rainStorm', 'soSad', 'rainFace'
   ].includes(stage);
 
-  const outerColor = purpleGlow
-    ? color(155, 95, 255)
-    : color(255, 180, 45);
-  const innerColor = purpleGlow
-    ? color(205, 155, 255)
-    : color(255, 225, 105);
-  const sparkleColor = purpleGlow
-    ? color(235, 210, 255)
-    : color(255, 245, 185);
+  const isWet = stage === 'wet';
+
+ const outerColor = isWet ? color(65, 65, 65)
+  : purpleGlow ? color(155, 95, 255) : color(255, 180, 45);
+
+ const innerColor = isWet ? color(95, 95, 95)
+  : purpleGlow ? color(205, 155, 255) : color(255, 225, 105);
+
+ const sparkleColor = isWet ? color(145, 145, 145)
+  : purpleGlow ? color(235, 210, 255) : color(255, 245, 185);
 
   push();
 
@@ -804,16 +828,17 @@ function drawRainDropsAndPuddles(time) {
       const growth = constrain((time - drop.clickedAt) / 1.1, 0, 1);
       const easedGrowth = 1 - pow(1 - growth, 3);
       const ripple = sin(time * 5 + i) * 1.5;
+      
 
-      // Bóng và viền xanh đậm
+      // Dark green shadow and border
       fill(30, 111, 150, 55);
       ellipse(x, puddleY + 2, 24 + easedGrowth * 62, 9 + easedGrowth * 18);
 
-      // Mặt nước
+      // Surface of the water
       fill(52, 164, 202, 155);
       ellipse(x, puddleY, 18 + easedGrowth * 58, 7 + easedGrowth * 15);
 
-      // Viền sáng
+      // Bright edge
       noFill();
       stroke(191, 244, 255, 190);
       strokeWeight(2);
