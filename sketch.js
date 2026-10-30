@@ -4,7 +4,7 @@
 //
 // Vy     → User Input
 // Emery  → Time-based
-// Zihen  → Audio
+// Zicen  → Audio
 // ========================================
 
 // Main controller for the staged kite story.
@@ -26,6 +26,7 @@ let walkFinished = false;
 
 function preload() {
   preloadCharacterImages();
+  preloadAudioAssets();
 }
 
 function setup() {
@@ -34,26 +35,28 @@ function setup() {
   strokeCap(ROUND);
   strokeJoin(ROUND);
   textFont('Arial, sans-serif');
+  setupAudio();
 }
 
 function draw() {
   const time = millis() / 1000;
   const dt = min(0.05, max(0, time - lastStoryTime));
   lastStoryTime = time;
+  updateAudio();
 
-  //Updated: wind stops after the kite escapes; rain starts on the next click.
+  // Wind stops after the kite escapes; rain starts on the next click.
   drawBackground(time, storyStage === 'finished');
-  //Updated: keep rain running through both sad-rain scenes.
-  // CHANGED: keep heavy rain visible after the final So sad image appears.
+  // Keep heavy rain visible after the final sad image appears.
   if (['rainStorm', 'rainFace', 'soSad'].includes(storyStage)) drawRain(time, true);
 
-  drawBackground(time, storyStage === 'finished');
   if (storyStage === 'intro') {
     drawClickArrow();
+    drawAudio();
     return;
   }
   if (storyStage === 'ready') {
     drawStartPrompt();
+    drawAudio();
     return;
   }
 
@@ -78,6 +81,7 @@ function draw() {
       }
   }
   updateAndDrawVy(time, dt);
+  drawAudio();
 }
 
 const LANDSCAPE_INK = '#10110E';
@@ -85,10 +89,9 @@ function drawBackground(time, windy = false) {
   // New static background.
   drawLandscape();
 
-  // Keep the existing sun, cloud and wind behaviour for now.
-  drawSun(99, 82, 34);
-  drawCloud(324, 84, 1);
-  drawCloud(630, 124, 0.78);
+  // Zicen's audio layer draws independent sun and cloud assets. Microphone
+  // level and frequency data control their scale, drift, and movement.
+  drawAudioSky(time);
 
   if (windy) {
     drawWind(time);
@@ -422,7 +425,7 @@ function drawLeafFan(x, y, direction) {
 
 function drawSun(x, y, radius) {
   noStroke();
-  fill('');
+  fill('#F43F3F');
   circle(x, y, radius * 2);
 }
 
