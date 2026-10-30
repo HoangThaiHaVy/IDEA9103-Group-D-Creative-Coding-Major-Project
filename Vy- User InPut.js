@@ -67,7 +67,7 @@ function updateAndDrawVy(time, dt) {
   
   // [EDITED] Magical glow makes the character stand out as clickable.
   if (['holding', 'released', 'walking', 'arrival', 'finished', 'lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered'].includes(storyStage)) {
-    drawCharacterGlow(characterX, GROUND_Y, time, characterFade);
+   drawCharacterGlow(characterX, GROUND_Y, time, characterFade, storyStage);
   }
 
   drawCharacterAndKite(characterX, GROUND_Y, time, {
@@ -96,7 +96,7 @@ function updateAndDrawVy(time, dt) {
   
   if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
   if (storyStage === 'released') drawCharacterHint('One click, lets go fly a kite together!');
-  if (storyStage === 'arrival') drawCharacterHint('Click character to continue story');
+  if (storyStage === 'arrival') drawCharacterHint('Click character to continue flying kites');
   if (storyStage === 'finished') drawCharacterHint('Windy~the kite floats higher');
   if (storyStage === 'lostKite') drawCharacterHint('Oh no! My kite is gone!');
   // [EDITED] The rain is getting heavier...
@@ -685,29 +685,48 @@ function drawLightning(time) {
   pop();
 }
 
-function drawCharacterGlow(x, y, time, fade = 1) {
+function drawCharacterGlow(x, y, time, fade = 1, stage = '') {
   const pulse = (sin(time * 2.8) + 1) / 2;
+  const purpleGlow = [
+    'lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered'
+  ].includes(stage);
+
+  const outerColor = purpleGlow
+    ? color(155, 95, 255)
+    : color(255, 180, 45);
+  const innerColor = purpleGlow
+    ? color(205, 155, 255)
+    : color(255, 225, 105);
+  const sparkleColor = purpleGlow
+    ? color(235, 210, 255)
+    : color(255, 245, 185);
 
   push();
-  translate(x, y - 55);
+
+  // Center the glow over the full character, from head to feet.
+  translate(x, y - 100);
   noStroke();
 
-  // Soft purple and golden halo
-  fill(190, 130, 255, (22 + pulse * 18) * fade);
-  ellipse(0, 0, 115 + pulse * 12, 175 + pulse * 12);
+  // A broad, brighter layer, deeper in tone and with a gentle rhythm
+  outerColor.setAlpha((45 + pulse * 35) * fade);
+  fill(outerColor);
+  ellipse(0, 0, 145 + pulse * 18, 235 + pulse * 18);
 
-  fill(255, 220, 130, (18 + pulse * 16) * fade);
-  ellipse(0, 0, 82 + pulse * 8, 140 + pulse * 8);
+  // The bright center, either yellow or purple
+  innerColor.setAlpha((55 + pulse * 45) * fade);
+  fill(innerColor);
+  ellipse(0, 0, 100 + pulse * 12, 195 + pulse * 12);
 
-  // Floating sparkles
-  for (let i = 0; i < 6; i++) {
-    const angle = time * 0.7 + TWO_PI * i / 6;
-    const radius = 58 + sin(time * 2 + i) * 5;
+  // The shimmering spots around the character
+  for (let i = 0; i < 8; i++) {
+    const angle = time * 0.7 + TWO_PI * i / 8;
+    const radius = 72 + sin(time * 2 + i) * 7;
     const sx = cos(angle) * radius;
     const sy = sin(angle) * radius * 1.25;
-    const size = 3 + (sin(time * 4 + i) + 1) * 1.5;
+    const size = 4 + (sin(time * 4 + i) + 1) * 2;
 
-    fill(255, 245, 190, (120 + pulse * 100) * fade);
+    sparkleColor.setAlpha((180 + pulse * 70) * fade);
+    fill(sparkleColor);
     circle(sx, sy, size);
   }
 
