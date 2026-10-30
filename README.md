@@ -64,6 +64,13 @@ scale and vertical pulse, the cream clouds' speed and bobbing, and a small
 sound-level indicator. The analysis is isolated in `audio-mechanic.js`, while
 `Alice-Audio.js` connects the data to the shared scene.
 
+The final audio scene begins inside a dark violet cave with a central campfire.
+Clicking the fire reveals a psychedelic cave background over 2.5 seconds, then
+five dancers enter with a short stagger. Overall volume changes their scale and
+bounce, bass controls their jump height and the fire pulse, and treble controls
+their sway and rotation. The scene respects the operating system's reduced
+motion preference.
+
 ### Interaction instructions
 
 1. Open the project through a local web server.
@@ -71,6 +78,8 @@ sound-level indicator. The analysis is isolated in `audio-mechanic.js`, while
 3. Speak, clap, or play music. Louder sound enlarges the sun, bass lifts it,
    and high frequencies increase the clouds' movement.
 4. Continue clicking the character and scene prompts to experience the story.
+5. After entering the cave, click the campfire to reveal the audio-controlled
+   dance. For direct testing, open the project with `?audioTest=1`.
 
 ### AI acknowledgement
 

@@ -66,13 +66,6 @@ function updateAndDrawVy(time, dt) {
   }
   
 
-  const caveStage = storyStage === 'rainFace' || storyStage === 'caveEntered';
-
-if (caveStage && caveRevealStartedAt > 0) {
-  const caveProgress = constrain((time - caveRevealStartedAt) / 5, 0, 1);
-  drawCave(caveProgress);
-}
-
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
     released,
@@ -107,18 +100,12 @@ if (caveStage && caveRevealStartedAt > 0) {
   // [EDITED] The next click advances to the sad-rain face.
   // Keep the "sad-rain" image and the prompt on the screen until the next click.
   if (storyStage === 'rainFace') {
-  const caveIsRevealing = caveRevealStartedAt > 0;
-
-  if (caveIsRevealing) {
-    drawCharacterHint('The cave slowly begins to appear\nClick on it to discover what happens next');
-  } else {
-    drawCharacterHint('“The rain is pouring down… I need to find somewhere to hide!”\nClick to continue…');
+    drawCharacterHint('A small light appears in the distance...\nClick to call the others together');
   }
-}
 
-if (storyStage === 'caveEntered') {
-  drawCharacterHint('There is a cave far away, Could this be a safe place to shelter?');
-}
+  if (storyStage === 'caveEntered') {
+    drawCharacterHint('Click to gather everyone around the light');
+  }
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
   // which already draws the kite; calling them here caused a ReferenceError.
@@ -129,6 +116,10 @@ if (storyStage === 'caveEntered') {
 
 
 function mousePressed() {
+  // Zicen's finale handles the cave and campfire clicks without adding more
+  // audio-specific conditions to the user-input story controller.
+  if (handleAudioSceneClick()) return false;
+
   if (storyStage === 'intro') {
     storyStage = 'ready';
   } else if (storyStage === 'ready') {
@@ -167,18 +158,10 @@ function mousePressed() {
     sadRainStartedAt = millis() / 1000;
     caveRevealStartedAt = 0;
  
-  } else if (storyStage === 'rainFace' && caveRevealStartedAt === 0 && clickOnCharacter()) {
-  // Tap the character to trigger the appearance of the cave.
-  caveRevealStartedAt = millis() / 1000;
-  } else if (
-  storyStage === 'rainFace' &&
-  caveRevealStartedAt > 0 &&
-  millis() / 1000 - caveRevealStartedAt >= 5 &&
-  clickOnCave()
-) {
-  // Once the cave has fully appeared, tap on it to continue.
-  storyStage = 'caveEntered';
-}
+  } else if (storyStage === 'rainFace' && clickOnCharacter()) {
+    // Zicen's finale now gathers the group around a rising star instead of a cave.
+    startStarGather();
+  }
 
   
   return false;
