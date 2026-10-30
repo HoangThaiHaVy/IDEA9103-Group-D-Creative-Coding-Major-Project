@@ -18,16 +18,17 @@ let audioPsychedelicCaveReady = false;
 let audioCampfireReady = false;
 let audioDancersReady = false;
 let audioCloudOffset = 0;
+let caveTransitionStartedAt = 0;
 let audioCaveStartedAt = 0;
 let audioDanceStartedAt = 0;
 let audioReducedMotion = false;
 
 const AUDIO_DANCER_PATHS = [
-  'assets/audio/dancer-red.png',
-  'assets/audio/dancer-blue.png',
-  'assets/audio/dancer-green.png',
-  'assets/audio/dancer-pink.png',
-  'assets/audio/dancer-orange.png'
+  'assets/audio/classic-red.png',
+  'assets/audio/classic-yellow.png',
+  'assets/audio/classic-green.png',
+  'assets/audio/classic-blue.png',
+  'assets/audio/classic-pink.png'
 ];
 
 function preloadAudioAssets() {
@@ -87,7 +88,7 @@ function enableAudioInput() {
     () => {
       audioButton.html('Microphone active');
       audioButton.attribute('disabled', '');
-      const inFinale = storyStage === 'audioCave' || storyStage === 'audioDance';
+      const inFinale = ['caveTransition', 'audioCave', 'audioDance'].includes(storyStage);
       audioStatus.html(inFinale
         ? 'Speak, clap, or play music to control the dance.'
         : 'Speak, clap, or play music to move the sky.');
@@ -100,18 +101,27 @@ function enableAudioInput() {
 
 function setupAudioTestMode() {
   const params = new URLSearchParams(window.location.search);
-  if (params.has('audioTest')) startAudioCave();
+  const testMode = params.get('audioTest');
+  if (testMode === 'entry') startCaveTransition();
+  else if (testMode === 'dance') startAudioDance();
+  else if (params.has('audioTest')) startAudioCave();
 }
 
 function isAudioFinaleStage() {
-  return storyStage === 'audioCave' || storyStage === 'audioDance';
+  return ['caveTransition', 'audioCave', 'audioDance'].includes(storyStage);
+}
+
+function startCaveTransition() {
+  storyStage = 'caveTransition';
+  caveTransitionStartedAt = millis() / 1000;
+  if (audioStatus) audioStatus.html('Follow the character into the cave...');
 }
 
 function startAudioCave() {
   storyStage = 'audioCave';
   audioCaveStartedAt = millis() / 1000;
   audioDanceStartedAt = 0;
-  if (audioStatus) audioStatus.html('Click the campfire to awaken the cave.');
+  if (audioStatus) audioStatus.html('The firelight is revealing someone...');
 }
 
 function startAudioDance() {
@@ -126,10 +136,10 @@ function startAudioDance() {
 
 function handleAudioSceneClick() {
   if (storyStage === 'caveEntered' && clickOnCave()) {
-    startAudioCave();
+    startCaveTransition();
     return true;
   }
-  if (storyStage === 'audioCave' && clickOnAudioCampfire()) {
+  if (storyStage === 'audioCave' && audioDiscoveryComplete() && clickOnAudioCampfire()) {
     startAudioDance();
     return true;
   }
@@ -179,6 +189,11 @@ function drawAudioSky(time) {
 }
 
 function drawAudioFinale(time) {
+  if (storyStage === 'caveTransition') {
+    drawCaveEntryTransition(time);
+    return;
+  }
+
   const transitionDuration = audioReducedMotion ? 0.2 : 2.5;
   const elapsed = audioDanceStartedAt > 0 ? time - audioDanceStartedAt : 0;
   const rawProgress = storyStage === 'audioDance'
@@ -192,8 +207,46 @@ function drawAudioFinale(time) {
     drawPsychedelicCave(revealProgress);
     drawAudioDancers(time, elapsed, revealProgress);
   } else {
-    drawAudioCavePrompt();
+    drawDiscoveredDancers(time);
+    drawAudioCavePrompt(time);
   }
+}
+
+function drawCaveEntryTransition(time) {
+  const duration = audioReducedMotion ? 0.35 : 1.65;
+  const progress = constrain((time - caveTransitionStartedAt) / duration, 0, 1);
+  const movement = strongEaseInOut(progress);
+
+  drawBackground(time, false);
+  drawRain(time, true);
+  drawCave(1);
+
+  const startX = characterX;
+  const targetX = width * 0.17;
+  const startY = GROUND_Y - 98;
+  const targetY = GROUND_Y - 70;
+  const x = lerp(startX, targetX, movement);
+  const y = lerp(startY, targetY, movement);
+  const characterScale = lerp(1, 0.24, movement);
+
+  if (pointingForwardImageReady) {
+    push();
+    imageMode(CENTER);
+    tint(92, 255, 119, 255 * (1 - max(0, progress - 0.78) / 0.22));
+    const imageHeight = 220 * characterScale;
+    const imageWidth = imageHeight * pointingForwardImage.width / pointingForwardImage.height;
+    image(pointingForwardImage, x, y, imageWidth, imageHeight);
+    noTint();
+    pop();
+  }
+
+  push();
+  noStroke();
+  fill(23, 20, 38, 255 * strongEaseOut(constrain((progress - 0.68) / 0.32, 0, 1)));
+  rect(0, 0, width, height);
+  pop();
+
+  if (progress >= 1) startAudioCave();
 }
 
 function drawDarkAudioCave(time, fireOpacity) {
@@ -238,15 +291,53 @@ function drawAudioCampfire(time, opacityAmount) {
   pop();
 }
 
-function drawAudioCavePrompt() {
+function audioDiscoveryComplete() {
+  const revealDuration = audioReducedMotion ? 0.3 : 2.25;
+  return audioCaveStartedAt > 0 && millis() / 1000 - audioCaveStartedAt >= revealDuration;
+}
+
+function drawDiscoveredDancers(time) {
+  if (!audioDancersReady) return;
+
+  const elapsed = max(0, time - audioCaveStartedAt);
+  const positions = [
+    [106, 385, 116], [238, 335, 110], [400, 312, 122],
+    [562, 335, 110], [694, 385, 116]
+  ];
+  const stagger = audioReducedMotion ? 0 : 0.22;
+  const duration = audioReducedMotion ? 0.2 : 0.55;
+
+  for (let i = 0; i < audioDancerImages.length; i += 1) {
+    const reveal = strongEaseOut(constrain((elapsed - 0.28 - i * stagger) / duration, 0, 1));
+    if (reveal <= 0) continue;
+    const asset = audioDancerImages[i];
+    const targetHeight = positions[i][2];
+    const targetWidth = targetHeight * asset.width / asset.height;
+    const fireFlicker = audioReducedMotion ? 1 : 0.96 + sin(time * 3.1 + i) * 0.04;
+
+    push();
+    imageMode(CENTER);
+    translate(positions[i][0], positions[i][1]);
+    scale((0.86 + reveal * 0.14) * fireFlicker);
+    tint(255, 255 * reveal);
+    image(asset, 0, -targetHeight / 2, targetWidth, targetHeight);
+    noTint();
+    pop();
+  }
+}
+
+function drawAudioCavePrompt(time) {
+  const complete = audioDiscoveryComplete();
   push();
   textAlign(CENTER, CENTER);
   textSize(18);
   textStyle(BOLD);
   fill('#FFF1CF');
   noStroke();
-  text('Click the fire to awaken the cave', width / 2, height - 48);
+  text(complete ? 'You are not alone — click the fire' : 'Shapes emerge from the firelight...', width / 2, height - 48);
   pop();
+
+  if (complete && audioStatus) audioStatus.html('You found the others. Click the campfire to begin.');
 }
 
 function drawPsychedelicCave(progress) {
@@ -263,9 +354,9 @@ function drawPsychedelicCave(progress) {
 function drawAudioDancers(time, elapsed, backgroundProgress) {
   if (!audioDancersReady) return;
 
-  const xPositions = [92, 238, 400, 562, 708];
-  const baseYPositions = [446, 432, 452, 432, 446];
-  const targetHeights = [154, 164, 142, 164, 148];
+  const xPositions = [88, 238, 400, 562, 712];
+  const baseYPositions = [458, 442, 454, 442, 458];
+  const targetHeights = [190, 158, 174, 158, 190];
   const entranceDuration = audioReducedMotion ? 0.2 : 0.5;
   const staggerSeconds = audioReducedMotion ? 0 : 0.06;
 
@@ -324,6 +415,30 @@ function strongEaseOut(progress) {
     3 * inverse * parameter * parameter * y2 + parameter * parameter * parameter;
 }
 
+// Exact cubic-bezier(0.77, 0, 0.175, 1) for the deliberate journey into the cave.
+function strongEaseInOut(progress) {
+  const x1 = 0.77;
+  const y1 = 0;
+  const x2 = 0.175;
+  const y2 = 1;
+  let parameter = constrain(progress, 0, 1);
+
+  for (let i = 0; i < 6; i += 1) {
+    const inverse = 1 - parameter;
+    const x = 3 * inverse * inverse * parameter * x1 +
+      3 * inverse * parameter * parameter * x2 + parameter * parameter * parameter;
+    const derivative = 3 * inverse * inverse * x1 +
+      6 * inverse * parameter * (x2 - x1) +
+      3 * parameter * parameter * (1 - x2);
+    if (abs(derivative) < 0.0001) break;
+    parameter = constrain(parameter - (x - progress) / derivative, 0, 1);
+  }
+
+  const inverse = 1 - parameter;
+  return 3 * inverse * inverse * parameter * y1 +
+    3 * inverse * parameter * parameter * y2 + parameter * parameter * parameter;
+}
+
 function drawAudio() {
   if (!audioMechanic || !audioMechanic.started) return;
 
@@ -345,6 +460,7 @@ function resetAudio() {
   if (audioMechanic) audioMechanic.stopAudio();
   audioData = { intensity: 0, bass: 0, treble: 0 };
   audioCloudOffset = 0;
+  caveTransitionStartedAt = 0;
   audioCaveStartedAt = 0;
   audioDanceStartedAt = 0;
 
