@@ -57,8 +57,9 @@ function updateAndDrawVy(time, dt) {
     ? time - sadnessStartedAt
     : 0;
 // Include soSad in the rain states and force heavy rain.
+// keep the heavy rain running after the character points toward the cave.
   if (
-    ['lostKite', 'rainStorm', 'soSad', 'rainFace'].includes(storyStage) &&
+    ['lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered'].includes(storyStage) &&
     sadnessElapsed >= 1.5
   ) {
     drawRain(time, storyStage !== 'lostKite');
@@ -82,13 +83,15 @@ if (caveStage && caveRevealStartedAt > 0) {
     sadRainProgress: storyStage === 'rainFace' ? min(1, max(0, (time - sadRainStartedAt) / 1.2)) : 0,
     // [EDITED]: the final click replaces the sad-rain face with So sad.png.
     soSad: storyStage === 'soSad',
-    // Do not draw the kite in the So sad scene.
-    hideKite: storyStage === 'soSad',
+    
+  // Hide the kite while the character points forward toward the cave.
+    hideKite: storyStage === 'soSad' || storyStage === 'caveEntered',
     kiteEscaped,
     escapeTime: kiteEscaped ? finishedElapsed - 0.8 : 0,
     kiteRise,
     fade: characterFade,
     pointingForward: storyStage === 'caveEntered',
+    
     
   });
  
@@ -104,18 +107,25 @@ if (caveStage && caveRevealStartedAt > 0) {
   // [EDITED] The next click advances to the sad-rain face.
   // Keep the "sad-rain" image and the prompt on the screen until the next click.
   if (storyStage === 'rainFace') {
-  const caveFullyRevealed =
-    caveRevealStartedAt > 0 &&
-    time - caveRevealStartedAt >= 5;
-    drawCharacterHint('“The rain is pouring down… I need to find somewhere to hide!”\nClick to continue…');
-  
-  } 
-   
+  const caveIsRevealing = caveRevealStartedAt > 0;
 
+  if (caveIsRevealing) {
+    drawCharacterHint('The cave slowly begins to appear\nClick on it to discover what happens next');
+  } else {
+    drawCharacterHint('“The rain is pouring down… I need to find somewhere to hide!”\nClick to continue…');
+  }
+}
+
+if (storyStage === 'caveEntered') {
+  drawCharacterHint('There is a cave far away, Could this be a safe place to shelter?');
+}
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
   // which already draws the kite; calling them here caused a ReferenceError.
 }
+
+
+
 
 
 function mousePressed() {
