@@ -100,8 +100,12 @@ function updateAndDrawVy(time, dt) {
   // [EDITED] The next click advances to the sad-rain face.
   // Keep the "sad-rain" image and the prompt on the screen until the next click.
   if (storyStage === 'rainFace') {
-    drawCharacterHint('A small light appears in the distance...\nClick to call the others together');
+    drawCharacterHint('Slowly reaching out a hand to catch the raindrops');
   }
+  // Lightning begins when a current flow emerges。“Slowly reaching out...”
+  if (storyStage === 'rainFace') {
+  drawLightning(time);
+}
 
   if (storyStage === 'caveEntered') {
     drawCharacterHint('Click to gather everyone around the light');
@@ -658,4 +662,19 @@ function clickOnCave() {
     mouseX <= 520 * caveScale &&
     mouseY >= GROUND_Y - 360 * caveScale &&
     mouseY <= GROUND_Y;
+}
+
+function drawLightning(time) {
+// A flash of lightning appears briefly every few seconds
+  const cycle = time % 4.5;
+  if (cycle > 0.18) return;
+
+  push();
+  const flash = map(cycle, 0, 0.18, 180, 0);
+  stroke(255, 255, 210, flash);
+  strokeWeight(5);
+  line(width * 0.72, 0, width * 0.68, height * 0.2);
+  line(width * 0.68, height * 0.2, width * 0.73, height * 0.2);
+  line(width * 0.73, height * 0.2, width * 0.65, height * 0.42);
+  pop();
 }
