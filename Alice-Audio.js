@@ -48,7 +48,7 @@ function preloadAudioAssets() {
     () => { audioPsychedelicCaveReady = false; }
   );
   audioHoldingHandsImage = loadImage(
-    'assets/audio/holding-hands-circle.png',
+    'assets/audio/holding-hands-circle-v2.png',
     () => { audioHoldingHandsReady = true; },
     () => { audioHoldingHandsReady = false; }
   );
