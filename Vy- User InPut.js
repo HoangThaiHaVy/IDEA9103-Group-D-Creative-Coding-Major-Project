@@ -47,15 +47,19 @@ function updateAndDrawVy(time, dt) {
   const kiteEscaped = ['finished', 'lostKite', 'rainStorm', 'rainFace'].includes(storyStage) && finishedElapsed >= 0.8;
   const kiteRise = arrivalAt > 0 ? min(120, max(0, time - arrivalAt) * 35) : 0;
   // The wind begins to pick up while character is walking, near the edge of the screen.
+ 
+
   const windStartsNearEnd =
     walking && characterX >= width - 220;
-
-  if (windStartsNearEnd) {
-    drawWind(time);
-  }
+  const windyCaptionVisible = storyStage === 'finished';
   const sadnessElapsed = sadnessStartedAt > 0
-    ? time - sadnessStartedAt
-    : 0;
+  ? time - sadnessStartedAt
+  : 0;
+
+  if (windStartsNearEnd || windyCaptionVisible) {
+    drawWind(time, windyCaptionVisible);
+  }
+
 // Include soSad in the rain states and force heavy rain.
 // keep the heavy rain running after the character points toward the cave.
   if (
@@ -95,7 +99,7 @@ function updateAndDrawVy(time, dt) {
   });
   
   if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
-  if (storyStage === 'released') drawCharacterHint('One click, lets go fly a kite together!');
+  if (storyStage === 'released') drawCharacterHint("One click, Let's take this kite up to the sky!");
   if (storyStage === 'arrival') drawCharacterHint('Click character to continue flying kites');
   if (storyStage === 'finished') drawCharacterHint('Windy~the kite floats higher');
   if (storyStage === 'lostKite') drawCharacterHint('Oh no! My kite is gone!');
@@ -584,23 +588,24 @@ function drawFallbackCharacter(x, y, fade = 1) {
   pop();
 }
 
-function drawWind(time) {
+function drawWind(time, stronger = false) {
   push();
   noFill();
   strokeCap(ROUND);
   strokeJoin(ROUND);
+  
 
-  const flows = 5;
+  const flows = stronger ? 9 : 5;
   const windAreaTop = 85;
   const windAreaBottom = GROUND_Y - 55;
   const spacing = (windAreaBottom - windAreaTop) / (flows - 1);
 
   for (let i = 0; i < flows; i++) {
     const y = windAreaTop + i * spacing;
-    const speed = 55 + (i % 3) * 18;
+    const speed = (55 + (i % 3) * 18) * (stronger ? 1.65 : 1);
     const travel = (time * speed + i * 173) % (width + 100);
     const x = travel - 50;
-    const size = 0.55 + (i % 2) * 0.12;
+    const size = (0.55 + (i % 2) * 0.12) * (stronger ? 1.3 : 1);
     const bob = sin(time * 2 + i) * 6;
 
     drawWindGust(x, y + bob, size);
