@@ -31,9 +31,15 @@ let surprisedImageFailed = false;
 let walkImageFailed = false;
 let sadnessStartedAt = 0;
 let caveRevealStartedAt = 0;
+
 let pointingForwardImage;
 let pointingForwardImageReady = false;
 
+const rainDropCount = 5;
+let rainDrops = Array.from({ length: rainDropCount }, () => ({
+  clicked: false,
+  clickedAt: 0
+}));
 
 
 function updateAndDrawVy(time, dt) {
@@ -110,8 +116,9 @@ function updateAndDrawVy(time, dt) {
   // [EDITED] The next click advances to the sad-rain face.
   // Keep the "sad-rain" image and the prompt on the screen until the next click.
   if (storyStage === 'rainFace') {
-    drawCharacterHint('Slowly reaching out a hand to catch the raindrops');
-  }
+  drawCharacterHint('Slowly reaching out a hand to catch the raindrops');
+  drawRainDropsAndPuddles(time);
+}
   // Lightning begins when a current flow emerges。“Slowly reaching out...”
   if (storyStage === 'rainFace') {
   drawLightning(time);
@@ -170,13 +177,17 @@ function mousePressed() {
     } else if (storyStage === 'soSad' && clickOnCharacter()) {
     storyStage = 'rainFace';
     sadRainStartedAt = millis() / 1000;
-    caveRevealStartedAt = 0;
- 
-  } else if (storyStage === 'rainFace' && clickOnCharacter()) {
-    // Zicen's finale now gathers the group around a rising star instead of a cave.
-    startStarGather();
-  }
+    } else if (storyStage === 'soSad' && clickOnCharacter()) {
+    storyStage = 'rainFace';
+    sadRainStartedAt = millis() / 1000;
+    rainDrops = Array.from({ length: rainDropCount }, () => ({ clicked: false, clickedAt: 0 }));
+  
 
+ 
+    } else if (storyStage === 'rainFace') {
+    if (clickRainDot()) return false;
+    if (clickOnCharacter()) startStarGather();
+}
   
   return false;
 }
@@ -733,6 +744,97 @@ function drawCharacterGlow(x, y, time, fade = 1, stage = '') {
     sparkleColor.setAlpha((180 + pulse * 70) * fade);
     fill(sparkleColor);
     circle(sx, sy, size);
+  }
+
+  pop();
+}
+
+function getRainPuddlePositions() {
+  return [
+    { x: width * 0.08, y: GROUND_Y - 10 },
+    { x: width * 0.18, y: GROUND_Y - 10 },
+    { x: width * 0.42, y: GROUND_Y - 10 },
+    { x: width * 0.58, y: GROUND_Y - 10 },
+    { x: width * 0.82, y: GROUND_Y - 10 }
+  ];
+}
+
+function clickRainDot() {
+  const positions = getRainPuddlePositions();
+
+  for (let i = 0; i < rainDropCount; i++) {
+    const { x, y } = positions[i];
+
+    if (!rainDrops[i].clicked && dist(mouseX, mouseY, x, y) < 22) {
+      rainDrops[i].clicked = true;
+      rainDrops[i].clickedAt = millis() / 1000;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function drawRainDropsAndPuddles(time) {
+  const positions = getRainPuddlePositions();
+
+  push();
+
+  for (let i = 0; i < rainDropCount; i++) {
+    const { x, y } = positions[i];
+    const puddleY = y + 5;
+    const drop = rainDrops[i];
+
+    noStroke();
+
+    if (drop.clicked) {
+      const growth = constrain((time - drop.clickedAt) / 1.1, 0, 1);
+      const easedGrowth = 1 - pow(1 - growth, 3);
+      const ripple = sin(time * 5 + i) * 1.5;
+
+      // Bóng và viền xanh đậm
+      fill(30, 111, 150, 55);
+      ellipse(x, puddleY + 2, 24 + easedGrowth * 62, 9 + easedGrowth * 18);
+
+      // Mặt nước
+      fill(52, 164, 202, 155);
+      ellipse(x, puddleY, 18 + easedGrowth * 58, 7 + easedGrowth * 15);
+
+      // Viền sáng
+      noFill();
+      stroke(191, 244, 255, 190);
+      strokeWeight(2);
+      arc(
+        x, puddleY - 1,
+        18 + easedGrowth * 52,
+        7 + easedGrowth * 12,
+        PI + 0.15, TWO_PI - 0.15
+      );
+
+      // Ripples the moment a puddle appears
+      if (growth < 0.85) {
+        stroke(218, 250, 255, 150 * (1 - growth));
+        strokeWeight(1.5);
+        ellipse(
+          x, puddleY,
+          24 + growth * 72 + ripple,
+          10 + growth * 20
+        );
+      }
+
+      // Reflected highlight
+      noStroke();
+      fill(230, 252, 255, 210);
+      ellipse(x - 12 - easedGrowth * 5, puddleY - 2, 8, 2.5);
+      ellipse(x + 10, puddleY + 1, 4, 2);
+    } else {
+      // A green dot for users to click on
+      fill('#43B7DE');
+      circle(x, y, 18);
+
+      fill('#DDF8FF');
+      circle(x - 3, y - 3, 5);
+    }
   }
 
   pop();
