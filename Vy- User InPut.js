@@ -115,9 +115,16 @@ function updateAndDrawVy(time, dt) {
   // [EDITED] The next click advances to the sad-rain face.
   // Keep the "sad-rain" image and the prompt on the screen until the next click.
   if (storyStage === 'rainFace') {
-  drawCharacterHint(rainDropsPromptVisible
-  ? 'Click each blue circle to discover what the rain brings'
-  : 'Slowly reaching out a hand to catch the raindrops');
+  const allRainDropsClicked = rainDrops.every(drop => drop.clicked);
+
+  drawCharacterHint(
+    allRainDropsClicked
+      ? 'Now, click on the figure to see how the story unfolds!'
+      : rainDropsPromptVisible
+        ? 'Click each blue circle to discover what the rain brings'
+        : 'Slowly reaching out a hand to catch the raindrops'
+  );
+
   drawRainDropsAndPuddles(time);
 }
   // Lightning begins when a current flow emerges。“Slowly reaching out...”
@@ -171,11 +178,11 @@ function mousePressed() {
     
     } else if (storyStage === 'lostKite' && clickOnCharacter()) {
     storyStage = 'rainStorm';
-  // Click nhân vật khi đang mưa lớn để hiện cảnh So sad.
+  // Click on the character during heavy rain to trigger a "so sad" scene.
 } else if (storyStage === 'rainStorm' && clickOnCharacter()) {
   storyStage = 'soSad';
 
-// Click nhân vật ở cảnh So sad để vào rainFace.
+// Click on the character in the "So sad" scene to enter "rainFace."
 } else if (storyStage === 'soSad' && clickOnCharacter()) {
   storyStage = 'rainFace';
   sadRainStartedAt = millis() / 1000;
@@ -185,7 +192,7 @@ function mousePressed() {
     clickedAt: 0
   }));
 
-// Click tiếp theo đổi chú thích; các click sau dùng cho vòng tròn xanh.
+// Click on the character in the "rainFace" scene to interact with rain drops.
 } else if (storyStage === 'rainFace') {
   if (!rainDropsPromptVisible) {
     rainDropsPromptVisible = true;
