@@ -10,10 +10,12 @@ let audioStatus;
 let audioSunImage;
 let audioCloudImage;
 let audioPsychedelicCaveImage;
+let audioHoldingHandsImage;
 let audioDancerImages = [];
 let audioSunReady = false;
 let audioCloudReady = false;
 let audioPsychedelicCaveReady = false;
+let audioHoldingHandsReady = false;
 let audioDancersReady = false;
 let audioCloudOffset = 0;
 let starGatherStartedAt = 0;
@@ -44,6 +46,11 @@ function preloadAudioAssets() {
     'assets/audio/psychedelic-cave.png',
     () => { audioPsychedelicCaveReady = true; },
     () => { audioPsychedelicCaveReady = false; }
+  );
+  audioHoldingHandsImage = loadImage(
+    'assets/audio/holding-hands-circle.png',
+    () => { audioHoldingHandsReady = true; },
+    () => { audioHoldingHandsReady = false; }
   );
   let loadedDancers = 0;
   audioDancerImages = AUDIO_DANCER_PATHS.map((path) => loadImage(
@@ -178,7 +185,8 @@ function drawAudioFinale(time) {
   const revealProgress = strongEaseOut(rawProgress);
 
   drawBackground(time, false);
-  drawGatheredDancers(time, 1 - revealProgress);
+  drawHoldingHandsGroup(time, 1 - revealProgress);
+  drawNightfall(1);
   drawRisingStar(time, width / 2, 82, 1 - revealProgress, 1);
   drawPsychedelicCave(revealProgress);
   drawAudioDancers(time, elapsed, revealProgress);
@@ -186,13 +194,17 @@ function drawAudioFinale(time) {
 
 function drawStarGathering(time) {
   const elapsed = max(0, time - starGatherStartedAt);
-  const totalDuration = audioReducedMotion ? 0.8 : 4.8;
+  const totalDuration = audioReducedMotion ? 1.2 : 6.8;
   const riseStart = audioReducedMotion ? 0.1 : 0.9;
   const riseDuration = audioReducedMotion ? 0.5 : 3.35;
   const rise = strongEaseInOut(constrain((elapsed - riseStart) / riseDuration, 0, 1));
+  const nightStart = audioReducedMotion ? 0.5 : 4.35;
+  const nightDuration = audioReducedMotion ? 0.5 : 2.15;
+  const nightProgress = strongEaseInOut(constrain((elapsed - nightStart) / nightDuration, 0, 1));
 
   drawBackground(time, false);
-  drawGatheredDancers(time, 1);
+  drawHoldingHandsGroup(time, 1);
+  drawNightfall(nightProgress);
   const starY = audioReducedMotion ? 82 : lerp(318, 82, rise);
   const starScale = lerp(0.72, 1.08, strongEaseOut(rise));
   drawRisingStar(time, width / 2, starY, 1, starScale);
@@ -201,39 +213,53 @@ function drawStarGathering(time) {
   textAlign(CENTER, CENTER);
   textSize(17);
   textStyle(BOLD);
-  fill('#241A4A');
+  fill(lerpColor(color('#241A4A'), color('#FFF4B7'), nightProgress));
   noStroke();
-  text(rise < 0.9 ? 'Together, they lift a light into the sky' : 'The world begins to change...', width / 2, height - 30);
+  const caption = rise < 0.9
+    ? 'Together, they lift a light into the sky'
+    : nightProgress < 0.9
+      ? 'Night falls around their shared light...'
+      : 'The world begins to change...';
+  text(caption, width / 2, height - 30);
   pop();
 
   if (elapsed >= totalDuration) startAudioDance();
 }
 
-function drawGatheredDancers(time, opacityAmount) {
-  if (!audioDancersReady || opacityAmount <= 0) return;
-  const positions = [
-    [400, 444, 134], [265, 400, 126], [535, 400, 126],
-    [300, 284, 118], [500, 284, 118]
-  ];
+function drawHoldingHandsGroup(time, opacityAmount) {
+  if (!audioHoldingHandsReady || opacityAmount <= 0) return;
+  const elapsed = max(0, time - starGatherStartedAt);
+  const entrance = strongEaseOut(constrain(elapsed / (audioReducedMotion ? 0.2 : 0.5), 0, 1));
+  const sway = audioReducedMotion ? 0 : sin(time * 1.6) * radians(2);
+  const targetHeight = 326;
+  const targetWidth = targetHeight * audioHoldingHandsImage.width / audioHoldingHandsImage.height;
 
-  for (let i = 0; i < audioDancerImages.length; i += 1) {
-    const asset = audioDancerImages[i];
-    const targetHeight = positions[i][2];
-    const targetWidth = targetHeight * asset.width / asset.height;
-    const entranceDelay = audioReducedMotion ? 0 : i * 0.06;
-    const elapsed = max(0, time - starGatherStartedAt - entranceDelay);
-    const entrance = strongEaseOut(constrain(elapsed / (audioReducedMotion ? 0.2 : 0.5), 0, 1));
-    const breathe = audioReducedMotion ? 1 : 1 + sin(time * 1.8 + i * 0.7) * 0.015;
+  push();
+  translate(width / 2, 472);
+  rotate(sway);
+  scale(0.95 + entrance * 0.05);
+  imageMode(CENTER);
+  tint(255, 255 * opacityAmount * entrance);
+  image(audioHoldingHandsImage, 0, -targetHeight / 2, targetWidth, targetHeight);
+  noTint();
+  pop();
+}
 
-    push();
-    translate(positions[i][0], positions[i][1]);
-    scale((0.95 + entrance * 0.05) * breathe);
-    imageMode(CENTER);
-    tint(255, 255 * opacityAmount * entrance);
-    image(asset, 0, -targetHeight / 2, targetWidth, targetHeight);
-    noTint();
-    pop();
+function drawNightfall(progress) {
+  if (progress <= 0) return;
+
+  push();
+  noStroke();
+  fill(8, 13, 52, 240 * progress);
+  rect(0, 0, width, height);
+
+  fill(255, 244, 183, 220 * progress);
+  const stars = [[58, 66], [182, 104], [286, 54], [515, 92], [628, 48], [742, 118], [92, 205], [691, 222]];
+  for (let i = 0; i < stars.length; i += 1) {
+    const twinkle = audioReducedMotion ? 1 : 0.75 + sin(i * 1.7 + frameCount * 0.025) * 0.25;
+    circle(stars[i][0], stars[i][1], (3 + i % 3) * twinkle);
   }
+  pop();
 }
 
 function drawRisingStar(time, x, y, opacityAmount, scaleAmount) {
