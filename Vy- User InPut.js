@@ -65,6 +65,10 @@ function updateAndDrawVy(time, dt) {
     drawRain(time, storyStage !== 'lostKite');
   }
   
+  // [EDITED] Magical glow makes the character stand out as clickable.
+  if (['holding', 'released', 'walking', 'arrival', 'finished', 'lostKite', 'rainStorm', 'soSad', 'rainFace', 'caveEntered'].includes(storyStage)) {
+    drawCharacterGlow(characterX, GROUND_Y, time, characterFade);
+  }
 
   drawCharacterAndKite(characterX, GROUND_Y, time, {
     walking,
@@ -84,10 +88,12 @@ function updateAndDrawVy(time, dt) {
     kiteRise,
     fade: characterFade,
     pointingForward: storyStage === 'caveEntered',
+
+    
     
     
   });
- 
+  
   if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
   if (storyStage === 'released') drawCharacterHint('One click, lets go fly a kite together!');
   if (storyStage === 'arrival') drawCharacterHint('Click character to continue story');
@@ -676,5 +682,34 @@ function drawLightning(time) {
   line(width * 0.72, 0, width * 0.68, height * 0.2);
   line(width * 0.68, height * 0.2, width * 0.73, height * 0.2);
   line(width * 0.73, height * 0.2, width * 0.65, height * 0.42);
+  pop();
+}
+
+function drawCharacterGlow(x, y, time, fade = 1) {
+  const pulse = (sin(time * 2.8) + 1) / 2;
+
+  push();
+  translate(x, y - 55);
+  noStroke();
+
+  // Soft purple and golden halo
+  fill(190, 130, 255, (22 + pulse * 18) * fade);
+  ellipse(0, 0, 115 + pulse * 12, 175 + pulse * 12);
+
+  fill(255, 220, 130, (18 + pulse * 16) * fade);
+  ellipse(0, 0, 82 + pulse * 8, 140 + pulse * 8);
+
+  // Floating sparkles
+  for (let i = 0; i < 6; i++) {
+    const angle = time * 0.7 + TWO_PI * i / 6;
+    const radius = 58 + sin(time * 2 + i) * 5;
+    const sx = cos(angle) * radius;
+    const sy = sin(angle) * radius * 1.25;
+    const size = 3 + (sin(time * 4 + i) + 1) * 1.5;
+
+    fill(255, 245, 190, (120 + pulse * 100) * fade);
+    circle(sx, sy, size);
+  }
+
   pop();
 }
