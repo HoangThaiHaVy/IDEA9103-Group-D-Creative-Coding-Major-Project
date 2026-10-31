@@ -194,7 +194,11 @@ if (storyStage === 'wet') {
 if (storyStage === 'pinkReveal') {
   drawPinkCharacterReveal();
 
-  if (character2WalkStartedAt > 0 && !character2Walking) {
+  if (character2Giving && character2GiveImageReady) {
+    drawCharacterHint(
+      'Character 2 wants to give the umbrella to Character 1.'
+    );
+  } else if (character2WalkStartedAt > 0 && !character2Walking) {
     drawCharacterHint(
       'Character 2 is near Character 1 (click the pink figure to continue)'
     );
@@ -1089,8 +1093,8 @@ if (character2Giving && character2GiveImageReady) {
   const drawX = character2X;
 
 // Draw the box just once, so that it no longer remains at the left edge.
-  const umbrellaX = character2Giving
-  ? drawX + imageWidth * 0.18
+ const umbrellaX = character2Giving
+  ? drawX + imageWidth * 0.32
   : drawX - imageWidth * 0.18;
 
 drawCharacter2Umbrella(
