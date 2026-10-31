@@ -41,6 +41,9 @@ let pinkDotStartedAt = null;
 let character2PinkImage;
 let character2PinkImageReady = false;
 let character2PinkRevealStartedAt = null;
+let character2PointingImage;
+let character2PointingImageReady = false;
+let character2Pointing = false;
 
 const rainDropCount = 5;
 let rainDrops = Array.from({ length: rainDropCount }, () => ({
@@ -168,13 +171,20 @@ if (storyStage === 'wet') {
   }
 }
 
-if (storyStage === 'pinkReveal') {
-  drawPinkCharacterReveal(time);
-}
+
 
 if (storyStage === 'pinkReveal') {
-  drawPinkCharacterReveal(time);
-  drawCharacterHint('Another person appeared, holding a white umbrella...');
+  drawPinkCharacterReveal();
+
+  if (character2Pointing && character2PointingImageReady) {
+    drawCharacterHint(
+      'Who is sitting over there in the rain? (click on the green character)'
+    );
+  } else {
+    drawCharacterHint(
+      'Another person appeared, holding a white umbrella...(CLICK Pink Figure)'
+    );
+  }
 }
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
@@ -249,7 +259,7 @@ function mousePressed() {
   const dotX = max(40, width * 0.08);
   const dotY = GROUND_Y - 120;
 
-  // Chỉ cho bấm sau khi chú thích chuyển sang “Look to the left...”
+  // Only allow clicking once the annotation changes to “Look to the left...”
   const canClickPinkDot =
     pinkDotStartedAt !== null &&
     millis() / 1000 - pinkDotStartedAt >= 5;
@@ -261,7 +271,10 @@ function mousePressed() {
     storyStage = 'pinkReveal';
     character2PinkRevealStartedAt = millis() / 1000;
   }
+  } else if (storyStage === 'pinkReveal' && clickOnCharacter2()) {
+  character2Pointing = true;
 }
+
  return false;
 }
 
@@ -277,6 +290,18 @@ function clickOnCharacter() {
     mouseY >= GROUND_Y + 42 &&
     mouseY <= GROUND_Y + 78;
   return clickedCharacter || clickedHint;
+}
+function clickOnCharacter2() {
+  const characterHeight = 270;
+  const characterWidth = character2PinkImageReady
+    ? characterHeight * character2PinkImage.width / character2PinkImage.height
+    : characterHeight;
+
+  const characterX = max(40, width * 0.08);
+  const characterY = GROUND_Y - characterHeight / 2 + 30;
+
+  return abs(mouseX - characterX) < characterWidth / 2 &&
+    abs(mouseY - characterY) < characterHeight / 2;
 }
 
 
@@ -476,8 +501,8 @@ surprisedImage = loadImage(
    soSadImage = loadImage('So sad.png', () => { soSadImageReady = true; }, () => imageLoadFailed('So sad.png'));
    pointingForwardImage = loadImage('Pointing forward.png', () => { pointingForwardImageReady = true; }, () => imageLoadFailed('Pointing forward.png'));
    wetImage = loadImage('wet.png', () => { wetImageReady = true; }, () => imageLoadFailed('wet.png'));
-   character2PinkImage = loadImage('character 2 pink.png', () => { character2PinkImageReady = true; }, () => imageLoadFailed('character 2 pink.png')
-);
+  character2PinkImage = loadImage('character 2 pink.png', () => { character2PinkImageReady = true; }, () => imageLoadFailed('character 2 pink.png'));
+  character2PointingImage = loadImage('hand pointed forward_C2.png', () => { character2PointingImageReady = true; }, () => imageLoadFailed('hand pointed forward_C2.png'));
 }
 
 
@@ -936,29 +961,30 @@ function drawRainDropsAndPuddles(time) {
    pop();
   }
 
-function drawPinkSparkleDot(time) {
-  const x = max(40, width * 0.08); 
-  // on the left side of the screen
-  const y = GROUND_Y - 120;         
-  // descend onto the grassy area
-
-  const pulse = 1 + 0.18 * sin(time * 4);
+function drawPinkSparkleDot() {
+  const x = max(40, width * 0.08);
+  const y = GROUND_Y - 120;
 
   push();
   noStroke();
+
   fill(255, 105, 190, 55);
-  circle(x, y, 70 * pulse);        
-  // larger halo
+  circle(x, y, 70); 
+  // Quầng sáng
+
   fill('#ea0088');
-  circle(x, y, 26 * pulse);        
-  // larger pink dot
+  circle(x, y, 26); 
+  // Chấm hồng
+
   fill('#fff4fb');
-  circle(x - 5, y - 5, 7);
+  circle(x - 5, y - 5, 7); 
+  // Điểm phản sáng
 
   stroke('#ffd5ef');
   strokeWeight(3);
   strokeCap(ROUND);
-  const ray = 24 + 3 * sin(time * 5);
+
+  const ray = 24;
   line(x - ray, y, x - ray + 7, y);
   line(x + ray - 7, y, x + ray, y);
   line(x, y - ray, x, y - ray + 7);
@@ -969,6 +995,10 @@ function drawPinkSparkleDot(time) {
 
 function drawPinkCharacterReveal(appear) {
   if (!character2PinkImageReady) return;
+  const imageToDraw =
+  character2Pointing && character2PointingImageReady
+    ? character2PointingImage
+    : character2PinkImage;
 
   const alpha = 255;
 
@@ -978,7 +1008,7 @@ function drawPinkCharacterReveal(appear) {
 
   const imageHeight = 270;
   const imageWidth =
-    imageHeight * character2PinkImage.width / character2PinkImage.height;
+  imageHeight * imageToDraw.width / imageToDraw.height;
 
   const characterX = max(40, width * 0.08);
   const characterY = GROUND_Y - imageHeight / 2 + 30;
@@ -992,12 +1022,18 @@ function drawPinkCharacterReveal(appear) {
 
   // Show the character on the left, near the pink dot.
   image(
-    character2PinkImage,
-    max(40, width * 0.08),
-    GROUND_Y - imageHeight / 2 +30,
-    imageWidth,
-    imageHeight
+  imageToDraw,
+  max(40, width * 0.08),
+  GROUND_Y - imageHeight / 2 + 30,
+  imageWidth,
+  imageHeight
+);
+if (character2Pointing && character2PointingImageReady) {
+  drawCharacter2Umbrella(
+    characterX - imageWidth * 0.18,
+    characterY - imageHeight * 0.43
   );
+}
 
   function drawCharacter2Umbrella(x, y) {
   push();
@@ -1062,14 +1098,11 @@ function drawPinkCharacterReveal(appear) {
   line(0, -58, 39, 0);
 
   // Umbrella handle and grip.
-  stroke('#70445e');
+  stroke('#6f0a45');
   strokeWeight(5);
   line(0, -1, 0, 77);
 
-  noFill();
-  stroke('#70445e');
-  strokeWeight(5);
-  arc(7, 77, 15, 17, 0, HALF_PI);
+ 
 
   // The small tip at the top of the umbrella.
   noStroke();
