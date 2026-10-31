@@ -556,7 +556,7 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
   } 
   if (imageToDraw) {
   imageMode(CENTER);
-  const imageHeight = 220;
+  const imageHeight = imageToDraw === wetImage ? 195 : 220;
   const imageWidth = imageHeight * imageToDraw.width / imageToDraw.height;
   const wetOffset = imageToDraw === wetImage ? -25 : 0;
 
@@ -967,6 +967,18 @@ function drawPinkCharacterReveal(appear) {
   const imageWidth =
     imageHeight * character2PinkImage.width / character2PinkImage.height;
 
+  const characterX = max(40, width * 0.08);
+  const characterY = GROUND_Y - imageHeight / 2 + 30;
+
+  // Vẽ ô trước để ô nằm phía sau nhân vật.
+  drawCharacter2Umbrella(
+  characterX - imageWidth * 0.18,
+  characterY - imageHeight * 0.34
+);
+
+  // Vẽ character 2 đè lên thân ô.
+  image(character2PinkImage, characterX, characterY, imageWidth, imageHeight);
+
   // Hiện nhân vật ở bên trái, gần vị trí chấm hồng.
   image(
     character2PinkImage,
@@ -976,7 +988,39 @@ function drawPinkCharacterReveal(appear) {
     imageHeight
   );
 
+  function drawCharacter2Umbrella(x, y) {
+  push();
+  translate(x, y);
+  scale(1.65);
+  noStroke();
+
+  // Mái ô lớn, có viền múi.
+  fill('#f06aa9');
+  beginShape();
+  vertex(-78, 0);
+  bezierVertex(-68, -42, -35, -62, 0, -62);
+  bezierVertex(35, -62, 68, -42, 78, 0);
+  bezierVertex(65, -10, 52, 10, 39, 0);
+  bezierVertex(26, -10, 13, 10, 0, 0);
+  bezierVertex(-13, -10, -26, 10, -39, 0);
+  bezierVertex(-52, -10, -65, 10, -78, 0);
+  endShape(CLOSE);
+
+  // Các múi màu sáng.
+  fill('#ffb1d3');
+  triangle(-39, 0, 0, -59, 0, 0);
+  fill('#f58aba');
+  triangle(0, -59, 39, 0, 0, 0);
+
+  // Thân ô và tay cầm.
+  stroke('#70445e');
+  strokeWeight(5);
+  strokeCap(ROUND);
+  line(0, -2, 0, 77);
+  noFill();
+  arc(8, 77, 16, 18, 0, HALF_PI);
+
   pop();
 }
-
+}
 
