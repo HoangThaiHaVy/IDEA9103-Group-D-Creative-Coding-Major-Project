@@ -559,7 +559,7 @@ surprisedImage = loadImage(
   );
    //  Updated: load the three requested emotional poses.
    sadnessImage = loadImage('stand-sadness.png', () => { sadnessImageReady = true; }, () => imageLoadFailed('stand-sadness.png'));
-   sadRainImage = loadImage('sad-rain face.png', () => { sadRainImageReady = true; }, () => imageLoadFailed('sad-rain face.png'));
+   sadRainImage = loadImage('Sad-rain face.png', () => { sadRainImageReady = true; }, () => imageLoadFailed('Sad-rain face.png'));
   // [EDITED]: preload the final image used after clicking sad-rain face.
    soSadImage = loadImage('So sad.png', () => { soSadImageReady = true; }, () => imageLoadFailed('So sad.png'));
    pointingForwardImage = loadImage('Pointing forward.png', () => { pointingForwardImageReady = true; }, () => imageLoadFailed('Pointing forward.png'));
@@ -1036,15 +1036,15 @@ function drawPinkSparkleDot() {
 
   fill(255, 105, 190, 55);
   circle(x, y, 70); 
-  // Quầng sáng
+  // Halo
 
   fill('#ea0088');
   circle(x, y, 26); 
-  // Chấm hồng
+  // pink dot
 
   fill('#fff4fb');
   circle(x - 5, y - 5, 7); 
-  // Điểm phản sáng
+  // High light
 
   stroke('#ffd5ef');
   strokeWeight(3);
