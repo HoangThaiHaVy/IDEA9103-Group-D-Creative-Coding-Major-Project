@@ -44,6 +44,16 @@ let character2PinkRevealStartedAt = null;
 let character2PointingImage;
 let character2PointingImageReady = false;
 let character2Pointing = false;
+let character2Walk1Image;
+let character2Walk2Image;
+let character2Walk1Ready = false;
+let character2Walk2Ready = false;
+
+let character2Walking = false;
+let character2X = 0;
+let character2WalkStartedAt = 0;
+let character2WalkStartX = 0;
+let character2WalkTargetX = 0;
 
 const rainDropCount = 5;
 let rainDrops = Array.from({ length: rainDropCount }, () => ({
@@ -186,6 +196,24 @@ if (storyStage === 'pinkReveal') {
     );
   }
 }
+if (character2Walking) {
+  const duration = 2.5;
+  const progress = constrain(
+    (time - character2WalkStartedAt) / duration,
+    0,
+    1
+  );
+
+  character2X = lerp(
+    character2WalkStartX,
+    character2WalkTargetX,
+    progress
+  );
+
+  if (progress >= 1) {
+    character2Walking = false;
+  }
+}
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
   // which already draws the kite; calling them here caused a ReferenceError.
@@ -237,6 +265,8 @@ function mousePressed() {
 } else if (storyStage === 'soSad' && clickOnCharacter()) {
   storyStage = 'rainFace';
   sadRainStartedAt = millis() / 1000;
+  character2X = max(40, width * 0.08);
+  character2Walking = false;
   rainDropsPromptVisible = false;
   rainDrops = Array.from({ length: rainDropCount }, () => ({
     clicked: false,
@@ -271,9 +301,14 @@ function mousePressed() {
     storyStage = 'pinkReveal';
     character2PinkRevealStartedAt = millis() / 1000;
   }
-  } else if (storyStage === 'pinkReveal' && clickOnCharacter2()) {
+  } else if (storyStage === 'pinkReveal' && character2Pointing && clickOnCharacter()) {
+  character2Walking = true;
+  character2WalkStartedAt = millis() / 1000;
+  character2WalkStartX = character2X;
+  character2WalkTargetX = characterX - 75;
+ } else if (storyStage === 'pinkReveal' && clickOnCharacter2()) {
   character2Pointing = true;
-}
+ }
 
  return false;
 }
@@ -503,6 +538,8 @@ surprisedImage = loadImage(
    wetImage = loadImage('wet.png', () => { wetImageReady = true; }, () => imageLoadFailed('wet.png'));
   character2PinkImage = loadImage('character 2 pink.png', () => { character2PinkImageReady = true; }, () => imageLoadFailed('character 2 pink.png'));
   character2PointingImage = loadImage('hand pointed forward_C2.png', () => { character2PointingImageReady = true; }, () => imageLoadFailed('hand pointed forward_C2.png'));
+  character2Walk1Image = loadImage('walk1 (character 2).png', () => { character2Walk1Ready = true; }, () => imageLoadFailed('walk1 (character 2).png'));
+  character2Walk2Image = loadImage('walk2 (character 2).png', () => { character2Walk2Ready = true; }, () => imageLoadFailed('walk2 (character 2).png'));
 }
 
 
@@ -995,10 +1032,15 @@ function drawPinkSparkleDot() {
 
 function drawPinkCharacterReveal(appear) {
   if (!character2PinkImageReady) return;
-  const imageToDraw =
-  character2Pointing && character2PointingImageReady
-    ? character2PointingImage
-    : character2PinkImage;
+  let imageToDraw = character2PinkImage;
+
+  if (character2Walking && character2Walk1Ready && character2Walk2Ready) {
+  imageToDraw = floor(millis() / 180) % 2 === 0
+    ? character2Walk1Image
+    : character2Walk2Image;
+ } else if (character2Pointing && character2PointingImageReady) {
+  imageToDraw = character2PointingImage;
+}
 
   const alpha = 255;
 
@@ -1023,7 +1065,7 @@ function drawPinkCharacterReveal(appear) {
   // Show the character on the left, near the pink dot.
   image(
   imageToDraw,
-  max(40, width * 0.08),
+  character2Walking ? character2X : max(40, width * 0.08),
   GROUND_Y - imageHeight / 2 + 30,
   imageWidth,
   imageHeight
