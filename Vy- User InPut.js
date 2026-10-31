@@ -172,7 +172,10 @@ if (storyStage === 'pinkReveal') {
   drawPinkCharacterReveal(time);
 }
 
-
+if (storyStage === 'pinkReveal') {
+  drawPinkCharacterReveal(time);
+  drawCharacterHint('Another person appeared, holding a white umbrella...');
+}
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
   // which already draws the kite; calling them here caused a ReferenceError.
@@ -983,7 +986,7 @@ function drawPinkCharacterReveal(appear) {
   // Draw the box first so that it is positioned behind the character.
   drawCharacter2Umbrella(
   characterX - imageWidth * 0.18,
-  characterY - imageHeight * 0.34
+  characterY - imageHeight * 0.43
 );
 
 
@@ -1000,35 +1003,79 @@ function drawPinkCharacterReveal(appear) {
   push();
   translate(x, y);
   scale(1.65);
-  noStroke();
+// A white umbrella canopy, divided into segments as simple as those of a kite.
+ noStroke();
+ fill('#f7e5d2');
+ beginShape();
+ vertex(-78, 0);
+ bezierVertex(-66, -42, -36, -62, 0, -62);
+ bezierVertex(36, -62, 66, -42, 78, 0);
+ bezierVertex(65, 10, 52, 10, 39, 0);
+ bezierVertex(26, 10, 13, 10, 0, 0);
+ bezierVertex(-13, 10, -26, 10, -39, 0);
+ bezierVertex(-52, 10, -65, 10, -78, 0);
+ endShape(CLOSE);
 
-  // Large umbrella canopy with a scalloped edge.
-  fill('#f06aa9');
-  beginShape();
-  vertex(-78, 0);
-  bezierVertex(-68, -42, -35, -62, 0, -62);
-  bezierVertex(35, -62, 68, -42, 78, 0);
-  bezierVertex(65, -10, 52, 10, 39, 0);
-  bezierVertex(26, -10, 13, 10, 0, 0);
-  bezierVertex(-13, -10, -26, 10, -39, 0);
-  bezierVertex(-52, -10, -65, 10, -78, 0);
-  endShape(CLOSE);
+ // Outer border with a soft color.
+ noFill();
+ stroke('#b83d78');
+ strokeWeight(2);
+ strokeCap(ROUND);
+ bezier(-78, 0, -66, -42, -36, -62, 0, -62);
+ bezier(0, -62, 36, -62, 66, -42, 78, 0);
+ bezier(-78, 0, -65, 10, -52, 10, -39, 0);
+ bezier(-39, 0, -26, 10, -13, 10, 0, 0);
+ bezier(0, 0, 13, 10, 26, 10, 39, 0);
+ bezier(39, 0, 52, 10, 65, 10, 78, 0);
 
-  // The light-colored segments.
-  fill('#ffb1d3');
-  triangle(-39, 0, 0, -59, 0, 0);
-  fill('#f58aba');
-  triangle(0, -59, 39, 0, 0, 0);
+ // Radiating from the center, much like the struts of a kite.
+ stroke('#b83d78');
+ strokeWeight(1.5);
+ line(0, -59, -39, 0);
+ line(0, -59, 0, 0);
+ line(0, -59, 39, 0);
 
-  // The umbrella shaft and handle.
+ // White umbrella tip.
+ noStroke();
+ fill('#fffaf5');
+ circle(0, -60, 7);
+
+ // Cream-coloured umbrella tip.
+ fill('#fff8ed');
+ circle(0, -60, 7);
+
+  // The bottom edge of the umbrella canopy.
+  noFill();
+  stroke('#b83d78');
+  strokeWeight(2.5);
+  strokeCap(ROUND);
+  bezier(-78, 0, -65, 10, -52, 10, -39, 0);
+  bezier(-39, 0, -26, 10, -13, 10, 0, 0);
+  bezier(0, 0, 13, 10, 26, 10, 39, 0);
+  bezier(39, 0, 52, 10, 65, 10, 78, 0);
+
+  // Umbrella ribs extend from the top toward the edge.
+  stroke('#b00046');
+  strokeWeight(1.5);
+  line(0, -58, -39, 0);
+  line(0, -58, 0, 0);
+  line(0, -58, 39, 0);
+
+  // Umbrella handle and grip.
   stroke('#70445e');
   strokeWeight(5);
-  strokeCap(ROUND);
-  line(0, -2, 0, 77);
+  line(0, -1, 0, 77);
+
   noFill();
-  arc(8, 77, 16, 18, 0, HALF_PI);
+  stroke('#70445e');
+  strokeWeight(5);
+  arc(7, 77, 15, 17, 0, HALF_PI);
+
+  // The small tip at the top of the umbrella.
+  noStroke();
+  fill('#ffe6f0');
+  circle(0, -60, 7);
 
   pop();
 }
 }
-
