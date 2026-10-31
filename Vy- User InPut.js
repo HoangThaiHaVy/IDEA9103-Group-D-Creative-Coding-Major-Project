@@ -783,50 +783,60 @@ function drawLightning(time) {
   pop();
 }
 
+
 function drawCharacterGlow(x, y, time, fade = 1, stage = '') {
-  const pulse = (sin(time * 2.8) + 1) / 2;
+
   const purpleGlow = [
     'lostKite', 'rainStorm', 'soSad', 'rainFace'
   ].includes(stage);
 
   const isWet = stage === 'wet';
 
- const outerColor = isWet ? color(65, 65, 65)
-  : purpleGlow ? color(155, 95, 255) : color(255, 180, 45);
+  const outerColor = isWet ? color(65, 65, 65)
+    : purpleGlow ? color(155, 95, 255) : color(255, 180, 45);
 
- const innerColor = isWet ? color(95, 95, 95)
-  : purpleGlow ? color(205, 155, 255) : color(255, 225, 105);
+  const innerColor = isWet ? color(95, 95, 95)
+    : purpleGlow ? color(205, 155, 255) : color(255, 225, 105);
 
- const sparkleColor = isWet ? color(145, 145, 145)
-  : purpleGlow ? color(235, 210, 255) : color(255, 245, 185);
+  const sparkleColor = isWet ? color(145, 145, 145)
+    : purpleGlow ? color(235, 210, 255) : color(255, 245, 185);
 
   push();
 
-  // Center the glow over the full character, from head to feet.
-  translate(x, y - 100);
+  // Lower the light intensity only while in the 'wet' state.
+  translate(x, isWet ? y - 55 : y - 100);
   noStroke();
 
-  // A broad, brighter layer, deeper in tone and with a gentle rhythm
-  outerColor.setAlpha((45 + pulse * 35) * fade);
-  fill(outerColor);
-  ellipse(0, 0, 145 + pulse * 18, 235 + pulse * 18);
+  if (isWet) {
+    outerColor.setAlpha(65 * fade);
+    fill(outerColor);
+    ellipse(0, 0, 150, 190);
 
-  // The bright center, either yellow or purple
-  innerColor.setAlpha((55 + pulse * 45) * fade);
-  fill(innerColor);
-  ellipse(0, 0, 100 + pulse * 12, 195 + pulse * 12);
+    innerColor.setAlpha(80 * fade);
+    fill(innerColor);
+    ellipse(0, 0, 112, 150);
+  } else {
+    const pulse = (sin(time * 2.8) + 1) / 2;
 
-  // The shimmering spots around the character
+    outerColor.setAlpha((45 + pulse * 35) * fade);
+    fill(outerColor);
+    ellipse(0, 0, 145 + pulse * 18, 235 + pulse * 18);
+
+    innerColor.setAlpha((55 + pulse * 45) * fade);
+    fill(innerColor);
+    ellipse(0, 0, 100 + pulse * 12, 195 + pulse * 12);
+  }
+
+  // Keep the highlights static; in the wet areas, place them around the highlights that have been toned down.
   for (let i = 0; i < 8; i++) {
-    const angle = time * 0.7 + TWO_PI * i / 8;
-    const radius = 72 + sin(time * 2 + i) * 7;
+    const angle = TWO_PI * i / 8;
+    const radius = isWet ? 70 : 72;
     const sx = cos(angle) * radius;
-    const sy = sin(angle) * radius * 1.25;
-    const size = 4 + (sin(time * 4 + i) + 1) * 2;
+    const sy = sin(angle) * radius * (isWet ? 1 : 1.25);
 
-    sparkleColor.setAlpha((180 + pulse * 70) * fade);
+    sparkleColor.setAlpha((isWet ? 210 : 180) * fade);
     fill(sparkleColor);
-    circle(sx, sy, size);
+    circle(sx, sy, 6);
   }
 
   pop();
@@ -970,16 +980,14 @@ function drawPinkCharacterReveal(appear) {
   const characterX = max(40, width * 0.08);
   const characterY = GROUND_Y - imageHeight / 2 + 30;
 
-  // Vẽ ô trước để ô nằm phía sau nhân vật.
+  // Draw the box first so that it is positioned behind the character.
   drawCharacter2Umbrella(
   characterX - imageWidth * 0.18,
   characterY - imageHeight * 0.34
 );
 
-  // Vẽ character 2 đè lên thân ô.
-  image(character2PinkImage, characterX, characterY, imageWidth, imageHeight);
 
-  // Hiện nhân vật ở bên trái, gần vị trí chấm hồng.
+  // Show the character on the left, near the pink dot.
   image(
     character2PinkImage,
     max(40, width * 0.08),
@@ -994,7 +1002,7 @@ function drawPinkCharacterReveal(appear) {
   scale(1.65);
   noStroke();
 
-  // Mái ô lớn, có viền múi.
+  // Large umbrella canopy with a scalloped edge.
   fill('#f06aa9');
   beginShape();
   vertex(-78, 0);
@@ -1006,13 +1014,13 @@ function drawPinkCharacterReveal(appear) {
   bezierVertex(-52, -10, -65, 10, -78, 0);
   endShape(CLOSE);
 
-  // Các múi màu sáng.
+  // The light-colored segments.
   fill('#ffb1d3');
   triangle(-39, 0, 0, -59, 0, 0);
   fill('#f58aba');
   triangle(0, -59, 39, 0, 0, 0);
 
-  // Thân ô và tay cầm.
+  // The umbrella shaft and handle.
   stroke('#70445e');
   strokeWeight(5);
   strokeCap(ROUND);
