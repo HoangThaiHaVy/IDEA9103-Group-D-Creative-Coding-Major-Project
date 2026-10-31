@@ -55,6 +55,7 @@ let character2WalkStartedAt = 0;
 let character2WalkStartX = 0;
 let character2WalkTargetX = 0;
 
+
 const rainDropCount = 5;
 let rainDrops = Array.from({ length: rainDropCount }, () => ({
   clicked: false,
@@ -182,7 +183,6 @@ if (storyStage === 'wet') {
 }
 
 
-
 if (storyStage === 'pinkReveal') {
   drawPinkCharacterReveal();
 
@@ -196,6 +196,7 @@ if (storyStage === 'pinkReveal') {
     );
   }
 }
+
 if (character2Walking) {
   const duration = 2.5;
   const progress = constrain(
@@ -211,8 +212,15 @@ if (character2Walking) {
   );
 
   if (progress >= 1) {
-    character2Walking = false;
-  }
+  character2X = character2WalkTargetX;
+  character2Walking = false;
+  character2Pointing = false;
+}
+if (character2WalkStartedAt > 0 && !character2Walking) {
+  drawCharacterHint(
+    'Character 2 approaches Character 1 (click the pink figure to continue)'
+  );
+}
 }
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
@@ -1055,27 +1063,24 @@ function drawPinkCharacterReveal(appear) {
   const characterX = max(40, width * 0.08);
   const characterY = GROUND_Y - imageHeight / 2 + 30;
 
-  // Draw the box first so that it is positioned behind the character.
+// Use the same coordinates for the character and the tile.
+// When moving, follow character2X; when not moving, remain at the initial position.
+  const drawX = character2X;
+
+// Draw the box just once, so that it no longer remains at the left edge.
   drawCharacter2Umbrella(
-  characterX - imageWidth * 0.18,
+  drawX - imageWidth * 0.18,
   characterY - imageHeight * 0.43
 );
 
-
-  // Show the character on the left, near the pink dot.
-  image(
+// Draw the character at the same horizontal position as the cell.
+image(
   imageToDraw,
-  character2Walking ? character2X : max(40, width * 0.08),
-  GROUND_Y - imageHeight / 2 + 30,
+  drawX,
+  characterY,
   imageWidth,
   imageHeight
 );
-if (character2Pointing && character2PointingImageReady) {
-  drawCharacter2Umbrella(
-    characterX - imageWidth * 0.18,
-    characterY - imageHeight * 0.43
-  );
-}
 
   function drawCharacter2Umbrella(x, y) {
   push();
