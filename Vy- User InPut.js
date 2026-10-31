@@ -559,7 +559,7 @@ surprisedImage = loadImage(
   );
    //  Updated: load the three requested emotional poses.
    sadnessImage = loadImage('stand-sadness.png', () => { sadnessImageReady = true; }, () => imageLoadFailed('stand-sadness.png'));
-   sadRainImage = loadImage('Sad-rain face.png', () => { sadRainImageReady = true; }, () => imageLoadFailed('sad-rain face.png'));
+   sadRainImage = loadImage('Sad-rain face.png', () => { sadRainImageReady = true; }, () => imageLoadFailed('Sad-rain face.png'));
   // [EDITED]: preload the final image used after clicking sad-rain face.
    soSadImage = loadImage('So sad.png', () => { soSadImageReady = true; }, () => imageLoadFailed('So sad.png'));
    pointingForwardImage = loadImage('Pointing forward.png', () => { pointingForwardImageReady = true; }, () => imageLoadFailed('Pointing forward.png'));
