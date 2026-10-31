@@ -65,6 +65,24 @@ let rainDrops = Array.from({ length: rainDropCount }, () => ({
   clickedAt: 0
 }));
 
+const USER_INPUT_PATHS = [
+  'assets/user input/stand.png',
+  'assets/user input/walk.png',
+  'assets/user input/walk2.png',
+  'assets/user input/stand-suprise 1.png',
+  'assets/user input/stand-sadness.png',
+  'assets/user input/Sad-rain face.png',
+  'assets/user input/So sad.png',
+  'assets/user input/wet.png',
+  'assets/user input/haracter 2 pink.png',
+  'assets/user input/hand pointed forward_C2.png',
+  'assets/user input/walk1 (character 2).png',
+  'assets/user input/walk2 (character 2).png',
+  'assets/user input/character 2 give.png',
+];
+
+
+
 
 function updateAndDrawVy(time, dt) {
   // Character and kite visuals follow the current story stage.
@@ -502,7 +520,7 @@ function drawCharacterHint(label) {
 
 function preloadCharacterImages() {
   standingImage = loadImage(
-    'stand.png',
+    'assets/user input/stand.png',
     (img) => {
       // Crop away the black margin only when the source has the expected size.
       // Smaller source images are drawn whole instead of producing an empty crop.
@@ -515,7 +533,7 @@ function preloadCharacterImages() {
     },
     () => {
       standingImageFailed = true;
-      imageLoadFailed('stand.png');
+      imageLoadFailed('assets/user input/stand.png');
     }
     
     
@@ -523,14 +541,14 @@ function preloadCharacterImages() {
 
 
 surprisedImage = loadImage(
-    'stand-suprise 1.png',
+    'assets/user input/stand-suprise 1.png',
     (img) => {
       surprisedImage = img;
       surprisedImageReady = true;
     },
     () => {
       surprisedImageFailed = true;
-      imageLoadFailed('stand-suprise 1.png');
+      imageLoadFailed('assets/user input/stand-suprise 1.png');
     }
   );
 
@@ -547,28 +565,28 @@ surprisedImage = loadImage(
   
 
     walk1Image = loadImage(
-    'walk.png',
+    'assets/user input/walk.png',
     () => { walk1ImageReady = true; },
-    () => imageLoadFailed('walk.png')
+    () => imageLoadFailed('assets/user input/walk.png')
    );
 
    walk2Image = loadImage(
-   'walk2.png',
+   'assets/user input/walk2.png',
    () => { walk2ImageReady = true; },
-   () => imageLoadFailed('walk2.png')
+   () => imageLoadFailed('assets/user input/walk2.png')
   );
    //  Updated: load the three requested emotional poses.
-   sadnessImage = loadImage('stand-sadness.png', () => { sadnessImageReady = true; }, () => imageLoadFailed('stand-sadness.png'));
-   sadRainImage = loadImage('Sad-rain face.png', () => { sadRainImageReady = true; }, () => imageLoadFailed('Sad-rain face.png'));
+   sadnessImage = loadImage('assets/user input/stand-sadness.png', () => { sadnessImageReady = true; }, () => imageLoadFailed('assets/user input/stand-sadness.png'));
+   sadRainImage = loadImage('assets/user input/Sad-rain face.png', () => { sadRainImageReady = true; }, () => imageLoadFailed('assets/user input/Sad-rain face.png'));
   // [EDITED]: preload the final image used after clicking sad-rain face.
-   soSadImage = loadImage('So sad.png', () => { soSadImageReady = true; }, () => imageLoadFailed('So sad.png'));
-   pointingForwardImage = loadImage('Pointing forward.png', () => { pointingForwardImageReady = true; }, () => imageLoadFailed('Pointing forward.png'));
-   wetImage = loadImage('wet.png', () => { wetImageReady = true; }, () => imageLoadFailed('wet.png'));
-  character2PinkImage = loadImage('character 2 pink.png', () => { character2PinkImageReady = true; }, () => imageLoadFailed('character 2 pink.png'));
-  character2PointingImage = loadImage('hand pointed forward_C2.png', () => { character2PointingImageReady = true; }, () => imageLoadFailed('hand pointed forward_C2.png'));
-  character2Walk1Image = loadImage('walk1 (character 2).png', () => { character2Walk1Ready = true; }, () => imageLoadFailed('walk1 (character 2).png'));
-  character2Walk2Image = loadImage('walk2 (character 2).png', () => { character2Walk2Ready = true; }, () => imageLoadFailed('walk2 (character 2).png'));
-  character2GiveImage = loadImage('character 2 give.png', () => { character2GiveImageReady = true; }, () => imageLoadFailed('character 2 give.png'));
+   soSadImage = loadImage('assets/user input/So sad.png', () => { soSadImageReady = true; }, () => imageLoadFailed('assets/user input/So sad.png'));
+   pointingForwardImage = loadImage('assets/user input/Pointing forward.png', () => { pointingForwardImageReady = true; }, () => imageLoadFailed('assets/user input/Pointing forward.png'));
+   wetImage = loadImage('assets/user input/wet.png', () => { wetImageReady = true; }, () => imageLoadFailed('assets/user input/wet.png'));
+  character2PinkImage = loadImage('assets/user input/character 2 pink.png', () => { character2PinkImageReady = true; }, () => imageLoadFailed('assets/user input/character 2 pink.png'));
+  character2PointingImage = loadImage('assets/user input/hand pointed forward_C2.png', () => { character2PointingImageReady = true; }, () => imageLoadFailed('assets/user input/hand pointed forward_C2.png'));
+  character2Walk1Image = loadImage('assets/user input/walk1 (character 2).png', () => { character2Walk1Ready = true; }, () => imageLoadFailed('assets/user input/walk1 (character 2).png'));
+  character2Walk2Image = loadImage('assets/user input/walk2 (character 2).png', () => { character2Walk2Ready = true; }, () => imageLoadFailed('assets/user input/walk2 (character 2).png'));
+  character2GiveImage = loadImage('assets/user input/character 2 give.png', () => { character2GiveImageReady = true; }, () => imageLoadFailed('assets/user input/character 2 give.png'));
 }
 
 
