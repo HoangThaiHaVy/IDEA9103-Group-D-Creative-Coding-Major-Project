@@ -1040,11 +1040,11 @@ function drawPinkSparkleDot() {
 
   fill('#ea0088');
   circle(x, y, 26); 
-  // pink dot
+  // Chấm hồng
 
   fill('#fff4fb');
   circle(x - 5, y - 5, 7); 
-  // High light
+  // Điểm phản sáng
 
   stroke('#ffd5ef');
   strokeWeight(3);
