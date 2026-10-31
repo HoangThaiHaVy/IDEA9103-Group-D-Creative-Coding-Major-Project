@@ -54,6 +54,9 @@ let character2X = 0;
 let character2WalkStartedAt = 0;
 let character2WalkStartX = 0;
 let character2WalkTargetX = 0;
+let character2GiveImage;
+let character2GiveImageReady = false;
+let character2Giving = false;
 
 
 const rainDropCount = 5;
@@ -179,14 +182,23 @@ if (storyStage === 'wet') {
     drawCharacterHint(
       'Look to the left and click the pink dot (a hint for what happens next)'
     );
+    if (character2Giving && character2GiveImageReady) {
+  drawCharacterHint(
+    'Character 2 wants to give the umbrella to Character 1.'
+  );
+} else if (character2Pointing && character2PointingImageReady) {
   }
 }
-
+}
 
 if (storyStage === 'pinkReveal') {
   drawPinkCharacterReveal();
 
-  if (character2Pointing && character2PointingImageReady) {
+  if (character2WalkStartedAt > 0 && !character2Walking) {
+    drawCharacterHint(
+      'Character 2 is near Character 1 (click the pink figure to continue)'
+    );
+  } else if (character2Pointing && character2PointingImageReady) {
     drawCharacterHint(
       'Who is sitting over there in the rain? (click on the green character)'
     );
@@ -216,11 +228,7 @@ if (character2Walking) {
   character2Walking = false;
   character2Pointing = false;
 }
-if (character2WalkStartedAt > 0 && !character2Walking) {
-  drawCharacterHint(
-    'Character 2 approaches Character 1 (click the pink figure to continue)'
-  );
-}
+
 }
    // Removed the duplicate drawKite() call here.
   // kiteX, kiteY, handX, and handY exist only inside drawCharacterAndKite(),
@@ -289,9 +297,7 @@ function mousePressed() {
     return false;
   } else if (rainDrops.every(drop => drop.clicked) && clickOnCharacter()) {
     storyStage = 'wet';
-  } else if (rainDrops.every(drop => drop.clicked) && clickOnCharacter()) {
-  storyStage = 'wet';
-  wetStartedAt = millis() / 1000;
+    wetStartedAt = millis() / 1000;
 }
 } else if (storyStage === 'wet') {
   const dotX = max(40, width * 0.08);
@@ -309,18 +315,28 @@ function mousePressed() {
     storyStage = 'pinkReveal';
     character2PinkRevealStartedAt = millis() / 1000;
   }
-  } else if (storyStage === 'pinkReveal' && character2Pointing && clickOnCharacter()) {
+} else if (storyStage === 'pinkReveal' && character2Giving) {
+  // Giữ cảnh give sau khi ảnh đã xuất hiện.
+} else if (
+  storyStage === 'pinkReveal' &&
+  character2WalkStartedAt > 0 &&
+  !character2Walking &&
+  clickOnCharacter2()
+) {
+  character2Giving = true;
+} else if (
+  storyStage === 'pinkReveal' &&
+  character2Pointing &&
+  clickOnCharacter()
+) {
   character2Walking = true;
   character2WalkStartedAt = millis() / 1000;
   character2WalkStartX = character2X;
-  character2WalkTargetX = characterX - 75;
- } else if (storyStage === 'pinkReveal' && clickOnCharacter2()) {
+  character2WalkTargetX = characterX - 120;
+} else if (storyStage === 'pinkReveal' && clickOnCharacter2()) {
   character2Pointing = true;
- }
-
- return false;
 }
-
+}
 
 
 function clickOnCharacter() {
@@ -340,7 +356,7 @@ function clickOnCharacter2() {
     ? characterHeight * character2PinkImage.width / character2PinkImage.height
     : characterHeight;
 
-  const characterX = max(40, width * 0.08);
+  const characterX = character2X;
   const characterY = GROUND_Y - characterHeight / 2 + 30;
 
   return abs(mouseX - characterX) < characterWidth / 2 &&
@@ -548,6 +564,7 @@ surprisedImage = loadImage(
   character2PointingImage = loadImage('hand pointed forward_C2.png', () => { character2PointingImageReady = true; }, () => imageLoadFailed('hand pointed forward_C2.png'));
   character2Walk1Image = loadImage('walk1 (character 2).png', () => { character2Walk1Ready = true; }, () => imageLoadFailed('walk1 (character 2).png'));
   character2Walk2Image = loadImage('walk2 (character 2).png', () => { character2Walk2Ready = true; }, () => imageLoadFailed('walk2 (character 2).png'));
+  character2GiveImage = loadImage('character 2 give.png', () => { character2GiveImageReady = true; }, () => imageLoadFailed('character 2 give.png'));
 }
 
 
@@ -1049,6 +1066,10 @@ function drawPinkCharacterReveal(appear) {
  } else if (character2Pointing && character2PointingImageReady) {
   imageToDraw = character2PointingImage;
 }
+if (character2Giving && character2GiveImageReady) {
+  imageToDraw = character2GiveImage;
+}
+
 
   const alpha = 255;
 
@@ -1068,8 +1089,12 @@ function drawPinkCharacterReveal(appear) {
   const drawX = character2X;
 
 // Draw the box just once, so that it no longer remains at the left edge.
-  drawCharacter2Umbrella(
-  drawX - imageWidth * 0.18,
+  const umbrellaX = character2Giving
+  ? drawX + imageWidth * 0.18
+  : drawX - imageWidth * 0.18;
+
+drawCharacter2Umbrella(
+  umbrellaX,
   characterY - imageHeight * 0.43
 );
 
