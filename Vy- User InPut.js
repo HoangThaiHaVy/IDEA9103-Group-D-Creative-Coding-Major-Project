@@ -1196,8 +1196,6 @@ image(
   strokeWeight(5);
   line(0, -1, 0, 77);
 
- 
-
   // The small tip at the top of the umbrella.
   noStroke();
   fill('#ffe6f0');
