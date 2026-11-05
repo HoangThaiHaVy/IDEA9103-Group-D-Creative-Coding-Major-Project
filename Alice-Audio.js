@@ -12,6 +12,7 @@ let audioCloudImage;
 let audioPsychedelicCaveImage;
 let audioHoldingHandsImage;
 let audioDancerImages = [];
+let audioDancers = [];
 let audioSunReady = false;
 let audioCloudReady = false;
 let audioPsychedelicCaveReady = false;
@@ -28,6 +29,14 @@ const AUDIO_DANCER_PATHS = [
   'assets/audio/classic-green.png',
   'assets/audio/classic-blue.png',
   'assets/audio/classic-pink.png'
+];
+
+const AUDIO_DANCER_LAYOUT = [
+  { x: 88, y: 458, height: 190, phase: 0, jumpStrength: 30 },
+  { x: 238, y: 442, height: 158, phase: 0.65, jumpStrength: 33 },
+  { x: 400, y: 454, height: 174, phase: 1.3, jumpStrength: 36 },
+  { x: 562, y: 442, height: 158, phase: 1.95, jumpStrength: 39 },
+  { x: 712, y: 458, height: 190, phase: 2.6, jumpStrength: 42 }
 ];
 
 function preloadAudioAssets() {
@@ -66,6 +75,9 @@ function preloadAudioAssets() {
 function setupAudio() {
   audioMechanic = new AudioMechanic();
   audioReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  audioDancers = audioDancerImages.map((imageAsset, index) =>
+    new AudioDancer(imageAsset, AUDIO_DANCER_LAYOUT[index])
+  );
 
   audioButton = createButton('Enable microphone');
   audioButton.parent(document.querySelector('main'));
@@ -298,40 +310,17 @@ function drawPsychedelicCave(progress) {
 }
 
 function drawAudioDancers(time, elapsed, backgroundProgress) {
-  if (!audioDancersReady) return;
+  if (!audioDancersReady || audioDancers.length === 0) return;
 
-  const xPositions = [88, 238, 400, 562, 712];
-  const baseYPositions = [458, 442, 454, 442, 458];
-  const targetHeights = [190, 158, 174, 158, 190];
   const entranceDuration = audioReducedMotion ? 0.2 : 0.5;
   const staggerSeconds = audioReducedMotion ? 0 : 0.06;
 
-  for (let i = 0; i < audioDancerImages.length; i += 1) {
-    const imageAsset = audioDancerImages[i];
+  for (let i = 0; i < audioDancers.length; i += 1) {
+    const dancer = audioDancers[i];
     const dancerElapsed = elapsed - 0.45 - i * staggerSeconds;
     const entrance = strongEaseOut(constrain(dancerElapsed / entranceDuration, 0, 1));
-    if (entrance <= 0 || backgroundProgress < 0.12) continue;
-
-    const idleSway = audioReducedMotion ? 0 : sin(time * 2.1 + i * 0.8) * 3;
-    const audioSway = audioReducedMotion ? 0 : sin(time * (3.2 + audioData.treble * 4) + i) * audioData.treble * 16;
-    const jump = audioReducedMotion ? 0 : audioData.bass * (30 + i * 3);
-    const bounce = audioReducedMotion ? 0 : abs(sin(time * 3.4 + i * 0.65)) * audioData.intensity * 18;
-    const rotation = audioReducedMotion ? 0 : sin(time * 2.7 + i) * audioData.treble * 0.16;
-    const soundScale = 1 + audioData.intensity * 0.16;
-    const entranceScale = 0.95 + entrance * 0.05;
-
-    const targetHeight = targetHeights[i];
-    const targetWidth = targetHeight * imageAsset.width / imageAsset.height;
-
-    push();
-    translate(xPositions[i] + idleSway + audioSway, baseYPositions[i] - jump - bounce);
-    rotate(rotation);
-    scale(entranceScale * soundScale);
-    imageMode(CENTER);
-    tint(255, 255 * entrance * backgroundProgress);
-    image(imageAsset, 0, -targetHeight / 2, targetWidth, targetHeight);
-    noTint();
-    pop();
+    dancer.update(time, audioData, audioReducedMotion);
+    dancer.display(entrance, backgroundProgress);
   }
 }
 
