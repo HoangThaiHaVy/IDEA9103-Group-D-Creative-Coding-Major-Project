@@ -12,11 +12,21 @@ Through this reinterpretation, "Move Together" explores how individual actions c
 
 Rather than merely replicating the original, this project reinterprets the spirit of movement and connection through interactive dance. Inspired by how Haring’s characters embody energy and interconnectedness, "Move Together" examines how individual actions can impact others and grow into a collective experience. We have maintained a colour palette and character design closely aligned with the original work, ensuring that its distinctive, signature style remains intact.
 
-# About
-An interactive experience exploring how individual movements
-can develop into a shared rhythm and collective choreography.
+# Move Together – Story Narrative
+01. Approach: User Input (Vy)
 
-# About Story 
+The story begins with a character flying a kite in a peaceful landscape, surrounded by open grassland and distant mountains. As the character enjoys flying the kite, a sudden strong gust of wind sweeps across the field, carrying the kite away. Losing the kite leaves the character feeling increasingly sad, and the weather soon takes a dramatic turn as raindrops begin to fall. The rain continues relentlessly, gradually gathering on the grass and forming large puddles across the landscape. With no shelter nearby, surrounded only by vast open grassland and mountains in the distance, the character has nowhere to escape the storm. Eventually, feeling helpless and overwhelmed, the character crouches down, lowers their head and becomes completely soaked by the rain.
+
+Just when everything seems at its worst, a soft pink glow appears in the distance, like a small light of hope breaking through the gloomy atmosphere. A second character emerges, carrying a white umbrella. Noticing the first character sitting alone in the rain, the newcomer slowly approaches, hoping to offer shelter by sharing their umbrella. 
+
+02. Synchronization: Time-based (Emery)
+
+Connecting with the user input's storyline: Character one agrees to share an umbrella with character two. Character two slowly helps character one stand up, and they both use the umbrella as the rain stops. The two characters dance together, sharing happy smiles (this scene shows the beginning of their friendship). Then, the two characters walk forward, encountering a group of three friends approaching. All five then hold hands and line up horizontally. Next, the characters place their hands on each other's shoulders (representing their friendship). Finally, all five dance together, gradually forming a circle.
+
+03. Collective Movement: Audio (Zichen)
+
+Connecting with the audio's storyline: After the five characters form a circle, they hold hands and extend them forward, creating a changing light around them that shifts color according to the rhythm of the music. Then, the characters move together in a slow, circular motion; a small star slowly appears in the center. At this point, the circle gradually narrows, and the star hovers above the characters. Then all five characters raise their hands to the sky as if cradling the small star. This connection creates a large source of light, the star becomes brighter and rises into the air (the five characters below look up). The star grows larger. And a breathtaking scene unfolds, the characters...
+
 
 # Technologies
 - p5.js
