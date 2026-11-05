@@ -46,8 +46,18 @@ function setup() {
   strokeCap(ROUND);
   strokeJoin(ROUND);
   textFont('Arial, sans-serif');
+  // Emery: initialise the Character objects after PNG preload completes.
+  setupTimeBased();
   setupAudio();
   setupAudioTestMode();
+  // Optional direct preview; the ordinary page still starts with Vy's story.
+  if (new URLSearchParams(location.search).has('timeDemo')) {
+    characterX = 640;
+    character2X = 520;
+    characterFade = 1;
+    character2Giving = true;
+    startTimeBased();
+  }
 }
 
 function draw() {
@@ -56,7 +66,8 @@ function draw() {
   lastStoryTime = time;
   updateAudio();
 
-  const inRainScene = RAIN_STAGES.includes(storyStage);
+  const inRainScene = RAIN_STAGES.includes(storyStage) ||
+    (storyStage === 'timeBased' && time - timeStartedAt < 1.2);
 
 if (inRainScene && rainMusic?.isLoaded() && !rainMusicPlaying) {
   rainMusic.setLoop(true);
@@ -68,6 +79,27 @@ if (inRainScene && rainMusic?.isLoaded() && !rainMusicPlaying) {
   rainMusicPlaying = false;
 }
  
+
+  // Emery: accepting the umbrella starts a timed sequence, then hands control
+  // to Zicen exactly once when the circle is complete.
+  if (storyStage === 'timeBased') {
+    drawBackground(time, false);
+    updateTimeBased(time);
+    if (timeElapsed < 1.2) {
+      const rainAmount = 1 - timeProgress(timeElapsed, 0, 1.2);
+      if (rainMusicPlaying) rainMusic.setVolume(0.15 * rainAmount);
+      push();
+      drawingContext.globalAlpha *= rainAmount;
+      drawRain(time, true);
+      pop();
+    }
+    drawTimeBased();
+    drawAudio();
+    if (timeCircleReady && !new URLSearchParams(location.search).has('hold')) {
+      startStarGather();
+    }
+    return;
+  }
 
   // The final audio scene owns the whole canvas after the character enters
   // the cave, so the outdoor story is intentionally skipped in these states.
@@ -107,12 +139,13 @@ if (inRainScene && rainMusic?.isLoaded() && !rainMusicPlaying) {
         // Pause at the midpoint while the tethered kite keeps rising.
         storyStage = 'arrival';
         arrivalAt = time;
-      } else 
-        // Finish the story only after Vy completes the second walk.
+      } else {
+        // Mark completion only after the second walk, not at the midpoint.
         storyStage = 'finished';
         walkFinished = true;
         finishedAt = time;
       }
+    }
   }
   updateAndDrawVy(time, dt);
   drawAudio();
@@ -474,37 +507,4 @@ function drawCloud(x, y, cloudScale) {
   circle(0, -5, 36);
   circle(21, 4, 27);
   pop();
-}
-
-
-drawLandscape()
-drawMountainBackdrop()
-drawLandscapeBush()
-drawGrassDetails()
-drawCornerFoliage()
-drawLeafFan()
-
-class Figure {
-  constructor(x, y, colour) {
-    this.x = x;
-    this.y = y;
-    this.targetX = x;
-
-    this.colour = colour;
-    this.pose = 'standing';
-    this.facing = 1;
-    this.hasCandy = false;
-
-    // Shared movement properties
-    this.sway = 0;
-    this.walk = 0;
-    this.open = 0;
-    this.stand = 1;
-  }
-   draw() {
-    this.drawBody();
-    this.drawArms();
-    this.drawLegs();
-    this.drawHead();
-  }
 }
