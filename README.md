@@ -331,7 +331,7 @@ Regarding the narrative flow design, I have organized the program into distinct,
 
 ### Overview and creative purpose
 
-Emery developed the time-based mechanic between Vy's umbrella-sharing scene and Zicen's audio finale. The sequence turns a small act of support into collective movement: two figures move from different timings to a shared rhythm, three companions enter from the left, and a horizontal line gradually becomes a linked circle. The changing timing and formation communicate growing companionship.
+Emery developed the time-based mechanic between Vy's umbrella-sharing scene and Zicen's audio finale. The sequence turns a small act of support into collective movement: two figures move from different timings to a shared rhythm, then teach a hand-lift and foot-tap motif to three companions entering from the left. The companions imitate it in turn before everyone repeats it together and a horizontal line becomes a linked circle. The visible transfer of one gesture expresses how an individual connection can spread through a group.
 
 ### Mechanic ownership and shared contributions
 
@@ -351,7 +351,9 @@ Follow Vy's click prompts until the pink character offers the umbrella, then cli
 | 0–4 s | The rain fades, the pink figure helps the green figure stand, and the umbrella is visibly swung and thrown off-screen. |
 | 4–8.5 s | The pair's initial movement offset reduces until both sway and step together. |
 | 8.5–14 s | The pair moves into position while three companions walk in together from outside the left edge. |
-| 14–33.2 s | Five eight-beat phrases develop the group dance: shoulder-linked steps, high knees, light kicks, clap-steps and a travelling arm wave. The music starts at 14 s. |
+| 14–15.92 s | The line briefly links shoulders and settles into the group dance. The music starts at 14 s. |
+| 15.92–21.68 s | The green/pink pair demonstrates a four-beat hand-lift and foot-tap gesture. Red, blue and yellow repeat the same gesture in order, starting two beats (0.96 s) apart, then settle into the shared timing. |
+| 21.68–33.2 s | Everyone repeats the learned gesture together, continues with clap-steps and a shared-phase arm wave, then briefly holds an open-arm stance before the circle transition. |
 | 33.2–40.2 s | The figures move from the line into the circle while keeping their neighbour order. |
 | 40.2–42.2 s | The linked circle continues, the music fades out, and `timeCircleReady` becomes true for the next mechanic. |
 
@@ -366,14 +368,14 @@ Follow Vy's click prompts until the pink character offers the umbrella, then cli
 | `Character` class, objects and arrays | Store each figure's position, scale and pose; update and draw reusable instances. | Separate choreography from appearance and allow the audio chapter to reuse the actual final figures. |
 | Bézier curves, shapes and layered outlines | Draw the torso, arms and legs; use transparent PNGs for the faces. | Preserve rounded silhouettes while allowing continuous pose changes instead of full-body sprite switches. |
 | `loadImage()`, `loadSound()` and sound playback control | Preload assets; start the group song once and fade it out before handoff. | Avoid sudden asset changes and give the dance a shared musical pace. |
-| Eight-beat phrase timing at 125 BPM | Blend between five short movement patterns. | Respond to tutor feedback asking for a more engaging dance and a clear pace. The animation follows a fixed beat clock; this chapter does not analyse the music with FFT. |
+| Musical timing and controlled time offsets at 125 BPM | Demonstrate one motif, delay it for each new companion by two beats, then remove the offsets for unison. | Make one person's movement visibly influence another and give the dance a readable progression. The animation follows a fixed beat clock; this chapter does not analyse the music with FFT. |
 | Time-based cloud positions and `%` wrapping | Move two clouds continuously and return them to the left after they leave the right edge. | Keep the daytime setting consistent across chapters without requiring microphone input. |
 
 ### How the code works and communicates
 
 `preloadTimeBasedAssets()` loads the heads and music; `setupTimeBased()` creates the five `Character` objects. Vy's acceptance event calls `startTimeBased()`, which records the starting time and the two figures' current positions.
 
-Each frame, `updateTimeBased()` computes elapsed seconds. `timeProgress()` clamps an interval to 0–1; `timeEase()` applies `p*p*(3-2*p)` so movement eases in and out. `timeWindow()` combines an entry and exit fade, allowing actions such as walking or holding hands to overlap smoothly. `groupDanceValues()` blends pose properties between phrases, and `applyGroupHandPoses()` adds the clap and wave gestures. `Character.update()` calculates the joints; `drawTimeBased()` renders the figures and umbrella.
+Each frame, `updateTimeBased()` computes elapsed seconds. `timeProgress()` clamps an interval to 0–1; `timeEase()` applies `p*p*(3-2*p)` so movement eases in and out. `timeWindow()` combines an entry and exit fade, allowing actions such as walking or holding hands to overlap smoothly. `relayGesture(index, elapsed)` uses a squared-sine pulse with a different start time for each companion. The original pair shares one start time; red, blue and yellow follow at two-beat intervals. `groupResponseTiming()` blends that delayed demonstration into a pulse shared by everyone. `groupDanceValues()` applies the pulse to the feet/body, and `applyGroupHandPoses()` applies the same motif to the hands before the later clap and shared wave. `Character.update()` calculates the joints; `drawTimeBased()` renders the figures and umbrella.
 
 `choreographyTime()` preserves the earlier opening and circle transitions while inserting 10.2 extra seconds into the middle dance. The additional phrases use actual elapsed time, so they continue moving during that insertion. At 42.2 seconds, `timeCircleReady` tells `sketch.js` to call `startStarGather()`. The audio chapter receives the same `timeFigures` objects and their final pose rather than starting from a replacement image.
 
@@ -381,7 +383,7 @@ Global state includes `timeFigures`, `timeStartedAt`, `timeElapsed` and `timeCir
 
 ### Iteration and evaluation
 
-Following tutor feedback, the prototype uses a reusable class, proportions matched to Vy's visible characters, and a longer group dance with distinct phrases. The extra figures enter by walking rather than appearing suddenly, and the umbrella has a visible release and flight. Visual feedback also led to restoring smooth curved arms after an experimental angular-elbow version looked too rigid.
+Following tutor feedback, the prototype uses a reusable class, proportions matched to Vy's visible characters, and a longer group dance with distinct phrases. The extra figures enter by walking rather than appearing suddenly, and the umbrella has a visible release and flight. The middle choreography was refined from simultaneous stepping into a demonstration–imitation–unison progression, making the idea of shared movement visible. The later shared wave resolves the earlier timing differences, and a brief closing stance makes the group unity readable. Visual feedback also led to restoring smooth curved arms after an experimental angular-elbow version looked too rigid.
 
 Browser checks exercised the opening click flow, the timed chapter, music start/stop, the circle-to-star handoff and the later audio scene. A narrow-window check confirmed that the scaled canvas and click coordinates still worked. Opening and circle pose samples were compared with the preceding version to preserve the integration. These checks cover the tested paths, rather than every device or all live sound conditions.
 

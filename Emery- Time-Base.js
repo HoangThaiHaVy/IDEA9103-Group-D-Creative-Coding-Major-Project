@@ -19,6 +19,14 @@ const GROUP_MUSIC_START = 14;
 const MUSIC_BPM = 125;
 const MUSIC_BEAT_SECONDS = 60 / MUSIC_BPM;
 const GROUP_PHRASE_SECONDS = MUSIC_BEAT_SECONDS * 8;
+// AI-assisted call-and-response choreography: the two original figures teach
+// one four-beat gesture; each companion repeats it two musical beats later.
+// These intervals stay inside the existing 19.2-second middle section.
+const RELAY_START = GROUP_MUSIC_START + MUSIC_BEAT_SECONDS * 4; // 15.92 s
+const RELAY_DELAY = MUSIC_BEAT_SECONDS * 2; // 0.96 s between companions
+const RELAY_GESTURE_DURATION = MUSIC_BEAT_SECONDS * 4; // 1.92 s per gesture
+const RELAY_END = RELAY_START + RELAY_DELAY * 3 + RELAY_GESTURE_DURATION; // 20.72 s
+const UNISON_START = GROUP_MUSIC_START + GROUP_PHRASE_SECONDS * 2; // 21.68 s
 const GROUP_DANCE_END = GROUP_MUSIC_START + GROUP_PHRASE_SECONDS * 5; // 33.2s
 const DANCE_EXTENSION = GROUP_DANCE_END - 23; // Only the middle is extended.
 const TIME_END = 32 + DANCE_EXTENSION; // 42.2s, same circle-ready interface.
@@ -332,9 +340,29 @@ function groupDanceWeight(elapsed) {
   return timeEase(elapsed, 14, 14.8) *
     (1 - timeEase(elapsed, GROUP_DANCE_END - 0.8, GROUP_DANCE_END));
 }
+// AI-assisted gesture envelope: sin(PI * progress)^2 rises from zero, peaks
+// halfway, and returns smoothly to zero. Only the start time changes, so the
+// audience sees the same gesture copied rather than several unrelated moves.
+function relayGesture(index, elapsed) {
+  const order = index < 2 ? 0 : index - 1; // green/pink together, then red/blue/yellow
+  const start = RELAY_START + order * RELAY_DELAY;
+  const progress = timeProgress(elapsed, start, start + RELAY_GESTURE_DURATION);
+  return pow(sin(PI * progress), 2);
+}
+// Return two independent blends. Demonstration uses per-person start times;
+// the repeated motif uses one clock for everyone, making the final unity visible.
+function groupResponseTiming(elapsed) {
+  const relay = timeEase(elapsed, 14.8, 15.6) *
+    (1 - timeEase(elapsed, RELAY_END, UNISON_START));
+  const united = timeWindow(elapsed, UNISON_START - 0.3, UNISON_START + 0.3,
+    UNISON_START + GROUP_PHRASE_SECONDS - 0.3, UNISON_START + GROUP_PHRASE_SECONDS + 0.3);
+  const sharedPulse = pow(sin(PI * (elapsed - UNISON_START) / RELAY_GESTURE_DURATION), 2);
+  return { relay, united, sharedPulse };
+}
 // AI-assisted choreography helper. One musical beat lasts 60/BPM seconds;
-// sin() alternates feet while five eight-beat property sets change the dance.
-// Short lerp() blends between sets avoid sudden pose switches.
+// the early phrases pass a motif from the pair to three companions; subsequent
+// phrases repeat it in unison, clap, and finish with a shared wave/open stance.
+// Short lerp() blends between poses avoid sudden switches.
 // This is a fixed beat clock, not live audio/FFT analysis.
 function groupDanceValues(index, elapsed) {
   const beat = (elapsed - GROUP_MUSIC_START) / MUSIC_BEAT_SECONDS;
@@ -361,10 +389,27 @@ function groupDanceValues(index, elapsed) {
     const blend = timeEase(elapsed, change - 0.3, change + 0.3);
     for (const key of Object.keys(pose)) pose[key] = lerp(pose[key], phrases[phrase][key], blend);
   }
+  const response = groupResponseTiming(elapsed);
+  // Waiting companions make only a small sway. The teaching gesture and its
+  // later group repetition use identical knee/step values and differ in timing.
+  const motif = (pulse) => ({ sway: pulse * 0.3, step: pulse, knee: 18,
+    bounce: pulse * 2, open: 0.12, reach: 0, stride: 2 });
+  // Each two-item array below contains [blend amount, gesture strength].
+  // The for...of destructuring reads those two numbers for one blend at a time.
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring
+  for (const [weight, pulse] of [[response.relay, relayGesture(index, elapsed)],
+      [response.united, response.sharedPulse]]) {
+    const target = motif(pulse);
+    for (const key of Object.keys(pose)) pose[key] = lerp(pose[key], target[key], weight);
+  }
+  // One clearly readable closing stance before the unchanged line-to-circle
+  // transition. groupDanceWeight() fades this pose out before 33.2 seconds.
+  const closing = timeEase(elapsed, GROUP_DANCE_END - 1.9, GROUP_DANCE_END - 1.3);
+  for (const key of ['sway', 'step', 'bounce']) pose[key] *= 1 - closing;
   return { ...common, ...pose };
 }
-// Add gestures after the general pose update: a periodic clap closes the hands,
-// then a small phase delay across the row creates a travelling wave.
+// AI-assisted hand choreography, applied after the general pose and shared
+// contact updates: demonstrate -> copy -> repeat together -> clap -> united wave.
 // Hands follow continuous Bezier arms in Character.display(), without angular elbows.
 function applyGroupHandPoses(elapsed) {
   const amount = groupDanceWeight(elapsed);
@@ -376,17 +421,28 @@ function applyGroupHandPoses(elapsed) {
     (1 - timeEase(elapsed, waveStart - 0.3, waveStart + 0.3)) * amount;
   const waving = timeEase(elapsed, waveStart - 0.3, waveStart + 0.3) * amount;
   const clap = pow(max(0, cos(PI * (beat - 1))), 4);
+  const response = groupResponseTiming(elapsed);
   for (const person of timeFigures) {
     const p = person.pose, s = person.scale;
+    // A raised left hand plus a small foot tap is the motif. The right hand
+    // opens lower for balance. Waiting figures keep relaxed, visible-length arms.
+    for (const [weight, pulse] of [[response.relay, relayGesture(person.index, elapsed)],
+        [response.united, response.sharedPulse]]) {
+      p.leftHand = timeBlendPoint(p.leftHand,
+        {x:p.shoulder.x-55*s,y:p.shoulder.y+(48-100*pulse)*s}, weight*amount);
+      p.rightHand = timeBlendPoint(p.rightHand,
+        {x:p.shoulder.x+52*s,y:p.shoulder.y+(48-22*pulse)*s}, weight*amount);
+    }
     if (clapping > 0) {
       const halfGap = (1 - clap) * 36 * s;
       p.leftHand = timeBlendPoint(p.leftHand, {x:p.shoulder.x-halfGap,y:p.shoulder.y+42*s}, clapping);
       p.rightHand = timeBlendPoint(p.rightHand, {x:p.shoulder.x+halfGap,y:p.shoulder.y+42*s}, clapping);
     }
     if (waving > 0) {
-      const order = TIME_ROW_ORDER.indexOf(person.index);
-      const wave = sin(PI * beat / 2 - order * 0.45);
-      // Original flowing wave: broad, rounded arms rather than angular elbows.
+      // Everyone now shares the same phase: the earlier delay has resolved
+      // into a group rhythm. Retain the original broad, rounded arm silhouette.
+      const closing = timeEase(elapsed, GROUP_DANCE_END - 1.9, GROUP_DANCE_END - 1.3);
+      const wave = sin(PI * beat / 2) * (1 - closing);
       p.leftHand = timeBlendPoint(p.leftHand, {x:p.shoulder.x-55*s,y:p.shoulder.y-10*s+wave*28*s}, waving);
       p.rightHand = timeBlendPoint(p.rightHand, {x:p.shoulder.x+55*s,y:p.shoulder.y-10*s-wave*28*s}, waving);
     }
