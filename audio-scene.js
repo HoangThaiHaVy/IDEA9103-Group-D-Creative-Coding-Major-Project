@@ -13,7 +13,8 @@
 //
 // AI acknowledgement: developed with help from OpenAI Codex (scene handoff,
 // easing curves, image-asset generation for the sun/cloud/campfire) and
-// Claude (soundtrack → microphone handover and end-of-track prompt). Zicen
+// Claude (soundtrack → microphone handover, end-of-track prompt, star,
+// handstand wave and human-tower ending). Zicen
 // designed the story beat, the mappings and the timing, and tested every change.
 
 let audioMechanic;
@@ -54,6 +55,30 @@ let finaleSoundtrackFinishedAt = 0;
 // smoothed loudness of everyone's sound.
 const SHARED_STAR_Y = 82;
 let sharedStarEnergy = 0;
+
+// Hand-drawn handstand poses (same colour order as AUDIO_DANCER_PATHS) and the
+// human tower used for the final "reach the light" moment.
+const AUDIO_HANDSTAND_PATHS = [
+  'assets/audio/handstand-red.png',
+  'assets/audio/handstand-yellow.png',
+  'assets/audio/handstand-green.png',
+  'assets/audio/handstand-blue.png',
+  'assets/audio/handstand-pink.png'
+];
+let audioHandstandImages = [];
+let towerImage;
+let towerImageReady = false;
+
+// Human tower: drawn so the top dancer's raised hand meets the shared star.
+// TOWER_HAND_* is the hand position inside tower-reach.png (333 x 640 px).
+const TOWER_DRAW_HEIGHT = 410;
+const TOWER_HAND_X = 207;
+const TOWER_HAND_Y = 80;
+const TOWER_GATHER = 0.9; // dancers fade out while the tower rises
+const TOWER_HOLD = 4.6; // the star flares while the tower holds it
+const TOWER_RELEASE = 0.9; // the tower fades back into the row
+const TOWER_TOTAL = TOWER_GATHER + TOWER_HOLD + TOWER_RELEASE;
+let towerStartedAt = -Infinity;
 
 // Easter egg: delay between neighbouring dancers in the handstand wave.
 const HANDSTAND_WAVE_STAGGER = 0.14;
@@ -129,6 +154,12 @@ function preloadAudioAssets() {
     ))
   );
   finaleSoundtrack = loadSound(FINALE_SOUNDTRACK_PATH);
+  audioHandstandImages = AUDIO_HANDSTAND_PATHS.map((path) => loadImage(path));
+  towerImage = loadImage(
+    'assets/audio/tower-reach.png',
+    () => { towerImageReady = true; },
+    () => { towerImageReady = false; }
+  );
 }
 
 function setupAudio() {
@@ -138,7 +169,7 @@ function setupAudio() {
     new AudioDancer(
       imageAsset,
       audioDancerPoseImages[index],
-      AUDIO_DANCER_LAYOUT[index]
+      { ...AUDIO_DANCER_LAYOUT[index], handstandImage: audioHandstandImages[index] }
     )
   );
 
@@ -259,8 +290,11 @@ function handleSoundtrackEnded() {
   if (!finaleSoundtrackStarted || finaleSoundtrackFinished) return;
   finaleSoundtrackFinished = true;
   finaleSoundtrackFinishedAt = millis() / 1000;
-  // The group takes a bow with the easter-egg move, so every visitor sees it.
+  // Ending: the group bows with a handstand wave, then climbs into a human
+  // tower to touch the star they lifted together. Then it is the visitor's turn.
   startHandstandWave(finaleSoundtrackFinishedAt);
+  towerStartedAt = finaleSoundtrackFinishedAt + HANDSTAND_TOTAL +
+    HANDSTAND_WAVE_STAGGER * 4 + 0.3;
   const micTakesOver = audioMechanic.useMicrophone();
   if (!micTakesOver) audioMechanic.source = null;
   if (audioStatus) {
@@ -364,21 +398,77 @@ function drawAudioFinale(time) {
     : peopleTransition;
   drawTimeCharactersToRow(rowProgress, oldCharacterOpacity);
   // The star from the previous scene keeps shining above the dancers.
-  drawSharedStar(time, peopleTransition);
-  if (audioData.tripleClap && rowProgress >= 1) {
+  const tower = towerProgress(time);
+  drawSharedStar(time, peopleTransition, tower.flare);
+  if (audioData.tripleClap && rowProgress >= 1 && tower.cover === 0) {
     startHandstandWave(time);
     soundHud.revealSecret();
   }
-  drawAudioDancers(time, imageCharacterProgress, 1);
+  // The row fades out while the tower is visible, and fades back afterwards.
+  drawAudioDancers(time, imageCharacterProgress, 1 - tower.cover);
+  drawHumanTower(tower);
   drawHandstandCaption(time);
-  drawSoundtrackFinishedPrompt(time);
+  if (tower.cover === 0) drawSoundtrackFinishedPrompt(time);
+}
+
+// Returns how visible the tower is (cover), how far it has risen (rise) and
+// how strongly the star flares (flare), all 0–1.
+function towerProgress(time) {
+  const elapsed = time - towerStartedAt;
+  if (audioReducedMotion || elapsed < 0 || elapsed > TOWER_TOTAL) {
+    return { cover: 0, rise: 0, flare: 0, caption: 0 };
+  }
+  const gather = strongEaseInOut(constrain(elapsed / TOWER_GATHER, 0, 1));
+  const release = strongEaseInOut(constrain(
+    (elapsed - TOWER_GATHER - TOWER_HOLD) / TOWER_RELEASE, 0, 1
+  ));
+  const holdTime = elapsed - TOWER_GATHER;
+  const flare = holdTime > 0 && holdTime < TOWER_HOLD
+    ? sin(PI * holdTime / TOWER_HOLD)
+    : 0;
+  return {
+    cover: gather * (1 - release),
+    rise: gather,
+    flare,
+    caption: min(1, max(0, holdTime) / 0.4) * (1 - release)
+  };
+}
+
+function drawHumanTower(tower) {
+  if (!towerImageReady || tower.cover <= 0) return;
+  const towerScale = TOWER_DRAW_HEIGHT / towerImage.height;
+  const towerWidth = towerImage.width * towerScale;
+  // Place the image so the raised hand sits just below-left of the star.
+  const left = width / 2 - TOWER_HAND_X * towerScale - 6;
+  const settledTop = SHARED_STAR_Y + 18 - TOWER_HAND_Y * towerScale;
+  const top = settledTop + (1 - tower.rise) * 40; // rises into place
+
+  push();
+  tint(255, 255 * tower.cover);
+  image(towerImage, left, top, towerWidth, TOWER_DRAW_HEIGHT);
+  noTint();
+  pop();
+
+  if (tower.caption > 0) {
+    push();
+    textAlign(CENTER, CENTER);
+    textStyle(BOLD);
+    textSize(20);
+    stroke('#171722');
+    strokeWeight(5);
+    drawingContext.globalAlpha *= tower.caption;
+    fill('#FFF4B7');
+    text('Together, they reach the light', width / 2, height - 22);
+    pop();
+  }
 }
 
 // The rising star's final position, now reacting to the music: louder sound
 // makes it bigger with a wider halo, and bass sends out short rays.
-function drawSharedStar(time, settleProgress) {
+function drawSharedStar(time, settleProgress, flare = 0) {
   sharedStarEnergy = lerp(sharedStarEnergy, audioData.intensity, 0.1);
-  const energy = sharedStarEnergy * settleProgress;
+  // When the tower touches the star, it flares as if the music peaked.
+  const energy = max(sharedStarEnergy * settleProgress, flare);
   const rayAmount = audioData.bass * energy;
 
   push();
@@ -434,8 +524,10 @@ function drawSoundtrackFinishedPrompt(time) {
   if (!finaleSoundtrackFinished || storyStage !== 'audioDance') return;
 
   const fadeDuration = audioReducedMotion ? 0.2 : 0.8;
+  // Fade in once the ending (handstand wave + tower) has finished.
+  const promptStart = max(finaleSoundtrackFinishedAt, towerStartedAt + TOWER_TOTAL);
   const opacityAmount = strongEaseOut(constrain(
-    (time - finaleSoundtrackFinishedAt) / fadeDuration,
+    (time - promptStart) / fadeDuration,
     0,
     1
   ));
