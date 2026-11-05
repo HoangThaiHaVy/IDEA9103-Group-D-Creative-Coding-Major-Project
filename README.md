@@ -399,12 +399,30 @@ loud or noisy microphone never makes the drawings shake, overlap badly or leave
 the canvas. Each dancer has its own phase and jump strength, so the group feels
 coordinated but not robotic. The OS *reduced motion* setting is respected.
 
+### Techniques used (Zicen)
+
+| Technique | Where | Why |
+| --- | --- | --- |
+| `p5.AudioIn`, `p5.Amplitude`, `p5.FFT` (1024 bins) | `audio-mechanic.js` | Read the soundtrack and the microphone. Each source has its own analyser pair, because p5.sound analysers keep every input they were ever connected to. |
+| Volume-independent tone balance (spectral centroid, band energy shares, dB → linear) | `AudioMechanic.measureBalance()` | A microphone is ~20 dB quieter than a music file, so raw `getEnergy()` made every sound look "bassy" and high voices barely registered. |
+| Event detection: onset + cooldown, triple clap, held sound, hum (steady pitch + concentrated spectrum + no beat) | `AudioMechanic.getSoundData()`, `detectHum()` | Each kind of sound triggers a different, readable reaction; the hum test is what separates a person humming from continuous music. |
+| `lerp()`, `constrain()`, `map()`, `pow()` curves | `audio-dancer.js` | **Tutor feedback:** reactions had to be more detailed but still visually controlled. Smoothing and limits stop shaking or overlap; `pow(volume, 1.3)` widens the gap between a quiet bob and a loud jump. |
+| Perlin `noise()` | `AudioDancer.updateTravel()` | A held sound makes each dancer drift smoothly inside its own lane. It replaced random target positions, which made the dancers jitter. |
+| `random()` | `startSoloFlip()` | Drum hits flip a random dancer into a handstand, so the group never moves in lockstep. |
+| Classes (`AudioMechanic`, `AudioDancer`, `SoundHud`, `FlipSynth`) and reuse of Emery's `Character` class | all audio files | **Tutor feedback:** connect the audio part to the rest of the program through classes. Each dancer instance stores its own position, poses, colour and phase. |
+| Transformations: `push/pop`, `translate`, `rotate`, `scale`; `tint()` crossfades; `blendMode(ADD)` | `AudioDancer.display()` | Squash on landing, handstand flips around the body centre, smooth pose changes and a coloured glow, without redrawing the hand-made art. |
+| `sin()` motion and cubic-bezier easing (Newton's method) | `audio-dancer.js`, `audio-scene.js` | Jump rhythm, flip arc and the slow-in/slow-out timing of the star, row and tower. |
+| Time-based sequencing with `millis()` | `audio-scene.js` | Star rise → nightfall → dance → handstand bow → human tower → visitor's turn. |
+| Sound synthesis (`p5.Oscillator`, `p5.Envelope`) and playback control (`play`, `pause`, `onended`) | `flip-synth.js`, `standby-music.js` | Live xylophone notes for every flip and a "Ta-da!" chord; standby music that pauses whenever a teammate's sound plays. |
+| p5 DOM (`createDiv`, `createSpan`, `createButton`) and CSS container queries | `audio-hud.js`, `style.css` | A sound panel that shows the audience what is being heard, and a stage that fits any window without scrolling. |
+
 ### Code structure
 - **`AudioMechanic` class** (`audio-mechanic.js`) – owns one
   `p5.Amplitude` + `p5.FFT` pair for the soundtrack and one for the
   microphone (p5.sound analysers keep every input they were ever given, so
   separate pairs avoid mixing the two). `getSoundData()` returns one plain
-  object `{ intensity, bass, mid, treble, longSound, shortSound, sustain, spread }`;
+  object `{ intensity, bass, mid, treble, longSound, shortSound, tripleClap,
+  humming, humProgress, sustain, spread }`;
   `createSilentSoundData()` returns the same shape when nothing is playing.
 - **`AudioDancer` class** (`audio-dancer.js`) – each instance stores its
   position, size, pose images, colour, phase and current reaction values.
@@ -415,8 +433,13 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   the event that was just detected. It shows the audience *what* the
   mechanic listens to (volume, bass, mid, treble, claps, held notes, bright /
   deep sound) and *what* each one controls – replacing the earlier raw debug
-  numbers. The secret chip reads `??? → clap 3 times fast` until the easter
-  egg is found.
+  numbers. The ⓘ button opens a pop-over with every mapping; the secret chip
+  reads `???` until the triple-clap easter egg is found.
+- **`FlipSynth` class** (`flip-synth.js`) – a pool of `p5.Oscillator` +
+  `p5.Envelope` voices created on the first sound (browsers only allow audio
+  after a click). `playNote(i)` rings dancer *i*'s pentatonic xylophone note
+  (sine + a faster-decaying overtone ×3.93, like a wooden bar);
+  `playTaDa()` plays a short G-major chord followed by a held C-major chord.
 - **Standby music** (`standby-music.js`) – a soft looping song for the
   quiet parts of the story before the audio chapter (it stays off from the
   rising star onwards). It never plays over a teammate's sound:
@@ -430,6 +453,22 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   the only calls `sketch.js` needs. The scene reuses Emery's `Character` class
   and `sketch.js`'s `drawLandscape()` with a night palette, so all mechanics
   share one visual world.
+
+### Contributions to the whole piece (Zicen)
+Beyond the audio chapter, Zicen added these changes that affect the whole
+project. The shared characters, landscape and the star as the group's common
+symbol were agreed by the team; the items below were designed and built by
+Zicen:
+- **Responsive stage** (`style.css`) – the canvas grows to the largest 16:10
+  size that fits the browser window, so the piece no longer sits small in the
+  top-left corner and desktop viewers never need to scroll.
+- **Dark stage background** – the space around the canvas is a dark "theatre"
+  colour, so the margins left by different window shapes look deliberate.
+- **Sound panel UI** (`audio-hud.js`) – the compact strip under the canvas
+  with the microphone button, live meters, event chips and the ⓘ pop-over.
+- **Standby music** (`standby-music.js`) – soft background music for quiet
+  moments of the whole story that always gives way to Vy's rain, Emery's
+  song and the finale song.
 
 ### Interaction instructions
 1. Open `index.html` through a local web server (e.g. VS Code Live Server)
