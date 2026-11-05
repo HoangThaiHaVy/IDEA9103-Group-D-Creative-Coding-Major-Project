@@ -354,14 +354,11 @@ function handleSoundtrackEnded() {
   }
 }
 
+// Click hook called by Vy's mousePressed(). The handoff from Emery's circle
+// happens automatically in sketch.js (timeCircleReady → startStarGather), so
+// a click only starts the star if the circle is ready but has not handed over.
 function handleAudioSceneClick() {
-  // Formal handoff from Emery's final circle: once the time-based sequence
-  // reports that the five characters are in place, a click begins the star.
   if (storyStage === 'timeBased' && timeCircleReady) {
-    startStarGather();
-    return true;
-  }
-  if (storyStage === 'caveEntered') {
     startStarGather();
     return true;
   }
@@ -582,6 +579,8 @@ function drawSharedStar(time, settleProgress, flare = 0) {
 
   push();
   translate(width / 2, SHARED_STAR_Y);
+  // ADD blending brightens what is underneath, like light.
+  // Reference: https://p5js.org/reference/p5/blendMode/
   blendMode(ADD);
   noStroke();
   fill(255, 236, 120, 38 * energy);
@@ -859,6 +858,10 @@ function drawAudioDancers(time, rowProgress, backgroundProgress) {
 }
 
 // Evaluates the exact cubic-bezier(0.23, 1, 0.32, 1) ease-out curve.
+// A CSS-style cubic-bezier gives y for a given x, so x(t) is first solved
+// for t with a few steps of Newton's method, then y(t) is returned.
+// References: https://developer.mozilla.org/en-US/docs/Web/CSS/easing-function/cubic-bezier
+//             https://en.wikipedia.org/wiki/Newton%27s_method
 function strongEaseOut(progress) {
   const x1 = 0.23;
   const y1 = 1;
@@ -883,7 +886,8 @@ function strongEaseOut(progress) {
     3 * inverse * parameter * parameter * y2 + parameter * parameter * parameter;
 }
 
-// Exact cubic-bezier(0.77, 0, 0.175, 1) for the star's deliberate rise.
+// Exact cubic-bezier(0.77, 0, 0.175, 1) for the star's deliberate rise
+// (same Newton's-method approach as strongEaseOut above).
 function strongEaseInOut(progress) {
   const x1 = 0.77;
   const y1 = 0;

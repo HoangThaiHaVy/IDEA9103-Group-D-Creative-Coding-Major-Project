@@ -248,6 +248,7 @@ class AudioDancer {
   // Soft halo in the dancer's own colour; brighter high frequencies make it
   // larger and stronger. ADD blending lightens the night sky like real light,
   // and two layered circles read as a glow without a slow blur filter.
+  // Reference: https://p5js.org/reference/p5/blendMode/
   drawGlow(x, y, alpha) {
     if (this.glow <= 0.02 || !this.colour) return;
     const glowColour = color(this.colour);

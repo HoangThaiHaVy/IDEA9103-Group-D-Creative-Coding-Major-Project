@@ -181,7 +181,8 @@ class AudioMechanic {
     for (let i = 1; i < spectrum.length; i += 1) {
       const frequency = i * nyquist / spectrum.length;
       if (frequency < 40 || frequency > 8000) continue;
-      // Decibel-like byte → linear energy (minus the silent floor of 1).
+      // Decibel-like byte → linear energy (minus the silent floor of 1);
+      // see the getByteFrequencyData reference in detectHum() below.
       const energy = pow(10, spectrum[i] * 0.0275) - 1;
       total += energy;
       weightedLogFrequency += energy * Math.log2(frequency);
@@ -218,8 +219,10 @@ class AudioMechanic {
       this.pitchSteadySince = now;
     }
 
-    // p5.FFT returns decibel-like values 0–255; pow(10, v * 0.0275) turns them
-    // back into linear energy (about 70 dB range) so the shares are meaningful.
+    // p5.FFT returns decibel-like values 0–255 (the Web Audio analyser maps
+    // about -100…-30 dB onto 0–255). pow(10, v * 0.0275) undoes that: 70 dB / 255
+    // ≈ 0.275 dB per step, and energy = 10^(dB / 10), so the shares are meaningful.
+    // Reference: https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData
     const energies = [];
     for (let i = binFor(80); i <= binFor(4000); i += 1) {
       energies.push(pow(10, spectrum[i] * 0.0275));

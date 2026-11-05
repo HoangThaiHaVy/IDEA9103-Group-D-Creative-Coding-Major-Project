@@ -1,6 +1,8 @@
 # IDEA9103-Group-D-Creative-Coding-Major-Project
 Move Together Story
 
+**▶ Live demo:** https://hoangthaihavy.github.io/IDEA9103-Group-D-Creative-Coding-Major-Project/ – click once on the page so the browser allows sound.
+
 # Project Inspiration: Keith Haring’s "Untitled (Dance)" (1987)
 Move Together draws inspiration from Keith Haring’s "Untitled (Dance)" (1987), a work that captures the energy of dance through simplified human figures, dynamic poses and expressive movement. Haring’s distinctive visual language transforms the human body into a powerful symbol of movement, interaction and connection. Rather than relying on realistic details or facial expressions, he uses bold outlines, exaggerated gestures and rhythmic compositions to communicate emotion and energy. The relationships between the figures are particularly significant, as their movements appear interconnected, creating a sense of collective rhythm and shared experience.
 
@@ -25,7 +27,7 @@ Connecting with the user input's storyline: Character one agrees to share an umb
 
 03. Collective Movement: Audio (Zicen)
 
-Connecting with the audio's storyline: when the five friends close their circle, a small star appears between their joined hands. Together they lift the light into the sky, and night falls over the same landscape. Under the star the friends let go, step into a row and turn into Haring-style dancers around a campfire. A song starts, and every beat, bass line and bright cymbal changes how each dancer jumps, glows and poses. When the song ends, the visitor is invited to take over with their own music, claps, humming or singing — the audience becomes the last member of the group, and the story ends with everyone moving together.
+Connecting with the audio's storyline: when the five friends close their circle, a small star appears between their joined hands. Together they lift the light into the sky, and night falls over the same landscape. Under the star the friends let go, step into a row and turn into Haring-style dancers around a campfire. A song starts, and the music moves them: loud beats make them jump higher, deep sounds pull them into a huddle, bright sounds throw them wide apart and make them glow, and on the drum hits they tumble into handstands one by one. When the song ends, they take a bow with a handstand wave, each flip ringing a xylophone note, and finish with a "Ta-da!". Then the five climb on each other's shoulders into a human tower, and the friend at the top reaches up and touches the star they lifted together – it flares with a sparkling chime. Finally the visitor is invited to join in with their own music, claps or singing; if everyone hums one steady note together, the friends build the tower again, one level for every second of humming, until they reach the light. The audience becomes the last member of the group, and the story ends with everyone moving together.
 
 
 # Technologies
@@ -471,8 +473,9 @@ Zicen:
   song and the finale song.
 
 ### Interaction instructions
-1. Open `index.html` through a local web server (e.g. VS Code Live Server)
-   and follow the story by clicking (Vy's and Emery's sections).
+1. Open the live demo (https://hoangthaihavy.github.io/IDEA9103-Group-D-Creative-Coding-Major-Project/), or open `index.html`
+   through a local web server (e.g. VS Code Live Server), and follow the story
+   by clicking (Vy's and Emery's sections).
 2. Turn your speakers on: after the circle, watch the star rise and the
    dancers react to the soundtrack.
 3. Click **Enable microphone** under the canvas and allow access (you can do
@@ -509,7 +512,8 @@ Zicen:
   https://p5js.org/reference/#/libraries/p5.sound
 - Easing curves `cubic-bezier(0.23, 1, 0.32, 1)` and `(0.77, 0, 0.175, 1)`
   evaluated with Newton's method in `strongEaseOut()` / `strongEaseInOut()` –
-  https://developer.mozilla.org/en-US/docs/Web/CSS/easing-function
+  https://developer.mozilla.org/en-US/docs/Web/CSS/easing-function/cubic-bezier
+  and https://en.wikipedia.org/wiki/Newton%27s_method
 - `blendMode(ADD)` for the glow halo and star – https://p5js.org/reference/p5/blendMode/
 - p5 DOM (`createDiv`, `createSpan`, `addClass`, `style`) for the sound panel –
   https://p5js.org/reference/p5/createDiv/
