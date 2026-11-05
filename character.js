@@ -6,7 +6,7 @@ let characterHeads = [];
 let headAssets = [];
 function preloadCharacterHeads() {
   const names = ['green', 'pink', 'red', 'blue', 'yellow'];
-  headAssets = names.map(name => loadImage('assets/time-based/heads/' + name + '.png'));
+  headAssets = names.map(name => loadImage('assets/time-based/' + name + '.png'));
 }
 function prepareCharacterHeads() {
   // These PNGs were exported from the previous prepareCharacterHeads() pixels.

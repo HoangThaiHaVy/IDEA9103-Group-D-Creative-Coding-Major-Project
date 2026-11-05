@@ -7,7 +7,7 @@ const SHARED_CLOUDS = [
   { startX: 620, y: 132, width: 126, height: 63, speed: 7 }
 ];
 function preloadBackgroundAssets() {
-  sharedCloudImage = loadImage('assets/background/cloud-cream.png',
+  sharedCloudImage = loadImage('assets/time-based/cloud-cream.png',
     () => { sharedCloudReady = true; },
     () => { sharedCloudReady = false; });
 }
