@@ -2,11 +2,11 @@
 // AI acknowledgement: this module was generated and revised with the help of
 // OpenAI Codex. It turns elapsed time into character poses, schedules five
 // dance phrases and music fades, and signals timeCircleReady for the audio scene.
-// Emery specified the narrative sequence and iterated the visual behaviour.
+// I specified the narrative sequence and iterated the visual behaviour.
 // All functions below are within this AI-assisted scope; helper comments explain
 // the calculations and identify technical references where relevant.
 // Read: startTimeBased() -> updateTimeBased() -> drawTimeBased().
-// Shared globals used by the main sketch and audio handoff.
+// Shared globals used by the main sketch and audio handoff to ramain consistent.
 // timeStartedAt is captured once; timeElapsed and poses change on each frame.
 let timeFigures = [];
 let timeStartedAt = 0;
@@ -35,10 +35,10 @@ let groupMusicStarted = false;
 const GROUP_MUSIC_VOLUME = 0.32;
 
 // Called from p5 preload(), so images and the group song are ready before setup.
-// The MP3 is an external asset, not AI-generated music or a team composition.
+// The MP3 is an external asset.
 function preloadTimeBasedAssets() {
   preloadCharacterHeads();
-  // Happy Commercial (Piano) — MaxKoMusic, supplied by Emery.
+  // Happy Commercial (Piano) — MaxKoMusic.
   // Source/credit: https://www.chosic.com/download-audio/27305/
   groupDanceMusic = loadSound('assets/time-based/group-dance.mp3');
 }
@@ -269,7 +269,7 @@ function drawTimeBased() {
   for (const person of [...timeFigures].sort((a, b) => a.y - b.y)) person.display(reveal);
 }
 
-// AI-assisted throw: interpolate to the release pose, then move left with a
+// Throw: interpolate to the release pose, then move left with a
 // quadratic vertical path (initial upward motion plus a downward t*t term).
 // The grip point uses sin/cos to follow the handle as the umbrella rotates.
 function getTimeUmbrellaPose(t) {
@@ -363,7 +363,7 @@ function groupResponseTiming(elapsed) {
 // the early phrases pass a motif from the pair to three companions; subsequent
 // phrases repeat it in unison, clap, and finish with a shared wave/open stance.
 // Short lerp() blends between poses avoid sudden switches.
-// This is a fixed beat clock, not live audio/FFT analysis.
+// This is a fixed beat clock.
 function groupDanceValues(index, elapsed) {
   const beat = (elapsed - GROUP_MUSIC_START) / MUSIC_BEAT_SECONDS;
   const step = sin(PI * beat); // Alternating feet: one step per musical beat.
