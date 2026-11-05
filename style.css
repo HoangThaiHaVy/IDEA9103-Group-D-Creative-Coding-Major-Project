@@ -3,9 +3,175 @@ html, body {
   padding: 0;
 }
 
-canvas {
+body {
+  font-family: Arial, sans-serif;
+  color: #171722;
+}
+
+/* Responsive stage: the canvas keeps p5's 800x500 drawing coordinates but is
+   displayed as large as the window allows (16:10), centred on the page, with
+   room left below for the sound panel. p5 converts mouse positions back to
+   canvas coordinates, so clicks still land on the right spot. */
+:root {
+  --stage-width: max(320px, min(100vw - 32px, (100vh - 300px) * 1.6, 1400px));
+}
+
+main {
+  width: var(--stage-width);
+  margin: 0 auto;
+  padding: 16px 0 24px;
+  box-sizing: border-box;
+}
+
+#sketch-holder canvas {
   display: block;
-  /* Scale the visible canvas while preserving p5's 800x500 drawing coordinates. */
-  max-width: 100%;
+  width: 100% !important;
   height: auto !important;
+}
+
+#instruction {
+  margin: 10px 0 0;
+  font-size: 15px;
+  text-align: center;
+}
+
+/* ===== Zicen: sound panel (audio-hud.js) ===== */
+.sound-hud {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 3px solid #171722;
+  border-radius: 12px;
+  background: #FFF7D6;
+  box-shadow: 4px 4px 0 #171722;
+}
+
+.sound-hud__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sound-hud__title {
+  font-weight: 700;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sound-hud__source {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border: 2px solid #171722;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.sound-hud.is-live .sound-hud__source {
+  background: #BCEB35;
+}
+
+.sound-hud__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.sound-hud__button {
+  font: 700 14px Arial, sans-serif;
+  padding: 7px 14px;
+  border: 2px solid #171722;
+  border-radius: 8px;
+  background: #FFD02E;
+  box-shadow: 2px 2px 0 #171722;
+  cursor: pointer;
+}
+
+.sound-hud__button:disabled {
+  background: #BCEB35;
+  cursor: default;
+}
+
+.sound-hud__status {
+  margin: 0;
+  font-size: 13px;
+}
+
+.sound-hud__meters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px 18px;
+}
+
+.sound-hud__meter {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+}
+
+.sound-hud__label {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.sound-hud__track {
+  height: 14px;
+  border: 2px solid #171722;
+  border-radius: 999px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.sound-hud__fill {
+  width: 0;
+  height: 100%;
+  transition: width 80ms linear;
+}
+
+.sound-hud__effect {
+  grid-column: 2;
+  font-size: 12px;
+  color: #4a4a58;
+}
+
+.sound-hud__events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.sound-hud__chip {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border: 2px solid #171722;
+  border-radius: 999px;
+  background: #ffffff;
+  opacity: 0.55;
+  transition: opacity 120ms, background 120ms, transform 120ms;
+}
+
+.sound-hud__chip.is-active {
+  opacity: 1;
+  background: #FFD02E;
+  transform: translateY(-2px);
+}
+
+.sound-hud__chip.is-revealed {
+  opacity: 1;
+  background: #F9B8DA;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sound-hud__fill,
+  .sound-hud__chip {
+    transition: none;
+  }
 }
