@@ -23,9 +23,9 @@ Just when everything seems at its worst, a soft pink glow appears in the distanc
 
 Connecting with the user input's storyline: Character one agrees to share an umbrella with character two. Character two slowly helps character one stand up, and they both use the umbrella as the rain stops. The two characters dance together, sharing happy smiles (this scene shows the beginning of their friendship). Then, the two characters walk forward, encountering a group of three friends approaching. All five then hold hands and line up horizontally. Next, the characters place their hands on each other's shoulders (representing their friendship). Finally, all five dance together, gradually forming a circle.
 
-03. Collective Movement: Audio (Zichen)
+03. Collective Movement: Audio (Zicen)
 
-Connecting with the audio's storyline: After the five characters form a circle, they hold hands and extend them forward, creating a changing light around them that shifts color according to the rhythm of the music. Then, the characters move together in a slow, circular motion; a small star slowly appears in the center. At this point, the circle gradually narrows, and the star hovers above the characters. Then all five characters raise their hands to the sky as if cradling the small star. This connection creates a large source of light, the star becomes brighter and rises into the air (the five characters below look up). The star grows larger. And a breathtaking scene unfolds, the characters...
+Connecting with the audio's storyline: when the five friends close their circle, a small star appears between their joined hands. Together they lift the light into the sky, and night falls over the same landscape. Under the star the friends let go, step into a row and turn into Haring-style dancers around a campfire. A song starts, and every beat, bass line and bright cymbal changes how each dancer jumps, glows and poses. When the song ends, the visitor is invited to take over with their own music, claps, humming or singing — the audience becomes the last member of the group, and the story ends with everyone moving together.
 
 
 # Technologies
@@ -36,8 +36,10 @@ Connecting with the audio's storyline: After the five characters form a circle, 
 
 # Project Structure
 
-- `audio-mechanic.js`: Zicen's microphone, amplitude, and frequency analysis module.
-- `Alice-Audio.js`: Zicen's audio setup, asset animation, drawing, and reset hooks.
+- `audio-mechanic.js`: Zicen's `AudioMechanic` class – soundtrack/microphone amplitude and FFT analysis.
+- `audio-dancer.js`: Zicen's reusable `AudioDancer` class – how one dancer reacts to sound.
+- `audio-scene.js`: Zicen's finale – star, nightfall, handoff from Emery's circle, soundtrack and microphone controls.
+- `assets/audio`: Zicen's dancer poses, campfire, sun/cloud images and finale soundtrack.
 - `Emery- Time-Base.js`: Emery's time-based interaction component.
 - `LICENSE`: Project license and usage terms.
 - `README.md`: Project overview, setup instructions, and documentation.
@@ -311,30 +313,91 @@ Regarding the narrative flow design, I have organized the program into distinct,
 || MECHANIC 3 ||
 ## AUDIO – Zicen
 
-Zicen developed the microphone-driven mechanic. The **Enable microphone**
-button starts `p5.AudioIn`; `p5.Amplitude` measures overall intensity and
-`p5.FFT` extracts bass and treble energy. These values control the red sun's
-scale and vertical pulse, the cream clouds' speed and bobbing, and a small
-sound-level indicator. The analysis is isolated in `audio-mechanic.js`, while
-`Alice-Audio.js` connects the data to the shared scene.
+### Overview
+Zicen directed the **audio** mechanic: the final chapter of *Move Together*,
+where the level and frequency content of an audio track – and then the
+visitor's own sound – drive five dancers. It is the payoff of the story: the
+friendship built by Vy's clicks and Emery's timeline becomes a dance that the
+audience can join.
 
-The final audio scene begins inside a dark violet cave with a central campfire.
-Clicking the fire reveals a psychedelic cave background over 2.5 seconds, then
-five dancers enter with a short stagger. Overall volume changes their scale and
-bounce, bass controls their jump height and the fire pulse, and treble controls
-their sway and rotation. The scene respects the operating system's reduced
-motion preference.
+### Story beats (`audio-scene.js`)
+1. **Handoff** – `sketch.js` calls `startStarGather()` once Emery's
+   `timeCircleReady` flag is true, so the finale always starts from Emery's
+   real final frame (same `Character` objects, positions and joined hands).
+2. **Rising star (6.8 s)** – a star rises from the circle; the day palette
+   cross-fades to the night palette of the same landscape.
+3. **Row and transformation (5.2 s)** – Emery's figures release hands, walk
+   into a row, strike a dance pose and cross-fade into Zicen's image dancers
+   of matching colours. A campfire then lights up behind them.
+4. **Soundtrack dance** – *Funky Drums Bass And Claps* plays once and is
+   analysed live, so the scene reacts to sound even before the microphone is on.
+5. **Your turn** – when the song ends a banner asks the visitor to play
+   music, clap, hum or sing. With the microphone enabled, the dance continues
+   for as long as the visitor keeps making sound.
+
+### Sound → visual mapping (response to tutor feedback)
+Our Week 9 feedback asked for *more detail on how the characters react to
+sound, while still looking visually appealing, and for the work to connect to
+the rest of the program through classes*. Instead of one volume-to-movement
+rule, each sound feature now controls a different, readable property:
+
+| Sound feature (`AudioMechanic`) | Dancer reaction (`AudioDancer`) | Limit that keeps it tidy |
+| --- | --- | --- |
+| Overall volume (`p5.Amplitude`) | Dance tempo and jump height, slight scale-up | Jump ≤ ~1.5 × `jumpStrength`, scale ≤ 6% |
+| Bass energy (`p5.FFT`) | Squash on landing, darker ground shadow, campfire pulse | Squash ≤ 9%, only near the ground |
+| Treble energy | Coloured glow halo in the dancer's own colour, extra tilt | Tilt ≤ ~4°, glow 0–1 |
+| Short sound (clap / drum hit) | Switches to the next hand-drawn pose with a burst of rays | 320 ms cooldown (mic), 1 s (song) |
+| Long sound (hum / held note) | Smooth Perlin-noise travel inside the dancer's own lane | ±24 px per lane, no collisions |
+| Bright vs. bass-heavy sound | Row spreads out or gathers closer together | Spread 0.72–1, campfire stays visible |
+
+All values are smoothed with `lerp()` and limited with `constrain()`, so a
+loud or noisy microphone never makes the drawings shake, overlap badly or leave
+the canvas. Each dancer has its own phase and jump strength, so the group feels
+coordinated but not robotic. The OS *reduced motion* setting is respected.
+
+### Code structure
+- **`AudioMechanic` class** (`audio-mechanic.js`) – owns one
+  `p5.Amplitude` + `p5.FFT` pair for the soundtrack and one for the
+  microphone (p5.sound analysers keep every input they were ever given, so
+  separate pairs avoid mixing the two). `getSoundData()` returns one plain
+  object `{ intensity, bass, mid, treble, longSound, shortSound, sustain, spread }`;
+  `createSilentSoundData()` returns the same shape when nothing is playing.
+- **`AudioDancer` class** (`audio-dancer.js`) – each instance stores its
+  position, size, pose images, colour, phase and current reaction values.
+  `update(time, sound)` turns sound data into movement; `display()` draws the
+  shadow, glow, burst and pose cross-fade.
+- **Scene functions** (`audio-scene.js`) – `preloadAudioAssets()`,
+  `setupAudio()`, `updateAudio()`, `drawAudioFinale()` and `drawAudio()` are
+  the only calls `sketch.js` needs. The scene reuses Emery's `Character` class
+  and `sketch.js`'s `drawLandscape()` with a night palette, so all mechanics
+  share one visual world.
 
 ### Interaction instructions
+1. Open `index.html` through a local web server (e.g. VS Code Live Server)
+   and follow the story by clicking (Vy's and Emery's sections).
+2. Turn your speakers on: after the circle, watch the star rise and the
+   dancers react to the soundtrack.
+3. Click **Enable microphone** under the canvas and allow access (you can do
+   this at any time). When the song ends, play your favourite music, clap,
+   hum or sing:
+   - louder → higher, faster jumps; low/bass sounds → stronger knee squash;
+   - whistling or bright sounds → brighter coloured glow and a wider row;
+   - a sharp clap → every dancer changes pose with a small burst;
+   - a long steady hum → the dancers drift smoothly left and right.
+4. The panel under the canvas shows the live source and values
+   (`SOURCE`, `MODE`, `VOLUME`, `BASS`, `TREBLE`, …).
+5. Testing shortcuts: `?audioTest=star` (start at the rising star),
+   `?audioTest=dance` (start at the dance; click once to allow audio).
 
-1. Open the project through a local web server.
-2. Select **Enable microphone** and allow microphone access.
-3. Speak, clap, or play music. Louder sound enlarges the sun, bass lifts it,
-   and high frequencies increase the clouds' movement.
-4. Continue clicking the character and scene prompts to experience the story.
-5. After entering the cave, click the campfire to reveal the audio-controlled
-   dance. For direct testing, open the project with `?audioTest=1`.
-
+### External references
+- p5.sound `p5.AudioIn`, `p5.Amplitude`, `p5.FFT`, `userStartAudio()` –
+  https://p5js.org/reference/#/libraries/p5.sound
+- Easing curves `cubic-bezier(0.23, 1, 0.32, 1)` and `(0.77, 0, 0.175, 1)`
+  evaluated with Newton's method in `strongEaseOut()` / `strongEaseInOut()` –
+  https://developer.mozilla.org/en-US/docs/Web/CSS/easing-function
+- `blendMode(ADD)` for the glow halo – https://p5js.org/reference/p5/blendMode/
+- Soundtrack: *Funky Drums Bass And Claps* by Emmraan, Pixabay Content
+  License – https://pixabay.com/service/license-summary/
 
 ---------------------------------------------------------------------------------
 
@@ -343,5 +406,14 @@ motion preference.
 OpenAI Codex was used to assist with debugging, modular integration, audio-data
 mapping, and the generation of the transparent red-sun and cream-cloud image
 assets. The team reviewed and adapted the resulting code. The audio code uses
-`p5.AudioIn`, `p5.Amplitude`, and `p5.FFT`; comments in `audio-mechanic.js` and
-`Alice-Audio.js` identify the assisted sections and explain their purpose.
+`p5.AudioIn`, `p5.Amplitude`, and `p5.FFT`; comments in `audio-mechanic.js`,
+`audio-dancer.js` and `audio-scene.js` identify the assisted sections and
+explain their purpose.
+
+Claude (Anthropic) was used by Zicen for a final review of the audio mechanic
+against the brief and the tutor feedback. It helped write: separate analysers
+so the soundtrack and the microphone can each drive the dancers, the
+end-of-song prompt, the glow / squash / shadow / burst reaction layers in
+`AudioDancer`, and the rewritten audio section of this README. Zicen chose
+which suggestions to keep, tuned the limits by testing in the browser, and the
+header comment of each file states what was assisted.
