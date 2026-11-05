@@ -16,7 +16,7 @@ class AudioMechanic {
     this.previousHighMid = 0;
     this.voiceSustain = 0;
     this.lastAnalysisAt = null;
-    this.spreadAmount = 0.88;
+    this.spreadAmount = 0.92;
   }
 
   startAudio(onReady, onError) {
@@ -48,7 +48,7 @@ class AudioMechanic {
         longSound: false,
         shortSound: false,
         sustain: 0,
-        spread: 0.88,
+        spread: 0.92,
         clap: false
       };
     }
@@ -95,13 +95,14 @@ class AudioMechanic {
     const shortSound = clap;
 
     // Bright sounds spread the group; bass-heavy sounds gather it. The hard
-    // lower bound preserves a readable gap between neighbouring characters.
+    // A wide range makes the response legible: bass-heavy sounds can create
+    // controlled overlap, while bright sounds restore a fully open row.
     const spectralTotal = bass + mid + highMid + treble + 0.08;
     const brightness = (highMid + treble + 0.04) / spectralTotal;
     const spreadTarget = voiceActive
-      ? constrain(map(brightness, 0.18, 0.72, 0.72, 1), 0.72, 1)
-      : 0.88;
-    this.spreadAmount = lerp(this.spreadAmount, spreadTarget, 0.055);
+      ? constrain(map(brightness, 0.28, 0.58, 0.52, 1), 0.52, 1)
+      : 0.92;
+    this.spreadAmount = lerp(this.spreadAmount, spreadTarget, 0.12);
 
     return {
       intensity,

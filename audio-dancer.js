@@ -56,7 +56,7 @@ class AudioDancer {
     this.lastUpdateTime = time;
 
     const intensity = sound.intensity || 0;
-    const spread = constrain(sound.spread || 0.92, 0.72, 1);
+    const spread = constrain(sound.spread || 0.92, 0.52, 1);
     const laneAnchor = width / 2 + (this.baseX - width / 2) * spread;
 
     // A sustained sound opens a continuous Perlin-noise path. Unlike random
@@ -64,7 +64,7 @@ class AudioDancer {
     // Each character stays inside its own lane, preventing overlap.
     if (sound.longSound) {
       const noisePosition = noise(time * 0.2 + this.phase * 4.7);
-      const laneTravel = 5 + spread * 7;
+      const laneTravel = 10 + spread * 14;
       this.targetX = laneAnchor + map(noisePosition, 0, 1, -laneTravel, laneTravel);
     } else {
       this.targetX = lerp(this.targetX, laneAnchor, 0.035);

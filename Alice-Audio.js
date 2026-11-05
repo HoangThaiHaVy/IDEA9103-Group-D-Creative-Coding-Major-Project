@@ -14,7 +14,7 @@ let audioData = {
   longSound: false,
   shortSound: false,
   sustain: 0,
-  spread: 0.88,
+  spread: 0.92,
   clap: false
 };
 let audioButton;
@@ -36,6 +36,7 @@ let starGatherStartedAt = 0;
 let audioDanceStartedAt = 0;
 let audioReducedMotion = false;
 let audioStartsFromTimeCircle = false;
+let timeCircleHandoff = [];
 
 const AUDIO_DANCER_PATHS = [
   'assets/audio/classic-red.png',
@@ -191,11 +192,28 @@ function startAudioDance() {
   if (audioStartsFromTimeCircle && timeFigures.length >= 5) {
     // Match each image colour to Emery's Character colour order so every
     // sticker grows from its own figure instead of appearing like a page cut.
-    const figureOrderForImages = [2, 4, 0, 3, 1];
     audioDancers.forEach((dancer, index) => {
-      const figure = timeFigures[figureOrderForImages[index]];
-      dancer.setEntranceOrigin(figure.x, figure.y);
+      // The vector figure reaches this row position before its matching image
+      // fades in, so the identity changes without a second travel path.
+      const target = AUDIO_DANCER_LAYOUT[index];
+      dancer.setEntranceOrigin(target.x, target.y);
     });
+    // Preserve Emery's exact linked-hand pose. These Character drawings move
+    // into a row before they crossfade into Zicen's image-based dancers.
+    timeCircleHandoff = timeFigures.map((figure) => ({
+      x: figure.x,
+      y: figure.y,
+      stand: figure.stand,
+      sway: figure.sway,
+      step: figure.step,
+      knee: figure.knee,
+      bounce: figure.bounce,
+      open: figure.open,
+      reach: figure.reach,
+      scale: figure.scale,
+      facing: figure.facing,
+      pose: cloneCharacterPose(figure.pose)
+    }));
   }
   storyStage = 'audioDance';
   audioDanceStartedAt = millis() / 1000;
@@ -233,7 +251,7 @@ function updateAudio() {
       longSound: false,
       shortSound: false,
       sustain: 0,
-      spread: 0.88,
+      spread: 0.92,
       clap: false
     };
 
@@ -280,12 +298,13 @@ function drawAudioFinale(time) {
 
   const elapsed = audioDanceStartedAt > 0 ? time - audioDanceStartedAt : 0;
   const rowStart = audioReducedMotion ? 0 : 0.35;
-  const rowDuration = audioReducedMotion ? 0.2 : 4.0;
-  const peopleTransition = strongEaseInOut(constrain(
+  const rowDuration = audioReducedMotion ? 0.2 : 5.2;
+  const rowProgress = constrain(
     (elapsed - rowStart) / rowDuration,
     0,
     1
-  ));
+  );
+  const peopleTransition = strongEaseInOut(rowProgress);
   // The campfire waits until the row transformation has fully settled.
   const fireProgress = strongEaseOut(constrain(
     (elapsed - (audioReducedMotion ? 0 : rowStart + rowDuration + 0.6)) /
@@ -299,9 +318,18 @@ function drawAudioFinale(time) {
   drawNightLandscape(time, 1);
   // Fire is drawn first, so it remains behind both generations of characters.
   drawCampfire(time, fireProgress, 1);
-  drawGatheredCharacters(time, 1 - peopleTransition);
+  // First form the row, then hold Emery's figures long enough for them to make
+  // a dance pose. Only the final 22% crossfades to Zicen's image artwork.
+  const hasTimeHandoff = audioStartsFromTimeCircle && timeCircleHandoff.length >= 5;
+  const oldCharacterOpacity = hasTimeHandoff
+    ? 1 - strongEaseOut(constrain((rowProgress - 0.78) / 0.22, 0, 1))
+    : 0;
+  const imageCharacterProgress = hasTimeHandoff
+    ? strongEaseOut(constrain((rowProgress - 0.78) / 0.22, 0, 1))
+    : peopleTransition;
+  drawTimeCharactersToRow(rowProgress, oldCharacterOpacity);
   drawRisingStar(time, width / 2, 82, 1 - peopleTransition, 1);
-  drawAudioDancers(time, peopleTransition, 1);
+  drawAudioDancers(time, imageCharacterProgress, 1);
 }
 
 function drawStarGathering(time) {
@@ -350,6 +378,63 @@ function drawGatheredCharacters(time, opacityAmount) {
     drawingContext.globalAlpha *= opacityAmount;
     drawTimeBased();
     pop();
+  }
+}
+
+function cloneCharacterPose(pose) {
+  if (!pose) return null;
+  const copy = {};
+  for (const [name, point] of Object.entries(pose)) {
+    copy[name] = { x: point.x, y: point.y };
+  }
+  return copy;
+}
+
+function drawTimeCharactersToRow(progress, opacityAmount) {
+  if (!audioStartsFromTimeCircle || timeCircleHandoff.length < 5 || opacityAmount <= 0) return;
+
+  // 0–52%: release hands and settle into the row.
+  // 52–60%: visibly hold the completed row.
+  // 60–78%: stay in place while the arms form a readable dance pose.
+  // 78–100%: the caller crossfades this drawing into the image artwork.
+  const move = strongEaseInOut(constrain(progress / 0.52, 0, 1));
+  const poseChange = strongEaseInOut(constrain((progress - 0.6) / 0.18, 0, 1));
+  const layoutByFigure = [2, 4, 0, 3, 1];
+  const danceOpen = [0.72, 0.58, 0.8, 0.64, 0.75];
+  const danceSway = [-0.42, 0.34, -0.3, 0.4, -0.36];
+  const danceStep = [0.28, -0.32, 0.24, -0.27, 0.3];
+
+  for (let figureIndex = 0; figureIndex < timeFigures.length; figureIndex += 1) {
+    const figure = timeFigures[figureIndex];
+    const start = timeCircleHandoff[figureIndex];
+    const layoutIndex = layoutByFigure.indexOf(figureIndex);
+    const target = AUDIO_DANCER_LAYOUT[layoutIndex];
+
+    figure.update({
+      x: lerp(start.x, target.x, move),
+      y: lerp(start.y, target.y, move),
+      stand: lerp(start.stand, 1, move),
+      sway: lerp(lerp(start.sway, 0, move), danceSway[figureIndex], poseChange),
+      step: lerp(lerp(start.step, 0, move), danceStep[figureIndex], poseChange),
+      knee: lerp(lerp(start.knee, 0, move), 12, poseChange),
+      bounce: lerp(start.bounce, 0, move),
+      open: lerp(lerp(start.open, 0.16, move), danceOpen[figureIndex], poseChange),
+      reach: lerp(lerp(start.reach, 0, move), 18, poseChange),
+      scale: lerp(start.scale, 0.72, move),
+      facing: 1
+    });
+
+    // Blend the linked skeleton itself into the new pose. The shared hand
+    // points therefore separate gradually instead of snapping apart.
+    if (start.pose) {
+      for (const [name, targetPoint] of Object.entries(figure.pose)) {
+        figure.pose[name] = timeBlendPoint(start.pose[name], targetPoint, move);
+      }
+    }
+  }
+
+  for (const person of [...timeFigures].sort((a, b) => a.y - b.y)) {
+    person.display(opacityAmount);
   }
 }
 
@@ -540,13 +625,14 @@ function resetAudio() {
     longSound: false,
     shortSound: false,
     sustain: 0,
-    spread: 0.88,
+    spread: 0.92,
     clap: false
   };
   audioCloudOffset = 0;
   starGatherStartedAt = 0;
   audioDanceStartedAt = 0;
   audioStartsFromTimeCircle = false;
+  timeCircleHandoff = [];
 
   if (audioButton) {
     audioButton.removeAttribute('disabled');
