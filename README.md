@@ -33,16 +33,9 @@ The group then repeats the gesture in unison, developing into coordinated swayin
 
 Connecting with the audio's storyline: when the five friends close their circle, a small star appears between their joined hands. Together they lift the light into the sky, and night falls over the same landscape. Under the star the friends let go, step into a row and turn into Haring-style dancers around a campfire. A song starts, and the music moves them: loud beats make them jump higher, deep sounds pull them into a huddle, bright sounds throw them wide apart and make them glow, and on the drum hits they tumble into handstands one by one. When the song ends, they take a bow with a handstand wave, each flip ringing a xylophone note, and finish with a "Ta-da!". Then the five climb on each other's shoulders into a human tower, and the friend at the top reaches up and touches the star they lifted together – it flares with a sparkling chime. Finally the visitor is invited to join in with their own music, claps or singing; if everyone hums one steady note together, the friends build the tower again, one level for every second of humming, until they reach the light. The audience becomes the last member of the group, and the story ends with everyone moving together.
 
-
-# Technologies
-- p5.js
-- HTML
-- CSS
-- JavaScript
-
 # Overall Techniques and Integration
 
-The project uses one p5.js animation loop and shared story state to connect three separately organised mechanics. Each chapter changes how the audience experiences connection while reusing the same setting and character identities.
+Built with p5.js, JavaScript, HTML and CSS, the project uses one p5.js animation loop and shared story state to connect three separately organised mechanics. HTML loads the scripts and provides the page structure, while CSS controls the layout and responsive presentation. Each chapter explores connection while reusing the same setting and character identities.
 
 | Mechanic / shared technique | Purpose and design decision |
 | --- | --- |
