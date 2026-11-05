@@ -1129,7 +1129,7 @@ image(
 pop();
 
   // Emery integration fix: restore the outer drawing state on every frame.
-  pop();
+  
 
   function drawCharacter2Umbrella(x, y) {
   push();
