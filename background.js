@@ -1,16 +1,28 @@
-// Shared outdoor sky — Emery, developed with OpenAI Codex assistance.
-// Clouds depend only on elapsed seconds, never microphone data.
+// SHARED DAYTIME SKY — Emery / Xinran Xu
+// AI acknowledgement: the cloud-motion helpers below were generated and revised
+// with the help of OpenAI Codex. They calculate automatic drift from elapsed
+// seconds, wrap clouds at the canvas edges and draw the shared daytime sky.
+// The cloud PNG reuses the team's existing AI-assisted image. Sun assets and
+// sound-response data come from Zicen's audio module; this file does not change
+// that mapping. Clouds do not depend on microphone input.
 let sharedCloudImage;
 let sharedCloudReady = false;
 const SHARED_CLOUDS = [
   { startX: 230, y: 88, width: 164, height: 82, speed: 11 },
   { startX: 620, y: 132, width: 126, height: 63, speed: 7 }
 ];
+// Reuse the team's AI-assisted cream-cloud PNG; ready flags select the image
+// or the existing simple cloud drawing. The image source is credited in README.
 function preloadBackgroundAssets() {
   sharedCloudImage = loadImage('assets/time-based/cloud-cream.png',
     () => { sharedCloudReady = true; },
     () => { sharedCloudReady = false; });
 }
+// AI-assisted automatic drift: x = starting position + seconds * speed.
+// % wraps the centre across a range wider than the canvas, so a cloud fully
+// exits before re-entering. sin() adds only a 1.5-pixel vertical drift.
+// Neither speed nor position reads microphone data.
+// Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Remainder
 function sharedCloudPose(cloud, time, index = 0) {
   const half = cloud.width / 2;
   return {
@@ -18,8 +30,10 @@ function sharedCloudPose(cloud, time, index = 0) {
     y: cloud.y + sin(time * 0.4 + index) * 1.5
   };
 }
+// Called once from sketch.js drawBackground(). Reuse the existing sun response
+// while giving clouds their own time-only motion. The audio scene owns the finale.
 function drawSharedSky(time) {
-  // Zicen's audio scene owns the night finale. Its star/audio stages do not draw outdoor clouds.
+  // Zicen's audio scene owns the night finale. Do not draw this daytime layer there.
   if (isAudioFinaleStage()) return;
   push();
   imageMode(CENTER);

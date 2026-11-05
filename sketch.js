@@ -7,6 +7,10 @@
 // Zicen  → Audio
 // ========================================
 
+// AI acknowledgement — Emery's shared integration additions:
+// OpenAI Codex assisted with the time-based preload/setup/update hooks and the
+// timeCircleReady -> startStarGather handoff. These connect Emery's module to
+// the shared controller; this is not an authorship claim over teammates' code.
 // Main controller for the staged kite story.
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 500;
@@ -185,6 +189,12 @@ function drawBackground(time, windy = false) {
 // STATIC LANDSCAPE
 // ========================================
 
+// AI acknowledgement — Emery's original daytime landscape contribution:
+// The base geometry in drawLandscape, drawMountainBackdrop, drawLandscapeBush,
+// drawGrassDetails, drawCornerFoliage and drawLeafFan was generated/refined with
+// OpenAI Codex. Basic p5 shapes and Bezier curves keep bold flat-colour outlines.
+// Zicen added the day/night palette interface and night-specific sky functions.
+// Keeping one ground level (GROUND_Y) lets both character mechanics share it.
 function drawLandscape(palette = DAY_LANDSCAPE, time = 0) {
   push();
 

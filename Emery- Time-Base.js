@@ -1,12 +1,21 @@
-// Emery's time-based movement, developed with OpenAI Codex assistance.
-// Read: startTimeBased -> updateTimeBased -> drawTimeBased.
-// One continuous clock and shared beat avoid resets at scene transitions.
+// TIME-BASED MECHANIC — Emery / Xinran Xu
+// AI acknowledgement: this module was generated and revised with the help of
+// OpenAI Codex. It turns elapsed time into character poses, schedules five
+// dance phrases and music fades, and signals timeCircleReady for the audio scene.
+// Emery specified the narrative sequence and iterated the visual behaviour.
+// All functions below are within this AI-assisted scope; helper comments explain
+// the calculations and identify technical references where relevant.
+// Read: startTimeBased() -> updateTimeBased() -> drawTimeBased().
+// Shared globals used by the main sketch and audio handoff.
+// timeStartedAt is captured once; timeElapsed and poses change on each frame.
 let timeFigures = [];
 let timeStartedAt = 0;
 let timeElapsed = 0;
 let timeStartX = [640, 520];
 let timeCircleReady = false;
 const GROUP_MUSIC_START = 14;
+// The supplied piano track is tagged 125 BPM. Eight beats make one phrase;
+// five phrases provide 19.2 seconds of group dancing, followed by the old circle path.
 const MUSIC_BPM = 125;
 const MUSIC_BEAT_SECONDS = 60 / MUSIC_BPM;
 const GROUP_PHRASE_SECONDS = MUSIC_BEAT_SECONDS * 8;
@@ -17,17 +26,23 @@ let groupDanceMusic;
 let groupMusicStarted = false;
 const GROUP_MUSIC_VOLUME = 0.32;
 
+// Called from p5 preload(), so images and the group song are ready before setup.
+// The MP3 is an external asset, not AI-generated music or a team composition.
 function preloadTimeBasedAssets() {
   preloadCharacterHeads();
   // Happy Commercial (Piano) — MaxKoMusic, supplied by Emery.
   // Source/credit: https://www.chosic.com/download-audio/27305/
   groupDanceMusic = loadSound('assets/time-based/group-dance.mp3');
 }
+// Stop the SoundFile only when it is playing; used at reset and at the handoff.
 function stopGroupMusic() {
   if (groupDanceMusic && groupDanceMusic.isPlaying()) groupDanceMusic.stop();
 }
+// Start the song once at the five-person dance, then update only its volume.
+// A short fade-in and fade-out avoid abrupt sound changes or overlap with the finale.
 function updateGroupMusic(elapsed) {
-  // Offline video recording mixes this same track afterwards.
+  // Local export flag only: the MP4 renderer mixes this recording afterwards.
+  // On the ordinary website the flag is absent and SoundFile playback runs normally.
   if (window.__exportMode || !groupDanceMusic || !groupDanceMusic.isLoaded()) return;
   if (elapsed >= GROUP_MUSIC_START && elapsed < TIME_END) {
     if (!groupMusicStarted) {
@@ -42,6 +57,10 @@ function updateGroupMusic(elapsed) {
     stopGroupMusic();
   }
 }
+// AI-assisted timeline helper: keep the opening unchanged and insert extra time
+// before the original circle transition. During the inserted interval this old
+// choreography clock stays at 23 s; groupDanceValues() still uses real elapsed time.
+// After 33.2 s subtract the extension, so the old circle path runs unchanged.
 function choreographyTime(elapsed) {
   // The original opening and complete line-to-circle sequence are reused.
   if (elapsed <= 23) return elapsed;
@@ -58,11 +77,15 @@ const TIME_BASE_Y = [372.658768 - 10 * TIME_BASE_SCALES[0], 382.237251 - 10 * TI
 const TIME_ROW_ORDER = [4, 3, 2, 1, 0];
 const UMBRELLA_RELEASE = 1.8;
 
+// Create five instances of one class. map() builds an array of Character objects;
+// each object keeps its own position, scale, movement properties and calculated pose.
 function setupTimeBased() {
   prepareCharacterHeads();
   timeFigures = TIME_COLOURS.map((c, i) => new Character(i, 0, GROUND_Y + 12, c));
 }
 
+// Entry point called by Vy after the umbrella offer is accepted. Capture the
+// current positions instead of restarting both figures at hard-coded locations.
 function startTimeBased(now = millis() / 1000) {
   stopGroupMusic();
   groupMusicStarted = false;
@@ -75,10 +98,17 @@ function startTimeBased(now = millis() / 1000) {
   updateTimeBased(now);
 }
 
+// Convert seconds within [start, end] into a 0–1 completion ratio.
+// constrain() holds the value at 0 before the interval and at 1 after it.
+// Reference: https://p5js.org/reference/p5/constrain/
 function timeProgress(t, start, end) {
   return constrain((t - start) / (end - start), 0, 1);
 }
 
+// AI-assisted implementation of cubic smoothstep: p*p*(3-2*p) changes slowly
+// near 0 and 1, avoiding an abrupt start/stop when lerp() moves a figure.
+// Mathematical reference (formula only; this is ordinary JavaScript, not GLSL):
+// https://registry.khronos.org/OpenGL-Refpages/gl4/html/smoothstep.xhtml
 function timeEase(t, start, end) {
   // A cubic easing curve makes parameter changes start and finish gradually.
   // p is an interval's 0–1 completion ratio; no animation library is used.
@@ -86,10 +116,15 @@ function timeEase(t, start, end) {
   return p * p * (3 - 2 * p);
 }
 
+// Multiply an entry fade by an exit fade: the result rises from 0, stays near 1,
+// then returns to 0. This lets walking, swaying and hand contact overlap smoothly.
 function timeWindow(t, start, fadeIn, fadeOut, end) {
   return timeEase(t, start, fadeIn) * (1 - timeEase(t, fadeOut, end));
 }
 
+// AI-assisted per-frame controller. It reads the clock, calculates interval
+// progress and cyclic motion, updates each Character, then adjusts shared hands.
+// It changes data; drawTimeBased() and Character.display() perform the drawing.
 function updateTimeBased(now = millis() / 1000) {
   // p5 time/interpolation references:
   // https://p5js.org/reference/p5/millis/ and https://p5js.org/reference/p5/lerp/
@@ -110,6 +145,9 @@ function updateTimeBased(now = millis() / 1000) {
     // Companions travel rightwards together from outside the left edge.
     const startX = pair ? timeStartX[i] - (i === 0 ? 35 : 15) * rise : -90 - (i - 2) * 95;
     const lineX = lerp(startX, TIME_LINE_X[i], joining);
+    // Five evenly spaced angles on an ellipse: 190 px horizontal radius,
+    // 60 px vertical radius. lerp() moves each figure from line to circle.
+    // Trigonometry references: https://p5js.org/reference/p5/sin/ and /p5/cos/
     const angle = PI + (4 - i) * TWO_PI / 5;
     const orbit = (t - 30) * 0.055 * timeEase(t, 30, 32);
     const circleX = 400 + cos(angle + orbit) * 190;
@@ -148,6 +186,7 @@ function updateTimeBased(now = millis() / 1000) {
   updateGroupMusic(timeElapsed);
 }
 
+// Interpolate both coordinates of a point; used for gentle hand-contact changes.
 function timeBlendPoint(a, b, amount) {
   return {
     x: lerp(a.x, b.x, amount),
@@ -155,6 +194,8 @@ function timeBlendPoint(a, b, amount) {
   };
 }
 
+// Blend neighbouring hands toward one shared point so contact is visible.
+// These links are derived from the current poses and preserve circle neighbour order.
 function connectTimeFigures(t) {
   const first = timeFigures[0].pose,
     second = timeFigures[1].pose;
@@ -196,6 +237,8 @@ function connectTimeFigures(t) {
   second.leftHand = timeBlendPoint(second.leftHand, grip, throwing);
 }
 
+// Crossfade the opening PNG poses into the code-drawn figures over 0.75 seconds,
+// then draw the umbrella and the current Character poses.
 function drawTimeBased() {
   const t = timeElapsed,
     reveal = timeEase(t, 0, 0.75);
@@ -211,9 +254,16 @@ function drawTimeBased() {
     pop();
   }
   if (reveal > 0) drawTimeUmbrella(t, reveal);
+  // Spread copies the drawing list before sort() changes its order. Draw figures
+  // with larger y last for depth, while preserving the original identity/index order.
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax
   for (const person of [...timeFigures].sort((a, b) => a.y - b.y)) person.display(reveal);
 }
 
+// AI-assisted throw: interpolate to the release pose, then move left with a
+// quadratic vertical path (initial upward motion plus a downward t*t term).
+// The grip point uses sin/cos to follow the handle as the umbrella rotates.
 function getTimeUmbrellaPose(t) {
   // Start in the same position as the umbrella in Vy's final PNG scene.
   const imageWidth = 270 * character2GiveImage.width / character2GiveImage.height;
@@ -242,6 +292,8 @@ function getTimeUmbrellaPose(t) {
   };
 }
 
+// Use local translate/rotate/scale to draw the umbrella around its own origin.
+// push()/pop() restore drawing settings and opacity before the next character.
 function drawTimeUmbrella(t, opacity) {
   const umbrella = getTimeUmbrellaPose(t);
   // Stop drawing only once the entire umbrella is outside the frame.
@@ -274,10 +326,16 @@ function drawTimeUmbrella(t, opacity) {
   pop();
 }
 
+// Blend the extra phrases in and out, returning to the original circle pose
+// before the handoff. The middle phrase clock does not alter the readiness API.
 function groupDanceWeight(elapsed) {
   return timeEase(elapsed, 14, 14.8) *
     (1 - timeEase(elapsed, GROUP_DANCE_END - 0.8, GROUP_DANCE_END));
 }
+// AI-assisted choreography helper. One musical beat lasts 60/BPM seconds;
+// sin() alternates feet while five eight-beat property sets change the dance.
+// Short lerp() blends between sets avoid sudden pose switches.
+// This is a fixed beat clock, not live audio/FFT analysis.
 function groupDanceValues(index, elapsed) {
   const beat = (elapsed - GROUP_MUSIC_START) / MUSIC_BEAT_SECONDS;
   const step = sin(PI * beat); // Alternating feet: one step per musical beat.
@@ -294,6 +352,9 @@ function groupDanceValues(index, elapsed) {
     { sway: sway * 0.45, step, knee: 14, bounce: abs(step) * 4, open: 0.55, reach: 0, stride: 5 },
     { sway: sway * 0.55, step, knee: 18, bounce: abs(step) * 3, open: 0.62, reach: 0, stride: 2 }
   ];
+  // Object spread copies a phrase; Object.keys() lists the numeric properties
+  // so one loop can interpolate each property instead of repeating the same code.
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys
   let pose = { ...phrases[0] };
   for (let phrase = 1; phrase < phrases.length; phrase++) {
     const change = GROUP_MUSIC_START + GROUP_PHRASE_SECONDS * phrase;
@@ -302,6 +363,9 @@ function groupDanceValues(index, elapsed) {
   }
   return { ...common, ...pose };
 }
+// Add gestures after the general pose update: a periodic clap closes the hands,
+// then a small phase delay across the row creates a travelling wave.
+// Hands follow continuous Bezier arms in Character.display(), without angular elbows.
 function applyGroupHandPoses(elapsed) {
   const amount = groupDanceWeight(elapsed);
   if (amount <= 0) return;
@@ -329,6 +393,7 @@ function applyGroupHandPoses(elapsed) {
   }
 }
 
+// Clear this mechanic's clock/readiness and stop its music for a fresh activation.
 function resetTimeBased() {
   stopGroupMusic();
   groupMusicStarted = false;

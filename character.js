@@ -1,13 +1,21 @@
-// Shared Character class — Emery, developed with OpenAI Codex assistance.
-// Heads are cropped from Vy's original PNGs; curved limbs match their outline
-// and proportions. An array stores five instances of this reusable class.
+// REUSABLE CHARACTER RENDERER — Emery / Xinran Xu
+// AI acknowledgement: this class and its drawing helpers were generated and
+// revised with the help of OpenAI Codex. They turn movement properties into
+// joint coordinates, then draw a rounded body and curved limbs with p5.js.
+// Emery requested proportions matching Vy's figures and reviewed pose previews.
+// Head PNGs were exported from the earlier crops/recolours of Vy's character
+// images. Bodies and limbs remain code-drawn. All functions below fall within
+// this AI-assisted scope; sources for JavaScript/Canvas helpers appear nearby.
 let characterHeads = [];
 
 let headAssets = [];
+// Load the five exported head PNGs from the exact folder used on GitHub.
+// map() returns an image array in the same colour order as timeFigures.
 function preloadCharacterHeads() {
   const names = ['green', 'pink', 'red', 'blue', 'yellow'];
   headAssets = names.map(name => loadImage('assets/time-based/' + name + '.png'));
 }
+// Use the already-preloaded images; do not crop or recolour them on every frame.
 function prepareCharacterHeads() {
   // These PNGs were exported from the previous prepareCharacterHeads() pixels.
   // Bodies, hands and feet are still drawn and articulated with code.
@@ -37,11 +45,16 @@ class Character {
       pose: null
     });
   }
+  // Object.assign(this, values) copies the latest property values onto this
+  // existing instance. calculatePose() then recalculates its points; no drawing yet.
   update(values) {
     // The timeline supplies values; this class supplies the reusable rendering.
     Object.assign(this, values);
     this.calculatePose();
   }
+  // AI-assisted pose calculation. point() converts local body coordinates into
+  // canvas coordinates using this figure's position and scale. stand blends
+  // seated/standing geometry; sway leans the upper body and step alternates feet.
   calculatePose() {
     const point = (x, y) => ({
       x: this.x + x * this.scale,
@@ -65,6 +78,9 @@ class Character {
       rightHand: point(lean + lerp(29, 71, this.open), shoulderY + lerp(66, -29, this.open) - max(0, step) * this.reach)
     };
   }
+  // Render the calculated pose. Drawing a wider black layer, then a narrower
+  // coloured layer, makes the continuous outline. A separate head PNG preserves
+  // the face while body coordinates change. Local push/pop contains all transforms.
   display(opacity = 1) {
     if (opacity <= 0 || this.x < -150 || this.x > width + 150) return;
     const p = this.pose,
@@ -111,6 +127,9 @@ class Character {
   }
 }
 
+// Draw one smooth leg curve through the influence of its knee point.
+// The same path is drawn first in black, then in the figure colour for an outline.
+// Reference: https://p5js.org/reference/p5/bezier/
 function characterLimb(a, j, b, c, w) {
   noFill();
   stroke(c);
@@ -118,6 +137,11 @@ function characterLimb(a, j, b, c, w) {
   bezier(a.x, a.y, lerp(a.x, j.x, 0.8), lerp(a.y, j.y, 0.8), lerp(b.x, j.x, 0.8), lerp(b.y, j.y, 0.8), b.x, b.y);
 }
 
+// AI-assisted continuous arm curve. Math.hypot(dx,dy) gives the shoulder-to-hand
+// distance; its normalised perpendicular offsets the control points gently.
+// The max(1,...) guard avoids division by zero. This is a soft drawn curve,
+// not a fixed-length joint simulation.
+// Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/hypot
 function characterArm(a, b, c, w, side, bend = 0) {
   noFill();
   stroke(c);
