@@ -23,22 +23,19 @@ Just when everything seems at its worst, a soft pink glow appears in the distanc
 
 02. Synchronization: Time-based (Emery)
 
-Connecting with the user input's storyline: Character one agrees to share an umbrella with character two. As the rain fades, Character Two helps Character One stand and visibly throws the umbrella off-screen. The two characters dance together, sharing happy smiles (this scene shows the beginning of their friendship). Then, the two characters walk forward, encountering a group of three friends approaching. All five join the horizontal line. Next, the characters place their hands on each other's shoulders (representing their friendship). Finally, all five dance together, gradually forming a circle.
+Following the umbrella-sharing interaction, the timed sequence begins as Character Two gently helps Character One stand. As the rain clears, Character Two throws the umbrella off-screen and gently helps Character One stand. The pair begin swaying and stepping together. Their movements gradually synchronize, turning an initial encounter into a shared rhythm and marking the beginning of their friendship.
+
+As clouds drift across the daytime sky, three more friends enter from the left. The original pair move towards them, and all five settle into a horizontal line. The two main characters demonstrate a shared arm gesture and foot tap, which the newcomers imitate one after another. This passing of movement makes their growing connection visible: each person responds to another before becoming part of the collective rhythm.
+
+The group then repeats the gesture in unison, developing into coordinated swaying, stepping and arm movements. Finally, the line gradually opens into a circle, completing the transition from individual companionship to community and preparing the scene for the audio-reactive collective dance.
 
 03. Collective Movement: Audio (Zicen)
 
 Connecting with the audio's storyline: when the five friends close their circle, a small star appears between their joined hands. Together they lift the light into the sky, and night falls over the same landscape. Under the star the friends let go, step into a row and turn into Haring-style dancers around a campfire. A song starts, and the music moves them: loud beats make them jump higher, deep sounds pull them into a huddle, bright sounds throw them wide apart and make them glow, and on the drum hits they tumble into handstands one by one. When the song ends, they take a bow with a handstand wave, each flip ringing a xylophone note, and finish with a "Ta-da!". Then the five climb on each other's shoulders into a human tower, and the friend at the top reaches up and touches the star they lifted together – it flares with a sparkling chime. Finally the visitor is invited to join in with their own music, claps or singing; if everyone hums one steady note together, the friends build the tower again, one level for every second of humming, until they reach the light. The audience becomes the last member of the group, and the story ends with everyone moving together.
 
-
-# Technologies
-- p5.js
-- HTML
-- CSS
-- JavaScript
-
 # Overall Techniques and Integration
 
-The project uses one p5.js animation loop and shared story state to connect three separately organised mechanics. Each chapter changes how the audience experiences connection while reusing the same setting and character identities.
+Built with p5.js, JavaScript, HTML and CSS, the project uses one p5.js animation loop and shared story state to connect three separately organised mechanics. HTML loads the scripts and provides the page structure, while CSS controls the layout and responsive presentation. Each chapter explores connection while reusing the same setting and character identities.
 
 | Mechanic / shared technique | Purpose and design decision |
 | --- | --- |
@@ -335,7 +332,7 @@ Regarding the narrative flow design, I have organized the program into distinct,
 
 ### Overview and creative purpose
 
-Emery developed the time-based mechanic between Vy's umbrella-sharing scene and Zicen's audio finale. The sequence turns a small act of support into collective movement: two figures move from different timings to a shared rhythm, three companions enter from the left, and a horizontal line gradually becomes a linked circle. The changing timing and formation communicate growing companionship.
+Emery developed the time-based mechanic between Vy's umbrella-sharing scene and Zicen's audio finale. The sequence turns a small act of support into collective movement: two figures move from different timings to a shared rhythm, then teach a hand-lift and foot-tap motif to three companions entering from the left. The companions imitate it in turn before everyone repeats it together and a horizontal line becomes a linked circle. The visible transfer of one gesture expresses how an individual connection can spread through a group.
 
 ### Mechanic ownership and shared contributions
 
@@ -355,7 +352,9 @@ Follow Vy's click prompts until the pink character offers the umbrella, then cli
 | 0–4 s | The rain fades, the pink figure helps the green figure stand, and the umbrella is visibly swung and thrown off-screen. |
 | 4–8.5 s | The pair's initial movement offset reduces until both sway and step together. |
 | 8.5–14 s | The pair moves into position while three companions walk in together from outside the left edge. |
-| 14–33.2 s | Five eight-beat phrases develop the group dance: shoulder-linked steps, high knees, light kicks, clap-steps and a travelling arm wave. The music starts at 14 s. |
+| 14–15.92 s | The line briefly links shoulders and settles into the group dance. The music starts at 14 s. |
+| 15.92–21.68 s | The green/pink pair demonstrates a four-beat hand-lift and foot-tap gesture. Red, blue and yellow repeat the same gesture in order, starting two beats (0.96 s) apart, then settle into the shared timing. |
+| 21.68–33.2 s | Everyone repeats the learned gesture together, continues with clap-steps and a shared-phase arm wave, then briefly holds an open-arm stance before the circle transition. |
 | 33.2–40.2 s | The figures move from the line into the circle while keeping their neighbour order. |
 | 40.2–42.2 s | The linked circle continues, the music fades out, and `timeCircleReady` becomes true for the next mechanic. |
 
@@ -370,28 +369,48 @@ Follow Vy's click prompts until the pink character offers the umbrella, then cli
 | `Character` class, objects and arrays | Store each figure's position, scale and pose; update and draw reusable instances. | Separate choreography from appearance and allow the audio chapter to reuse the actual final figures. |
 | Bézier curves, shapes and layered outlines | Draw the torso, arms and legs; use transparent PNGs for the faces. | Preserve rounded silhouettes while allowing continuous pose changes instead of full-body sprite switches. |
 | `loadImage()`, `loadSound()` and sound playback control | Preload assets; start the group song once and fade it out before handoff. | Avoid sudden asset changes and give the dance a shared musical pace. |
-| Eight-beat phrase timing at 125 BPM | Blend between five short movement patterns. | Respond to tutor feedback asking for a more engaging dance and a clear pace. The animation follows a fixed beat clock; this chapter does not analyse the music with FFT. |
+| Musical timing and controlled time offsets at 125 BPM | Demonstrate one motif, delay it for each new companion by two beats, then remove the offsets for unison. | Make one person's movement visibly influence another and give the dance a readable progression. The animation follows a fixed beat clock; this chapter does not analyse the music with FFT. |
 | Time-based cloud positions and `%` wrapping | Move two clouds continuously and return them to the left after they leave the right edge. | Keep the daytime setting consistent across chapters without requiring microphone input. |
 
 ### How the code works and communicates
 
-`preloadTimeBasedAssets()` loads the heads and music; `setupTimeBased()` creates the five `Character` objects. Vy's acceptance event calls `startTimeBased()`, which records the starting time and the two figures' current positions.
+The time-based mechanic separates story coordination, choreography and character drawing. sketch.js coordinates the stages, Emery- Time-Base.js calculates movement over time, and character.js turns those movement values into visible figures. These scripts are loaded by index.html and communicate through shared functions and state within one p5.js sketch.
 
-Each frame, `updateTimeBased()` computes elapsed seconds. `timeProgress()` clamps an interval to 0–1; `timeEase()` applies `p*p*(3-2*p)` so movement eases in and out. `timeWindow()` combines an entry and exit fade, allowing actions such as walking or holding hands to overlap smoothly. `groupDanceValues()` blends pose properties between phrases, and `applyGroupHandPoses()` adds the clap and wave gestures. `Character.update()` calculates the joints; `drawTimeBased()` renders the figures and umbrella.
+1. Loading assets and creating characters
 
-`choreographyTime()` preserves the earlier opening and circle transitions while inserting 10.2 extra seconds into the middle dance. The additional phrases use actual elapsed time, so they continue moving during that insertion. At 42.2 seconds, `timeCircleReady` tells `sketch.js` to call `startStarGather()`. The audio chapter receives the same `timeFigures` objects and their final pose rather than starting from a replacement image.
+During preload(), the main sketch calls preloadTimeBasedAssets() to load the five head PNGs and the group-dance music. It also calls preloadBackgroundAssets() to load the shared cloud image. During setup(), setupTimeBased() prepares the heads and creates five instances of the Character class, stored in the timeFigures array. Each instance keeps its own colour, position, scale and movement properties.
 
-Global state includes `timeFigures`, `timeStartedAt`, `timeElapsed` and `timeCircleReady`. Each `Character` keeps its own properties such as `x`, `y`, `stand`, `sway`, `step`, `open` and `scale`. Progress values such as `rise`, `sync`, `joining` and `circle` are local to the update. `drawSharedSky(time)` is called by the shared background; its automatic cloud movement is independent of the microphone.
+2. Starting and updating the timeline
+
+At the end of Vy’s umbrella-sharing interaction, startTimeBased() records the starting time and the two characters’ existing positions, then changes storyStage to 'timeBased'. Each frame, sketch.js calls updateTimeBased(time).
+
+The controller calculates elapsed seconds and converts specific time intervals into progress values using timeProgress() and timeEase(). These values control standing, synchronization, entrances and formation changes. Sine cycles produce repeated steps and swaying. For the demonstration–imitation sequence, relayGesture() gives the same gesture different starting times; later, groupResponseTiming() gives everyone one shared pulse. This changes the timing of a common movement rather than replacing the characters.
+
+3. Building and drawing the moving figures
+
+Character.update(values) receives the movement properties from the timeline and calls calculatePose(). This calculates coordinates for the hips, shoulders, head, knees, feet and hands. For example, stand blends sitting and standing positions, sway shifts the upper body, and step and knee control alternating foot lifts.
+
+The timeline then adjusts hand coordinates for contact and choreography. Finally, drawTimeBased() calls each character’s display() method. The body and limbs are drawn with p5.js shapes and Bézier curves, with a wider black layer beneath a narrower coloured layer. A separate PNG head preserves the character’s facial identity. This combination allows continuous body movement while remaining visually connected to Vy’s image-based figures.
+
+4. Updating the shared background
+
+sketch.js draws the landscape and calls drawSharedSky(time) from background.js. Cloud positions are calculated from starting positions, elapsed time and speed; they wrap around after leaving the canvas. Their motion continues across the daytime chapters independently of microphone input. This daytime sky layer stops drawing during the audio finale.
+
+5. Passing the completed circle to Audio
+
+When the sequence reaches 42.2 seconds, timeCircleReady becomes true. The main sketch detects this and calls startStarGather(). Zicen’s scene initially reuses the same timeFigures and their final poses, then transitions into its own dancers.
+
+Shared state includes timeFigures, timeStartedAt, timeElapsed and timeCircleReady. Individual movement properties belong to each Character instance, while temporary progress values such as rise, sync, joining and circle remain local to the update function.
 
 ### Iteration and evaluation
 
-Following tutor feedback, the prototype uses a reusable class, proportions matched to Vy's visible characters, and a longer group dance with distinct phrases. The extra figures enter by walking rather than appearing suddenly, and the umbrella has a visible release and flight. Visual feedback also led to restoring smooth curved arms after an experimental angular-elbow version looked too rigid.
+Following tutor feedback, the prototype uses a reusable class, proportions matched to Vy's visible characters, and a longer group dance with distinct phrases. The extra figures enter by walking rather than appearing suddenly, and the umbrella has a visible release and flight. The middle choreography was refined from simultaneous stepping into a demonstration–imitation–unison progression, making the idea of shared movement visible. The later shared wave resolves the earlier timing differences, and a brief closing stance makes the group unity readable. Visual feedback also led to restoring smooth curved arms after an experimental angular-elbow version looked too rigid.
 
 Browser checks exercised the opening click flow, the timed chapter, music start/stop, the circle-to-star handoff and the later audio scene. A narrow-window check confirmed that the scaled canvas and click coordinates still worked. Opening and circle pose samples were compared with the preceding version to preserve the integration. These checks cover the tested paths, rather than every device or all live sound conditions.
 
 ### AI acknowledgement
 
-OpenAI Codex was used to generate and revise the time-based module, reusable character renderer, daytime landscape and shared cloud movement. It also assisted with integration, debugging, head-image export, MP4 rendering and documentation. Emery specified the narrative sequence, selected the music, reviewed the visual previews and requested changes to entrances, pacing, proportions and arm poses. The module calculates elapsed time, blends character properties, renders the updated poses and signals the next mechanic when the circle is ready. Corresponding code comments identify the AI-assisted scope and explain the main helpers; the shared `sketch.js` comments distinguish Emery's additions from teammates' work.
+OpenAI Codex was used to generate and revise the time-based module, reusable character renderer, daytime landscape and shared cloud movement. It also assisted with integration, debugging, head-image export, MP4 rendering and documentation. The module calculates elapsed time, blends character properties, renders the updated poses and signals the next mechanic when the circle is ready. Corresponding code comments identify the AI-assisted scope and explain the main helpers; the shared `sketch.js` comments distinguish Emery's additions from teammates' work.
 
 ### External references and asset credits
 

@@ -1,4 +1,4 @@
-// REUSABLE CHARACTER RENDERER — Emery / Xinran Xu
+// REUSABLE CHARACTER RENDERER — Emery Xu
 // AI acknowledgement: this class and its drawing helpers were generated and
 // revised with the help of OpenAI Codex. They turn movement properties into
 // joint coordinates, then draw a rounded body and curved limbs with p5.js.
