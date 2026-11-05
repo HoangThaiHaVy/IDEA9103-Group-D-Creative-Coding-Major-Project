@@ -24,6 +24,7 @@ const SILENT_SOUND_DATA = Object.freeze({
   treble: 0,
   longSound: false,
   shortSound: false,
+  tripleClap: false,
   sustain: 0,
   spread: 0.92
 });
@@ -42,6 +43,7 @@ const SOURCE_LEVEL_RANGE = {
   track: { quiet: 0.02, loud: 0.2, shortSoundCooldown: 1000 }
 };
 const MIN_SPREAD = 0.72; // closest the row may gather (1 = full width)
+const TRIPLE_CLAP_WINDOW = 1500; // ms in which three short sounds count as a combo
 
 class AudioMechanic {
   constructor() {
@@ -61,6 +63,7 @@ class AudioMechanic {
     // Memory used to detect changes between frames.
     this.previousClapEnergy = 0;
     this.lastClapAt = -Infinity;
+    this.recentShortSounds = []; // timestamps used for the triple-clap combo
     this.previousMid = 0;
     this.previousHighMid = 0;
     this.voiceSustain = 0;
@@ -152,6 +155,19 @@ class AudioMechanic {
     this.previousClapEnergy = lerp(this.previousClapEnergy, clapEnergy, 0.38);
     if (shortSound) this.lastClapAt = now;
 
+    // TRIPLE CLAP (easter egg): three short sounds inside 1.5 s. Only the
+    // microphone can do this – the soundtrack's 1 s cooldown is too slow.
+    let tripleClap = false;
+    if (shortSound) {
+      this.recentShortSounds.push(now);
+      this.recentShortSounds = this.recentShortSounds
+        .filter((time) => now - time < TRIPLE_CLAP_WINDOW);
+      if (this.recentShortSounds.length >= 3) {
+        tripleClap = true;
+        this.recentShortSounds = [];
+      }
+    }
+
     // LONG SOUND: humming or a held note keeps a steady mid-range spectrum,
     // while speech and drums change it quickly. "voiceSustain" fills up while
     // the spectrum is steady and drains when it changes. This is a simple
@@ -186,6 +202,7 @@ class AudioMechanic {
       treble,
       longSound,
       shortSound,
+      tripleClap,
       sustain: this.voiceSustain,
       spread: this.spreadAmount
     };

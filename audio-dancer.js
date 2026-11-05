@@ -13,6 +13,7 @@
 //   long sound (hum / held note)→ smooth Perlin-noise travel inside a lane
 //   short sound (clap / drum hit)→ pose change + a short burst of rays
 //   spectral brightness        → spacing of the row (see audio-mechanic.js)
+//   triple clap (easter egg)    → handstand wave, started by audio-scene.js
 // Every reaction is smoothed with lerp() and limited with constrain(), so loud
 // or noisy input never makes the drawings shake, overlap badly or leave the
 // canvas.
@@ -21,6 +22,9 @@
 // the class) and Claude (glow, squash, shadow and burst reaction layers).
 
 const BURST_DURATION = 0.45; // seconds a pose-change burst stays visible
+const HANDSTAND_FLIP = 0.55; // seconds to flip over (and back)
+const HANDSTAND_HOLD = 2.2; // seconds spent upside down
+const HANDSTAND_TOTAL = HANDSTAND_FLIP * 2 + HANDSTAND_HOLD;
 
 class AudioDancer {
   constructor(imageAsset, alternateImageAssets, options) {
@@ -48,9 +52,31 @@ class AudioDancer {
     this.poseIndex = 0;
     this.previousPoseIndex = 0;
     this.burstStartedAt = -Infinity;
+    this.handstandStartedAt = -Infinity;
     this.dancePhase = (options.phase / TWO_PI) % 1;
     this.lastUpdateTime = null;
     this.previousShortSound = false;
+  }
+
+  // Easter egg: the scene gives each dancer a slightly later start time, so
+  // the five flips travel along the row like a wave.
+  startHandstand(startTime) {
+    if (this.isInHandstand(startTime)) return;
+    this.handstandStartedAt = startTime;
+  }
+
+  isInHandstand(time) {
+    const elapsed = time - this.handstandStartedAt;
+    return elapsed >= 0 && elapsed < HANDSTAND_TOTAL;
+  }
+
+  // 0 = on the feet, 1 = fully upside down; eased flips at both ends.
+  handstandAmount(time) {
+    const elapsed = time - this.handstandStartedAt;
+    if (elapsed < 0 || elapsed >= HANDSTAND_TOTAL) return 0;
+    if (elapsed < HANDSTAND_FLIP) return strongEaseInOut(elapsed / HANDSTAND_FLIP);
+    if (elapsed < HANDSTAND_FLIP + HANDSTAND_HOLD) return 1;
+    return 1 - strongEaseInOut((elapsed - HANDSTAND_FLIP - HANDSTAND_HOLD) / HANDSTAND_FLIP);
   }
 
   setEntranceOrigin(x, y) {
@@ -150,9 +176,12 @@ class AudioDancer {
     if (this.poseImages.length === 0 || entrance <= 0 || backgroundProgress < 0.12) return;
 
     const overallAlpha = entrance * backgroundProgress;
+    const flip = this.handstandAmount(time);
     const stagedX = lerp(this.entranceX, this.currentX, entrance);
     const groundY = lerp(this.entranceY, this.baseY, entrance);
-    const stagedY = groundY - this.jump * entrance;
+    // While flipping, the dancer follows a small arc; jumps pause upside down.
+    const flipArc = sin(PI * flip) * 46;
+    const stagedY = groundY - this.jump * entrance * (1 - flip) - flipArc;
 
     this.drawShadow(stagedX, groundY, overallAlpha);
     this.drawGlow(stagedX, stagedY, overallAlpha);
@@ -161,9 +190,15 @@ class AudioDancer {
     const entranceScale = 0.95 + entrance * 0.05;
     const bodyScale = entranceScale * this.soundScale * (1 - this.poseTransition * 0.05);
 
+    // Upside down the legs keep kicking gently to the music.
+    const kick = flip > 0.95 ? sin(time * 9 + this.phase) * 0.07 : 0;
+
     push();
     translate(stagedX, stagedY);
-    rotate(this.rotation);
+    // Rotate around the middle of the body so the handstand stays in place.
+    translate(0, -this.targetHeight / 2);
+    rotate(this.rotation + PI * flip + kick);
+    translate(0, this.targetHeight / 2);
     // Squash and stretch keep the area roughly constant: wider when shorter.
     scale(bodyScale * (1 + this.squash * 0.6), bodyScale * (1 - this.squash));
     imageMode(CENTER);
@@ -194,10 +229,10 @@ class AudioDancer {
     push();
     blendMode(ADD);
     noStroke();
-    glowColour.setAlpha(45 * this.glow * alpha);
+    glowColour.setAlpha(32 * this.glow * alpha);
     fill(glowColour);
     circle(x, centreY, diameter * 1.35);
-    glowColour.setAlpha(70 * this.glow * alpha);
+    glowColour.setAlpha(55 * this.glow * alpha);
     fill(glowColour);
     circle(x, centreY, diameter);
     blendMode(BLEND);
