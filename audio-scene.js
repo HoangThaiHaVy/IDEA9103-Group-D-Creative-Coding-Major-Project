@@ -96,12 +96,11 @@ const STAR_CHIME_PATH = 'assets/audio/star-chime.mp3';
 const STAR_CHIME_VOLUME = 0.5;
 let starChime;
 
-// Applause for the curtain-call handstand wave after the song. Also an
-// original sound synthesised by Claude (32 virtual clappers: band-passed
-// noise bursts at 3.6–5.2 claps per second, swelling in and fading out).
-const APPLAUSE_PATH = 'assets/audio/applause.mp3';
-const APPLAUSE_VOLUME = 0.45;
-let applause;
+// Live-synthesised xylophone notes for every flip and a "Ta-da!" chord when
+// a handstand wave is complete (flip-synth.js).
+let flipSynth;
+let flipNotePlayedFor = []; // per dancer: handstandStartedAt that already rang
+let taDaPlayedFor = null; // handstandWaveStartedAt that already got its chord
 let starChimePlayedFor = null; // towerStartedAt of the tower that already chimed
 
 // During the soundtrack, drum hits make random dancers flip into a short
@@ -186,7 +185,6 @@ function preloadAudioAssets() {
   audioHandstandImages = AUDIO_HANDSTAND_PATHS.map((path) => loadImage(path));
   preloadStandbyMusic();
   starChime = loadSound(STAR_CHIME_PATH);
-  applause = loadSound(APPLAUSE_PATH);
   towerLayerImages = TOWER_LAYER_PATHS.map((path) => loadImage(
     path,
     () => { towerLayersLoaded += 1; }
@@ -345,10 +343,6 @@ function handleSoundtrackEnded() {
   // Ending: the group bows with a handstand wave, then climbs into a human
   // tower to touch the star they lifted together. Then it is the visitor's turn.
   startHandstandWave(finaleSoundtrackFinishedAt);
-  if (applause && applause.isLoaded()) {
-    applause.setVolume(APPLAUSE_VOLUME);
-    applause.play(); // the audience applauds the curtain call
-  }
   towerStartedAt = finaleSoundtrackFinishedAt + HANDSTAND_TOTAL +
     HANDSTAND_WAVE_STAGGER * 4 + 0.3;
   const micTakesOver = audioMechanic.useMicrophone();
@@ -470,12 +464,16 @@ function drawAudioFinale(time) {
     soundHud.revealSecret();
   }
   const waveBusy = time - handstandWaveStartedAt < HANDSTAND_TOTAL + 1;
+  // Solo flips stop 2.2 s before the song ends, so every dancer is upright
+  // and ready for the curtain-call wave (and its full xylophone run).
+  const songNearlyOver = finaleSoundtrack.duration() - finaleSoundtrack.currentTime() < 2.2;
   if (audioMechanic.source === 'track' && audioData.shortSound && rowProgress >= 1 &&
-      tower.cover === 0 && !waveBusy) {
+      tower.cover === 0 && !waveBusy && !songNearlyOver) {
     startSoloFlip(time);
   }
   // The row fades out while the tower is visible, and fades back afterwards.
   drawAudioDancers(time, imageCharacterProgress, 1 - tower.cover);
+  playFlipSounds(time);
   drawHumanTower(tower);
   drawHandstandCaption(time);
   if (tower.cover === 0) drawSoundtrackFinishedPrompt(time);
@@ -600,6 +598,25 @@ function drawSharedStar(time, settleProgress, flare = 0) {
   pop();
 
   drawRisingStar(time, width / 2, SHARED_STAR_Y, 1, 1 + energy * 0.35);
+}
+
+// Each dancer rings its own xylophone note when a flip starts; once the whole
+// wave is upside down, the chord plays.
+function playFlipSounds(time) {
+  if (!flipSynth) flipSynth = new FlipSynth();
+  audioDancers.forEach((dancer, index) => {
+    if (dancer.isInHandstand(time) && flipNotePlayedFor[index] !== dancer.handstandStartedAt) {
+      flipNotePlayedFor[index] = dancer.handstandStartedAt;
+      flipSynth.playNote(index);
+    }
+  });
+  const waveUpsideDown = handstandWaveStartedAt +
+    HANDSTAND_WAVE_STAGGER * (audioDancers.length - 1) + HANDSTAND_FLIP;
+  if (time >= waveUpsideDown && time < waveUpsideDown + 0.5 &&
+      taDaPlayedFor !== handstandWaveStartedAt) {
+    taDaPlayedFor = handstandWaveStartedAt;
+    flipSynth.playTaDa();
+  }
 }
 
 // One random dancer that is not already upside down flips on this beat.

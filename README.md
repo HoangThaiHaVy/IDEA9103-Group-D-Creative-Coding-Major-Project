@@ -40,6 +40,7 @@ Connecting with the audio's storyline: when the five friends close their circle,
 - `audio-dancer.js`: Zicen's reusable `AudioDancer` class – how one dancer reacts to sound.
 - `audio-scene.js`: Zicen's finale – star, nightfall, handoff from Emery's circle, soundtrack, microphone and easter egg.
 - `audio-hud.js`: Zicen's `SoundHud` class – the live sound panel under the canvas.
+- `flip-synth.js`: Zicen's `FlipSynth` class – live xylophone notes for each handstand and the "Ta-da!" chord.
 - `standby-music.js`: Zicen's soft background song that fills quiet moments and gives way to each member's music.
 - `assets/audio`: Zicen's dancer poses, handstand poses, human-tower image, campfire, sun/cloud images and finale soundtrack.
 - `Emery- Time-Base.js`: Emery's time-based interaction component.
@@ -337,8 +338,9 @@ audience can join.
    the light the friends lifted together now answers their shared sound.
 5. **Final bow** – when the song ends the group performs a *handstand wave*
    (each dancer flips onto their hands a moment after their neighbour – a nod
-   to the upside-down figures in Haring's dance drawings) while an audience
-   applauds. Then the five climb
+   to the upside-down figures in Haring's dance drawings). Each flip rings
+   that dancer's xylophone note, so the wave plays a rising run (C D E G A),
+   and a "Ta-da!" chord sounds when the whole row is upside down. Then the five climb
    into a human tower and the top dancer touches the star they lifted at the
    start of the chapter; the star flares with a sparkling chime and the
    caption reads *"Together, they reach the light"*. The tower artwork originally held a moon; the moon
@@ -363,7 +365,7 @@ rule, each sound feature now controls a different, readable property:
 | Short sound (clap / drum hit) | Switches to the next hand-drawn pose with a burst of rays | 320 ms cooldown (mic), 1 s (song) |
 | Long sound (hum / held note) | Smooth Perlin-noise travel inside the dancer's own lane | ±24 px per lane, no collisions |
 | Bright vs. dark sound, and brighter / darker than the last ~4 s | Row throws itself wide open or squeezes into a tight huddle | Spread 0.4–1 of the row width |
-| Soundtrack drum hit | A random dancer flips into a quick handstand (`random()`, 85% chance per beat) | Beats ≥ 1 s apart, 0.9 s upside down, never the same dancer twice at once |
+| Soundtrack drum hit | A random dancer flips into a quick handstand (`random()`, 85% chance per beat) and rings its own xylophone note | Beats ≥ 1 s apart, 0.9 s upside down, never the same dancer twice at once |
 | **Easter egg:** three claps within 1.5 s | Handstand wave across the row | Only one wave at a time |
 | **Hum** (microphone): one steady note, no beat | Builds the human tower level by level; 3 s completes it and the top dancer touches the star | Progress falls back when the hum stops |
 
@@ -474,10 +476,11 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries
 - Soundtrack: *Funky Drums Bass And Claps* by Emmraan, Pixabay Content
   License – https://pixabay.com/service/license-summary/
-- Star chime (`star-chime.mp3`) and applause (`applause.mp3`): original
-  sounds synthesised for this project with Python/NumPy/SciPy (bell partials
-  with high shimmer; 32 virtual clappers made of band-passed noise bursts),
-  credited in the AI acknowledgement.
+- Star chime (`star-chime.mp3`): an original sound synthesised for this
+  project with Python/NumPy (bell partials with high shimmer), credited in the
+  AI acknowledgement.
+- Flip sounds (`flip-synth.js`): synthesised live in the browser with
+  `p5.Oscillator` + `p5.Envelope` – https://p5js.org/reference/p5.sound/p5.Oscillator/
 - Standby music: *Child Play – Happy Kids School Background Music* by
   SunnyVibesAudio, Pixabay Content License (re-encoded to 128 kbps)
 - Spectral centroid as a measure of "brightness" –
@@ -502,7 +505,7 @@ so the soundtrack and the microphone can each drive the dancers, the
 end-of-song prompt, the glow / squash / shadow / burst reaction layers in
 `AudioDancer`, the persistent sound-reactive star, the handstand-wave easter
 egg and human-tower ending, the hum detector and level-by-level tower,
-the standby music, the synthesised star-chime and applause sounds, the `SoundHud` panel and its CSS, the responsive page layout in
+the standby music, the synthesised star chime, the live xylophone / "Ta-da" flip sounds, the `SoundHud` panel and its CSS, the responsive page layout in
 `style.css`, and the rewritten audio section of this README. Zicen chose
 which suggestions to keep, tuned the limits by testing in the browser, and the
 header comment of each file states what was assisted.
