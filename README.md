@@ -38,7 +38,8 @@ Connecting with the audio's storyline: when the five friends close their circle,
 
 - `audio-mechanic.js`: Zicen's `AudioMechanic` class – soundtrack/microphone amplitude and FFT analysis.
 - `audio-dancer.js`: Zicen's reusable `AudioDancer` class – how one dancer reacts to sound.
-- `audio-scene.js`: Zicen's finale – star, nightfall, handoff from Emery's circle, soundtrack and microphone controls.
+- `audio-scene.js`: Zicen's finale – star, nightfall, handoff from Emery's circle, soundtrack, microphone and easter egg.
+- `audio-hud.js`: Zicen's `SoundHud` class – the live sound panel under the canvas.
 - `assets/audio`: Zicen's dancer poses, campfire, sun/cloud images and finale soundtrack.
 - `Emery- Time-Base.js`: Emery's time-based interaction component.
 - `LICENSE`: Project license and usage terms.
@@ -331,9 +332,14 @@ audience can join.
    of matching colours. A campfire then lights up behind them.
 4. **Soundtrack dance** – *Funky Drums Bass And Claps* plays once and is
    analysed live, so the scene reacts to sound even before the microphone is on.
-5. **Your turn** – when the song ends a banner asks the visitor to play
-   music, clap, hum or sing. With the microphone enabled, the dance continues
-   for as long as the visitor keeps making sound.
+   The star stays in the sky above them and grows brighter with the music –
+   the light the friends lifted together now answers their shared sound.
+5. **Final bow** – when the song ends the group performs a *handstand wave*
+   (each dancer flips upside down a moment after their neighbour – a nod to
+   the upside-down figures in Haring's dance drawings).
+6. **Your turn** – a banner asks the visitor to play music, clap, hum or
+   sing. With the microphone enabled, the dance continues for as long as the
+   visitor keeps making sound.
 
 ### Sound → visual mapping (response to tutor feedback)
 Our Week 9 feedback asked for *more detail on how the characters react to
@@ -343,12 +349,14 @@ rule, each sound feature now controls a different, readable property:
 
 | Sound feature (`AudioMechanic`) | Dancer reaction (`AudioDancer`) | Limit that keeps it tidy |
 | --- | --- | --- |
-| Overall volume (`p5.Amplitude`) | Dance tempo and jump height, slight scale-up | Jump ≤ ~1.5 × `jumpStrength`, scale ≤ 6% |
-| Bass energy (`p5.FFT`) | Squash on landing, darker ground shadow, campfire pulse | Squash ≤ 9%, only near the ground |
+| Overall volume (`p5.Amplitude`) | Dance tempo and jump height, slight scale-up; star size and halo | Jump ≤ ~1.5 × `jumpStrength`, scale ≤ 6% |
+| Bass energy (`p5.FFT`) | Squash on landing, ground shadow, star rays, campfire pulse | Squash ≤ 9%, only near the ground |
+| Mid energy | Campfire flame grows taller | Flame ≤ 18% taller |
 | Treble energy | Coloured glow halo in the dancer's own colour, extra tilt | Tilt ≤ ~4°, glow 0–1 |
 | Short sound (clap / drum hit) | Switches to the next hand-drawn pose with a burst of rays | 320 ms cooldown (mic), 1 s (song) |
 | Long sound (hum / held note) | Smooth Perlin-noise travel inside the dancer's own lane | ±24 px per lane, no collisions |
 | Bright vs. bass-heavy sound | Row spreads out or gathers closer together | Spread 0.72–1, campfire stays visible |
+| **Easter egg:** three claps within 1.5 s | Handstand wave across the row | Only one wave at a time |
 
 All values are smoothed with `lerp()` and limited with `constrain()`, so a
 loud or noisy microphone never makes the drawings shake, overlap badly or leave
@@ -366,6 +374,13 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   position, size, pose images, colour, phase and current reaction values.
   `update(time, sound)` turns sound data into movement; `display()` draws the
   shadow, glow, burst and pose cross-fade.
+- **`SoundHud` class** (`audio-hud.js`) – builds the sound panel once with
+  p5 DOM functions, then each frame only changes bar widths and highlights
+  the event that was just detected. It shows the audience *what* the
+  mechanic listens to (volume, bass, mid, treble, claps, held notes, bright /
+  deep sound) and *what* each one controls – replacing the earlier raw debug
+  numbers. The secret chip reads `??? → clap 3 times fast` until the easter
+  egg is found.
 - **Scene functions** (`audio-scene.js`) – `preloadAudioAssets()`,
   `setupAudio()`, `updateAudio()`, `drawAudioFinale()` and `drawAudio()` are
   the only calls `sketch.js` needs. The scene reuses Emery's `Character` class
@@ -384,9 +399,15 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
    - whistling or bright sounds → brighter coloured glow and a wider row;
    - a sharp clap → every dancer changes pose with a small burst;
    - a long steady hum → the dancers drift smoothly left and right.
-4. The panel under the canvas shows the live source and values
-   (`SOURCE`, `MODE`, `VOLUME`, `BASS`, `TREBLE`, …).
-5. Testing shortcuts: `?audioTest=star` (start at the rising star),
+   - **easter egg:** clap three times quickly for a handstand wave.
+4. The **sound panel** under the canvas shows what is being listened to,
+   four live meters (volume, bass, mid, treble) with what each one controls,
+   and chips that light up when a clap, a held note, or a bright / deep sound
+   is detected.
+5. The page scales to the browser window (the canvas keeps its 800 × 500
+   drawing coordinates and is enlarged with CSS; p5 maps mouse positions back,
+   so Vy's clicks still work at any size).
+6. Testing shortcuts: `?audioTest=star` (start at the rising star),
    `?audioTest=dance` (start at the dance; click once to allow audio).
 
 ### External references
@@ -395,7 +416,11 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
 - Easing curves `cubic-bezier(0.23, 1, 0.32, 1)` and `(0.77, 0, 0.175, 1)`
   evaluated with Newton's method in `strongEaseOut()` / `strongEaseInOut()` –
   https://developer.mozilla.org/en-US/docs/Web/CSS/easing-function
-- `blendMode(ADD)` for the glow halo – https://p5js.org/reference/p5/blendMode/
+- `blendMode(ADD)` for the glow halo and star – https://p5js.org/reference/p5/blendMode/
+- p5 DOM (`createDiv`, `createSpan`, `addClass`, `style`) for the sound panel –
+  https://p5js.org/reference/p5/createDiv/
+- CSS `min()` / `max()` for the responsive stage size –
+  https://developer.mozilla.org/en-US/docs/Web/CSS/min
 - Soundtrack: *Funky Drums Bass And Claps* by Emmraan, Pixabay Content
   License – https://pixabay.com/service/license-summary/
 
@@ -414,6 +439,8 @@ Claude (Anthropic) was used by Zicen for a final review of the audio mechanic
 against the brief and the tutor feedback. It helped write: separate analysers
 so the soundtrack and the microphone can each drive the dancers, the
 end-of-song prompt, the glow / squash / shadow / burst reaction layers in
-`AudioDancer`, and the rewritten audio section of this README. Zicen chose
+`AudioDancer`, the persistent sound-reactive star, the handstand-wave easter
+egg, the `SoundHud` panel and its CSS, the responsive page layout in
+`style.css`, and the rewritten audio section of this README. Zicen chose
 which suggestions to keep, tuned the limits by testing in the browser, and the
 header comment of each file states what was assisted.
