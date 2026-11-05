@@ -37,6 +37,8 @@ function timeProgress(t, start, end) {
 }
 
 function timeEase(t, start, end) {
+  // A cubic easing curve makes parameter changes start and finish gradually.
+  // p is an interval's 0–1 completion ratio; no animation library is used.
   const p = timeProgress(t, start, end);
   return p * p * (3 - 2 * p);
 }
@@ -46,6 +48,8 @@ function timeWindow(t, start, fadeIn, fadeOut, end) {
 }
 
 function updateTimeBased(now = millis() / 1000) {
+  // p5 time/interpolation references:
+  // https://p5js.org/reference/p5/millis/ and https://p5js.org/reference/p5/lerp/
   timeElapsed = max(0, now - timeStartedAt);
   const t = timeElapsed;
   const rise = timeEase(t, 0.8, 4);

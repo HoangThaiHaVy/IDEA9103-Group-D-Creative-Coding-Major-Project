@@ -5,4 +5,7 @@ html, body {
 
 canvas {
   display: block;
+  /* Scale the visible canvas while preserving p5's 800x500 drawing coordinates. */
+  max-width: 100%;
+  height: auto !important;
 }
