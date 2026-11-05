@@ -19,7 +19,7 @@ function sharedCloudPose(cloud, time, index = 0) {
   };
 }
 function drawSharedSky(time) {
-  // Alice owns the night scene. Its star/audio stages do not draw outdoor clouds.
+  // Zicen's audio scene owns the night finale. Its star/audio stages do not draw outdoor clouds.
   if (isAudioFinaleStage()) return;
   push();
   imageMode(CENTER);
