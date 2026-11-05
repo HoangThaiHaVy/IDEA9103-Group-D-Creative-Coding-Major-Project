@@ -23,16 +23,13 @@ let arrivalAt = 0;
 let midpointReached = false;
 let lastStoryTime = 0;
 let walkFinished = false;
-
 let rainMusic;
 let rainMusicPlaying = false;
 const RAIN_STAGES = [
   'rainStorm', 'soSad', 'rainFace', 'wet', 'pinkReveal'
 ];
 
-  
 function preload() {
-  
   preloadCharacterImages();
   preloadAudioAssets();
   preloadBackgroundAssets();
@@ -40,19 +37,16 @@ function preload() {
   rainMusic = loadSound('assets/user input/rainsound/rainsound.mp3');
 }
 
-
-
 function setup() {
   const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   canvas.parent('sketch-holder');
   strokeCap(ROUND);
   strokeJoin(ROUND);
   textFont('Arial, sans-serif');
-  // Emery: initialise the Character objects after PNG preload completes.
   setupTimeBased();
   setupAudio();
   setupAudioTestMode();
-  // Optional direct preview; the ordinary page still starts with Vy's story.
+  // Optional direct preview; the normal page starts with Vy's opening.
   if (new URLSearchParams(location.search).has('timeDemo')) {
     characterX = 640;
     character2X = 520;
@@ -70,20 +64,18 @@ function draw() {
 
   const inRainScene = RAIN_STAGES.includes(storyStage) ||
     (storyStage === 'timeBased' && time - timeStartedAt < 1.2);
+  if (inRainScene && rainMusic?.isLoaded() && !rainMusicPlaying) {
+    rainMusic.setLoop(true);
+    rainMusic.setVolume(0.15);
+    rainMusic.play();
+    rainMusicPlaying = true;
+  } else if (!inRainScene && rainMusicPlaying) {
+    rainMusic.stop();
+    rainMusicPlaying = false;
+  }
 
-if (inRainScene && rainMusic?.isLoaded() && !rainMusicPlaying) {
-  rainMusic.setLoop(true);
-  rainMusic.setVolume(0.15);
-  rainMusic.play();
-  rainMusicPlaying = true;
-} else if (!inRainScene && rainMusicPlaying) {
-  rainMusic.stop();
-  rainMusicPlaying = false;
-}
- 
-
-  // Emery: accepting the umbrella starts a timed sequence, then hands control
-  // to Zicen exactly once when the circle is complete.
+  // Emery owns this section until the five characters complete their circle.
+  // The finished circle is then handed directly to Zicen's rising-star scene.
   if (storyStage === 'timeBased') {
     drawBackground(time, false);
     updateTimeBased(time);
@@ -110,7 +102,6 @@ if (inRainScene && rainMusic?.isLoaded() && !rainMusicPlaying) {
     drawAudio();
     return;
   }
-
 
   // Wind stops after the kite escapes; rain starts on the next click.
   drawBackground(time, storyStage === 'finished');
@@ -142,7 +133,7 @@ if (inRainScene && rainMusic?.isLoaded() && !rainMusicPlaying) {
         storyStage = 'arrival';
         arrivalAt = time;
       } else {
-        // Mark completion only after the second walk, not at the midpoint.
+        // Finish the story only after Vy completes the second walk.
         storyStage = 'finished';
         walkFinished = true;
         finishedAt = time;
@@ -154,12 +145,34 @@ if (inRainScene && rainMusic?.isLoaded() && !rainMusicPlaying) {
 }
 
 const LANDSCAPE_INK = '#10110E';
+const DAY_LANDSCAPE = {
+  sky: PAPER,
+  ground: GRASS,
+  ink: LANDSCAPE_INK,
+  leftMountain: '#20BDF0',
+  rightMountain: '#FF747D',
+  smallMountain: '#FFA323',
+  coralBush: '#FF747D',
+  leaves: '#008D68',
+  accentBush: '#FFA323'
+};
+const NIGHT_LANDSCAPE = {
+  sky: '#11163F',
+  ground: '#244F45',
+  ink: '#090B20',
+  leftMountain: '#233B78',
+  rightMountain: '#52316F',
+  smallMountain: '#8A466B',
+  coralBush: '#442658',
+  leaves: '#123E42',
+  accentBush: '#6C385B',
+  night: true
+};
 function drawBackground(time, windy = false) {
   // New static background.
   drawLandscape();
 
-  // Shared outdoor clouds drift automatically in both opening and time stages.
-  // The sun keeps its existing appearance; Alice owns the subsequent night sky.
+  // Shared outdoor sky: automatic clouds; Zicen retains the night palette.
   drawSharedSky(time);
 
   if (windy) {
@@ -172,7 +185,7 @@ function drawBackground(time, windy = false) {
 // STATIC LANDSCAPE
 // ========================================
 
-function drawLandscape() {
+function drawLandscape(palette = DAY_LANDSCAPE, time = 0) {
   push();
 
   rectMode(CORNER);
@@ -180,27 +193,30 @@ function drawLandscape() {
   strokeCap(ROUND);
   strokeJoin(ROUND);
 
-  background(PAPER);
+  noStroke();
+  fill(palette.sky);
+  rect(0, 0, width, height);
+  if (palette.night) drawNightSkyDetails(time, palette.ink);
 
   // Mountains and shrubs are behind the walking surface.
-  drawMountainBackdrop();
+  drawMountainBackdrop(palette);
 
   // Keep the ground at exactly GROUND_Y = 369.
   noStroke();
-  fill(GRASS);
+  fill(palette.ground);
   rect(0, GROUND_Y, width, height - GROUND_Y);
 
   // Straight horizontal ground boundary.
-  stroke(LANDSCAPE_INK);
+  stroke(palette.ink);
   strokeWeight(4);
   line(0, GROUND_Y, width, GROUND_Y);
 
-  drawGrassDetails();
-  drawCornerFoliage();
+  drawGrassDetails(palette.ink);
+  drawCornerFoliage(palette);
 
   // Rounded black frame.
   noFill();
-  stroke(LANDSCAPE_INK);
+  stroke(palette.ink);
   strokeWeight(5);
   rect(3, 3, width - 6, height - 6, 9);
 
@@ -212,17 +228,17 @@ function drawLandscape() {
 // MOUNTAINS AND LOW SHRUBS
 // ========================================
 
-function drawMountainBackdrop() {
+function drawMountainBackdrop(palette = DAY_LANDSCAPE) {
   push();
 
   // All horizontal coordinates are based on an 800px canvas.
   scale(width / 800, 1);
 
-  stroke(LANDSCAPE_INK);
+  stroke(palette.ink);
   strokeWeight(4);
 
   // Large blue mountain on the left.
-  fill('#20BDF0');
+  fill(palette.leftMountain);
 
   beginShape();
   vertex(0, GROUND_Y);
@@ -255,7 +271,7 @@ function drawMountainBackdrop() {
   endShape(CLOSE);
 
   // Large coral mountain on the right.
-  fill('#FF747D');
+  fill(palette.rightMountain);
 
   beginShape();
   vertex(516, GROUND_Y);
@@ -282,7 +298,7 @@ function drawMountainBackdrop() {
   endShape(CLOSE);
 
   // Smaller orange mountain on the left.
-  fill('#FFA323');
+  fill(palette.smallMountain);
 
   beginShape();
   vertex(56, GROUND_Y);
@@ -316,27 +332,27 @@ function drawMountainBackdrop() {
 
   // Shrubs at the feet of the mountains.
   drawLandscapeBush(
-    0, GROUND_Y, 130, 102, '#FF747D'
+    0, GROUND_Y, 130, 102, palette.coralBush, palette.ink
   );
 
   drawLandscapeBush(
-    0, GROUND_Y, 48, 25, '#008D68'
+    0, GROUND_Y, 48, 25, palette.leaves, palette.ink
   );
 
   drawLandscapeBush(
-    110, GROUND_Y, 34, 16, '#008D68'
+    110, GROUND_Y, 34, 16, palette.leaves, palette.ink
   );
 
   drawLandscapeBush(
-    634, GROUND_Y, 75, 37, '#008D68'
+    634, GROUND_Y, 75, 37, palette.leaves, palette.ink
   );
 
   drawLandscapeBush(
-    765, GROUND_Y, 40, 24, '#008D68'
+    765, GROUND_Y, 40, 24, palette.leaves, palette.ink
   );
 
   // Small decorative black marks.
-  stroke(LANDSCAPE_INK);
+  stroke(palette.ink);
   strokeWeight(3);
 
   line(83, GROUND_Y - 168, 81, GROUND_Y - 186);
@@ -353,7 +369,7 @@ function drawMountainBackdrop() {
 // x and y indicate its lower-left position.
 
 function drawLandscapeBush(
-  x, y, bushWidth, bushHeight, colour
+  x, y, bushWidth, bushHeight, colour, ink = LANDSCAPE_INK
 ) {
   push();
 
@@ -361,7 +377,7 @@ function drawLandscapeBush(
   scale(bushWidth / 120, bushHeight / 100);
 
   fill(colour);
-  stroke(LANDSCAPE_INK);
+  stroke(ink);
   strokeWeight(4);
 
   beginShape();
@@ -383,7 +399,7 @@ function drawLandscapeBush(
 // GRASS MARKS AND DOTS
 // ========================================
 
-function drawGrassDetails() {
+function drawGrassDetails(ink = LANDSCAPE_INK) {
   push();
 
   // Positions are measured from the ground boundary.
@@ -393,7 +409,7 @@ function drawGrassDetails() {
     (height - GROUND_Y) / 131
   );
 
-  stroke(LANDSCAPE_INK);
+  stroke(ink);
   strokeWeight(3);
 
   // Fixed positions keep the background stable.
@@ -424,7 +440,7 @@ function drawGrassDetails() {
   ];
 
   noStroke();
-  fill(LANDSCAPE_INK);
+  fill(ink);
 
   for (const cluster of dotClusters) {
     const x = cluster[0];
@@ -443,7 +459,7 @@ function drawGrassDetails() {
 // FOREGROUND CORNER PLANTS
 // ========================================
 
-function drawCornerFoliage() {
+function drawCornerFoliage(palette = DAY_LANDSCAPE) {
   push();
 
   // Anchor these plants to the bottom of the canvas.
@@ -453,12 +469,12 @@ function drawCornerFoliage() {
     (height - GROUND_Y) / 131
   );
 
-  drawLeafFan(0, 0, 1);
-  drawLeafFan(800, 0, -1);
+  drawLeafFan(0, 0, 1, palette.leaves, palette.ink);
+  drawLeafFan(800, 0, -1, palette.leaves, palette.ink);
 
   // Orange plant in front of the right-hand leaves.
   drawLandscapeBush(
-    712, 0, 74, 60, '#FFA323'
+    712, 0, 74, 60, palette.accentBush, palette.ink
   );
 
   pop();
@@ -467,14 +483,14 @@ function drawCornerFoliage() {
 
 // direction = 1 faces right; -1 mirrors the plant.
 
-function drawLeafFan(x, y, direction) {
+function drawLeafFan(x, y, direction, colour = '#008D68', ink = LANDSCAPE_INK) {
   push();
 
   translate(x, y);
   scale(direction, 1);
 
-  fill('#008D68');
-  stroke(LANDSCAPE_INK);
+  fill(colour);
+  stroke(ink);
   strokeWeight(4);
 
   beginShape();
@@ -489,6 +505,53 @@ function drawLeafFan(x, y, direction) {
 
   endShape(CLOSE);
 
+  pop();
+}
+
+function drawNightSkyDetails(time, ink) {
+  push();
+  noStroke();
+  const stars = [
+    [55, 58, 4], [142, 105, 3], [226, 53, 5], [318, 124, 3],
+    [402, 65, 4], [504, 112, 5], [607, 51, 3], [731, 96, 4]
+  ];
+  for (let i = 0; i < stars.length; i += 1) {
+    const twinkle = 0.75 + sin(time * 2 + i * 1.8) * 0.25;
+    fill(255, 239, 157, 210);
+    circle(stars[i][0], stars[i][1], stars[i][2] * twinkle);
+  }
+  const moonX = 676;
+  const moonY = 92;
+  const moonPulse = 1 + sin(time * 1.15) * 0.025;
+
+  // Soft concentric light stays behind the outlined hand-drawn moon.
+  noStroke();
+  fill(255, 232, 126, 24);
+  circle(moonX, moonY, 112 * moonPulse);
+  fill(255, 236, 150, 42);
+  circle(moonX, moonY, 82 * moonPulse);
+
+  stroke(ink);
+  strokeWeight(4);
+  fill('#F6E7A2');
+  circle(moonX, moonY, 62);
+
+  // Simple crater marks retain the crayon-like graphic language.
+  noStroke();
+  fill(201, 174, 104, 105);
+  circle(moonX - 14, moonY - 10, 9);
+  circle(moonX + 13, moonY - 14, 6);
+  circle(moonX + 16, moonY + 9, 11);
+  circle(moonX - 8, moonY + 16, 6);
+  circle(moonX - 19, moonY + 7, 4);
+  pop();
+}
+
+function drawNightLandscape(time, opacityAmount = 1) {
+  if (opacityAmount <= 0) return;
+  push();
+  drawingContext.globalAlpha *= opacityAmount;
+  drawLandscape(NIGHT_LANDSCAPE, time);
   pop();
 }
 
