@@ -75,7 +75,7 @@ const USER_INPUT_PATHS = [
   'assets/user input/Sad-rain face.png',
   'assets/user input/So sad.png',
   'assets/user input/wet.png',
-  'assets/user input/haracter 2 pink.png',
+  'assets/user input/character 2 pink.png',
   'assets/user input/hand pointed forward_C2.png',
   'assets/user input/walk1 (character 2).png',
   'assets/user input/walk2 (character 2).png',
@@ -203,7 +203,7 @@ if (storyStage === 'wet') {
     );
     if (character2Giving && character2GiveImageReady) {
   drawCharacterHint(
-    'Character 2 wants to give the umbrella to Character 1.'
+    'Click the green figure to accept the umbrella and move together.'
   );
 } else if (character2Pointing && character2PointingImageReady) {
   }
@@ -215,7 +215,7 @@ if (storyStage === 'pinkReveal') {
 
   if (character2Giving && character2GiveImageReady) {
     drawCharacterHint(
-      'Character 2 wants to give the umbrella to Character 1.'
+      'Click the green figure to accept the umbrella and move together.'
     );
   } else if (character2WalkStartedAt > 0 && !character2Walking) {
     drawCharacterHint(
@@ -262,7 +262,17 @@ if (character2Walking) {
 
 
 
-function mousePressed() {
+function mousePressed(event) {
+  // Keep microphone-button clicks separate from story clicks on the canvas.
+  if (event && event.target && event.target.tagName !== 'CANVAS') return;
+  // Resume the sound context from a real click so Vy's rain sound can play.
+  userStartAudio();
+  // Emery: accept the umbrella after Vy's final pose, retaining both positions.
+  if (storyStage === 'pinkReveal' && character2Giving && clickOnCharacter()) {
+    startTimeBased();
+    return false;
+  }
+  if (storyStage === 'timeBased' || isAudioFinaleStage()) return false;
   // Zicen's finale handles the cave and campfire clicks without adding more
   // audio-specific conditions to the user-input story controller.
   if (handleAudioSceneClick()) return false;
@@ -523,13 +533,8 @@ function preloadCharacterImages() {
   standingImage = loadImage(
     'assets/user input/stand.png',
     (img) => {
-      // Crop away the black margin only when the source has the expected size.
-      // Smaller source images are drawn whole instead of producing an empty crop.
-      if (img.width >= 585 && img.height >= 1090) {
-        standingImage = img.get(195, 190, 390, 900);
-      } else {
-        standingImage = img;
-      }
+      // Current PNGs already have transparent margins; preserve the image.
+      standingImage = img;
       standingImageReady = true;
     },
     () => {
@@ -872,6 +877,15 @@ function drawRain(time, heavy = true) {
   pop();
 }
 
+function clickOnCave() {
+  const caveScale = min(width * 0.44 / 520, GROUND_Y * 0.70 / 360);
+
+  return mouseX >= 0 &&
+    mouseX <= 520 * caveScale &&
+    mouseY >= GROUND_Y - 360 * caveScale &&
+    mouseY <= GROUND_Y;
+}
+
 function drawLightning(time) {
 // A flash of lightning appears briefly every few seconds
   const cycle = time % 4.5;
@@ -931,6 +945,17 @@ function drawCharacterGlow(x, y, time, fade = 1, stage = '') {
     ellipse(0, 0, 100 + pulse * 12, 195 + pulse * 12);
   }
 
+  // Keep the highlights static; in the wet areas, place them around the highlights that have been toned down.
+  for (let i = 0; i < 8; i++) {
+    const angle = TWO_PI * i / 8;
+    const radius = isWet ? 70 : 72;
+    const sx = cos(angle) * radius;
+    const sy = sin(angle) * radius * (isWet ? 1 : 1.25);
+
+    sparkleColor.setAlpha((isWet ? 210 : 180) * fade);
+    fill(sparkleColor);
+    circle(sx, sy, 6);
+  }
 
   pop();
 }
@@ -1039,11 +1064,11 @@ function drawPinkSparkleDot() {
 
   fill('#ea0088');
   circle(x, y, 26); 
-  // pink dot
+  // Chấm hồng
 
   fill('#fff4fb');
   circle(x - 5, y - 5, 7); 
-  // light point
+  // Điểm phản sáng
 
   stroke('#ffd5ef');
   strokeWeight(3);
@@ -1109,6 +1134,9 @@ image(
   imageWidth,
   imageHeight
 );
+
+  // Emery integration fix: restore the outer drawing state on every frame.
+  pop();
 
   function drawCharacter2Umbrella(x, y) {
   push();

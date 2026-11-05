@@ -239,6 +239,17 @@ function drawStarGathering(time) {
 }
 
 function drawHoldingHandsGroup(time, opacityAmount) {
+  // Emery integration: keep the completed circle for Zicen's rising-star scene.
+  // Zicen's AudioDancer objects and audio-reactive finale remain in this module.
+  if (timeCircleReady && timeFigures.length > 0) {
+    if (opacityAmount <= 0) return;
+    updateTimeBased(time);
+    push();
+    drawingContext.globalAlpha *= opacityAmount;
+    drawTimeBased();
+    pop();
+    return;
+  }
   if (!audioHoldingHandsReady || opacityAmount <= 0) return;
   const elapsed = max(0, time - starGatherStartedAt);
   const entrance = strongEaseOut(constrain(elapsed / (audioReducedMotion ? 0.2 : 0.5), 0, 1));
