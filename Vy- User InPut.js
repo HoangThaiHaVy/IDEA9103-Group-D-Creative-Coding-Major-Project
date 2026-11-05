@@ -940,17 +940,6 @@ function drawCharacterGlow(x, y, time, fade = 1, stage = '') {
     ellipse(0, 0, 100 + pulse * 12, 195 + pulse * 12);
   }
 
-  // Keep the highlights static; in the wet areas, place them around the highlights that have been toned down.
-  for (let i = 0; i < 8; i++) {
-    const angle = TWO_PI * i / 8;
-    const radius = isWet ? 70 : 72;
-    const sx = cos(angle) * radius;
-    const sy = sin(angle) * radius * (isWet ? 1 : 1.25);
-
-    sparkleColor.setAlpha((isWet ? 210 : 180) * fade);
-    fill(sparkleColor);
-    circle(sx, sy, 6);
-  }
 
   pop();
 }
@@ -1059,11 +1048,11 @@ function drawPinkSparkleDot() {
 
   fill('#ea0088');
   circle(x, y, 26); 
-  // Chấm hồng
+  // pink dot
 
   fill('#fff4fb');
   circle(x - 5, y - 5, 7); 
-  // Điểm phản sáng
+  // light point
 
   stroke('#ffd5ef');
   strokeWeight(3);
