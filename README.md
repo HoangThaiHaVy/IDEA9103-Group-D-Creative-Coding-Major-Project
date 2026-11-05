@@ -400,10 +400,10 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   numbers. The secret chip reads `??? → clap 3 times fast` until the easter
   egg is found.
 - **Standby music** (`standby-music.js`) – a soft looping song for the
-  quiet parts of the whole story. It fades out whenever Emery's group-dance
-  song or the finale song is playing and fades back in (resuming, not
-  restarting) when they stop; Vy's rain and wind are sound effects and keep
-  playing on top of it. It is off during the final dance so the microphone
+  quiet parts of the whole story. It never plays over a teammate's sound:
+  whenever Vy's rain, Emery's group-dance song or the finale song is playing
+  it fades out in 0.3 s and pauses, then fades back in (resuming, not
+  restarting) when they stop. It is off during the final dance so the microphone
   only hears the visitor. Hooked into `preloadAudioAssets()` /
   `updateAudio()`, so no teammate's file had to change.
 - **Scene functions** (`audio-scene.js`) – `preloadAudioAssets()`,
@@ -432,9 +432,12 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
    four live meters (volume, bass, mid, treble) with what each one controls,
    and chips that light up when a clap, a held note, or a bright / deep sound
    is detected.
-5. The page scales to the browser window (the canvas keeps its 800 × 500
-   drawing coordinates and is enlarged with CSS; p5 maps mouse positions back,
-   so Vy's clicks still work at any size).
+5. The page fits the browser window without scrolling on desktop: the canvas
+   grows to the largest 16:10 size that fits above a compact sound strip
+   (CSS container query units), on a dark "stage" background. The ⓘ button
+   opens a pop-over listing what every sound controls. On phones the page
+   stacks and scrolls. The canvas keeps its 800 × 500 drawing coordinates
+   and p5 maps mouse positions back, so Vy's clicks still work at any size.
 6. Testing shortcuts – add one to the page address to skip the earlier
    chapters (click once on the page so the browser allows audio):
    - `?audioTest=handoff` – last seconds of Emery's circle, then the handoff
@@ -452,8 +455,9 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
 - `blendMode(ADD)` for the glow halo and star – https://p5js.org/reference/p5/blendMode/
 - p5 DOM (`createDiv`, `createSpan`, `addClass`, `style`) for the sound panel –
   https://p5js.org/reference/p5/createDiv/
-- CSS `min()` / `max()` for the responsive stage size –
-  https://developer.mozilla.org/en-US/docs/Web/CSS/min
+- CSS container queries (`container-type`, `cqw` / `cqh`) for the
+  responsive stage size –
+  https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries
 - Soundtrack: *Funky Drums Bass And Claps* by Emmraan, Pixabay Content
   License – https://pixabay.com/service/license-summary/
 - Standby music: *Child Play – Happy Kids School Background Music* by

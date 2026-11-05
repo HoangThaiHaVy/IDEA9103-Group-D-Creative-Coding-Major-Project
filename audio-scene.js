@@ -191,7 +191,7 @@ function setupAudio() {
   audioButton.mousePressed(enableAudioInput);
 
   audioStatus = createP('Audio is off');
-  audioStatus.parent(soundHud.controls);
+  audioStatus.parent(soundHud.footer);
   audioStatus.addClass('sound-hud__status');
 
   if (finaleSoundtrack) finaleSoundtrack.onended(handleSoundtrackEnded);

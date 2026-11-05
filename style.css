@@ -3,125 +3,150 @@ html, body {
   padding: 0;
 }
 
+/* Dark "stage" around the artwork: when the window is wider or taller than
+   the 16:10 canvas, the empty space reads as a deliberate frame. */
 body {
   font-family: Arial, sans-serif;
   color: #171722;
+  background: #1b1c2b;
 }
 
-/* Responsive stage: the canvas keeps p5's 800x500 drawing coordinates but is
-   displayed as large as the window allows (16:10), centred on the page, with
-   room left below for the sound panel. p5 converts mouse positions back to
-   canvas coordinates, so clicks still land on the right spot. */
-:root {
-  --stage-width: max(320px, min(100vw - 32px, (100vh - 300px) * 1.6, 1400px));
-}
-
+/* Desktop layout: everything fits in one screen without scrolling.
+   main is a full-height column; the canvas area takes all the height left
+   over by the instruction line and the sound strip. */
 main {
-  width: var(--stage-width);
-  margin: 0 auto;
-  padding: 16px 0 24px;
   box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+/* A size container lets the canvas use "cqw/cqh" units: it becomes as large
+   as possible while keeping 16:10 (width ≤ 100% of the area's width and
+   ≤ 160% of its height). p5 keeps 800x500 drawing coordinates and converts
+   mouse positions, so clicks still land correctly at any size.
+   Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries */
+#sketch-holder {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #sketch-holder canvas {
   display: block;
-  width: 100% !important;
+  width: min(100cqw, 160cqh) !important;
   height: auto !important;
 }
 
 #instruction {
-  margin: 10px 0 0;
-  font-size: 15px;
+  margin: 0;
+  font-size: 14px;
+  color: #fff4b7;
   text-align: center;
 }
 
 /* ===== Zicen: sound panel (audio-hud.js) ===== */
 .sound-hud {
-  margin-top: 12px;
-  padding: 12px 14px;
-  border: 3px solid #171722;
+  position: relative;
+  box-sizing: border-box;
+  width: min(100%, 1400px);
+  padding: 8px 12px;
+  border: 3px solid #0d0d16;
   border-radius: 12px;
-  background: #FFF7D6;
-  box-shadow: 4px 4px 0 #171722;
+  background: #fff7d6;
+  box-shadow: 4px 4px 0 #0d0d16;
 }
 
-.sound-hud__header {
+.sound-hud__bar,
+.sound-hud__footer {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 12px;
   align-items: center;
+  gap: 6px 12px;
+}
+
+.sound-hud__footer {
   justify-content: space-between;
-}
-
-.sound-hud__title {
-  font-weight: 700;
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.sound-hud__source {
-  font-size: 13px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border: 2px solid #171722;
-  border-radius: 999px;
-  background: #ffffff;
-}
-
-.sound-hud.is-live .sound-hud__source {
-  background: #BCEB35;
+  margin-top: 6px;
 }
 
 .sound-hud__controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 12px;
-  align-items: center;
-  margin: 10px 0;
+}
+
+.sound-hud__button,
+.sound-hud__info {
+  font: 700 13px Arial, sans-serif;
+  padding: 5px 11px;
+  border: 2px solid #171722;
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 #171722;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .sound-hud__button {
-  font: 700 14px Arial, sans-serif;
-  padding: 7px 14px;
-  border: 2px solid #171722;
-  border-radius: 8px;
-  background: #FFD02E;
-  box-shadow: 2px 2px 0 #171722;
-  cursor: pointer;
+  background: #ffd02e;
 }
 
 .sound-hud__button:disabled {
-  background: #BCEB35;
+  background: #bceb35;
   cursor: default;
 }
 
-.sound-hud__status {
-  margin: 0;
-  font-size: 13px;
+.sound-hud__info {
+  background: #ffffff;
+}
+
+.sound-hud.is-open .sound-hud__info {
+  background: #f9b8da;
+}
+
+.sound-hud__source {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border: 2px solid #171722;
+  border-radius: 999px;
+  background: #ffffff;
+  white-space: nowrap;
+}
+
+.sound-hud.is-live .sound-hud__source {
+  background: #bceb35;
 }
 
 .sound-hud__meters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 8px 18px;
+  flex: 1 1 420px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
 }
 
 .sound-hud__meter {
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  grid-template-rows: auto auto;
-  column-gap: 8px;
+  flex: 1 1 90px;
+  display: flex;
   align-items: center;
+  gap: 6px;
 }
 
 .sound-hud__label {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .sound-hud__track {
-  height: 14px;
+  flex: 1;
+  min-width: 40px;
+  height: 11px;
   border: 2px solid #171722;
   border-radius: 999px;
   background: #ffffff;
@@ -134,39 +159,89 @@ main {
   transition: width 80ms linear;
 }
 
-.sound-hud__effect {
-  grid-column: 2;
+.sound-hud__status {
+  order: -1; /* status text on the left, chips on the right */
+  margin: 0;
   font-size: 12px;
-  color: #4a4a58;
 }
 
 .sound-hud__events {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 5px;
 }
 
 .sound-hud__chip {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 4px 9px;
+  padding: 2px 8px;
   border: 2px solid #171722;
   border-radius: 999px;
   background: #ffffff;
-  opacity: 0.55;
+  opacity: 0.5;
   transition: opacity 120ms, background 120ms, transform 120ms;
 }
 
 .sound-hud__chip.is-active {
   opacity: 1;
-  background: #FFD02E;
+  background: #ffd02e;
   transform: translateY(-2px);
 }
 
 .sound-hud__chip.is-revealed {
   opacity: 1;
-  background: #F9B8DA;
+  background: #f9b8da;
+}
+
+/* Pop-over with every mapping; floats above the strip so opening it never
+   makes the page scroll. */
+.sound-hud__details {
+  display: none;
+  position: absolute;
+  right: 12px;
+  bottom: calc(100% + 10px);
+  z-index: 10;
+  width: min(480px, calc(100% - 24px));
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 3px solid #0d0d16;
+  border-radius: 12px;
+  background: #fff7d6;
+  box-shadow: 4px 4px 0 #0d0d16;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.sound-hud.is-open .sound-hud__details {
+  display: block;
+}
+
+.sound-hud__details-title {
+  margin: 0 0 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sound-hud__details ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+/* Phones and tall windows: stack normally and let the page scroll. */
+@media (max-width: 720px), (max-aspect-ratio: 1/1) {
+  main {
+    height: auto;
+  }
+
+  #sketch-holder {
+    container-type: normal;
+    flex: none;
+  }
+
+  #sketch-holder canvas {
+    width: 100% !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -174,9 +249,4 @@ main {
   .sound-hud__chip {
     transition: none;
   }
-}
-
-/* The hum meter drives the tower, so it gets a full-width row of its own. */
-.sound-hud__meter:last-child {
-  grid-column: 1 / -1;
 }
