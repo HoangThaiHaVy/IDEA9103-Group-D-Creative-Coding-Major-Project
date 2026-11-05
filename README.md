@@ -137,7 +137,7 @@ The main components of the code include:
 * Displaying a second character, along with animations for walking, pointing, or offering an umbrella.
 The user input code handles mouse interactions for the Vy-User Input file. It reads storyStage and updates it when the user clicks the start button, a character, or a rain or pink dot. It also updates related state, such as characterX, characterFade, rainDrops, and the second character’s position and animation.
 
-Some values it uses are declared in sketch.js, including storyStage, characterX, characterFade, GROUND_Y, finishedAt, and arrivalAt. The p5.js library provides width, height, mouseX, mouseY, frameCount, millis(), and drawing functions. Additionally, in the preload() function, I have added the audio for the rain sequence corresponding to the RAIN_STAGES: ['rainStorm', 'soSad', 'rainFace', 'wet', 'pinkReveal'].
+Some values it uses are declared in sketch.js, including storyStage, characterX, characterFade, GROUND_Y, finishedAt, and arrivalAt. This provides width, height, mouseX, mouseY, frameCount, millis(), and drawing functions. Additionally, in the preload() function, I have added the audio for the rain sequence corresponding to the RAIN_STAGES: ['rainStorm', 'soSad', 'rainFace', 'wet', 'pinkReveal'].
 
 2. How the story transitions between scenes
 
@@ -305,7 +305,7 @@ Image loading callbacks track whether assets have loaded successfully. The image
 The project also includes drawFallbackCharacter(), a function that creates a simplified character using basic shapes as an alternative visual representation.
 
 9. Technical Implementation
-The User Input Mechanic combines several key p5.js techniques:
+The User Input Mechanic combines several key techniques:
 Conditional statements: Control story progression and interaction logic.
 Time-based animation: Synchronise character movement and visual effects with elapsed time.
 Interpolation: Create smooth movement between positions using lerp() and constrain().
@@ -314,7 +314,9 @@ Custom drawing: Construct visual elements using shapes, Bézier curves, and laye
 Asset management: Load and organise character images and visual resources.
 Together, these mechanics and techniques transform individual user interactions into a continuous interactive narrative, supporting the project's central concept: Where individual movements become a shared rhythm.
 
-The code integrates a story-state controller with p5.js drawing functions. The `mousePressed()` function handles user interaction and scene transitions; `updateAndDrawVy()` determines which effects and content to render; and functions such as `drawCharacterAndKite()`, `drawRain()`, and `drawPinkCharacterReveal()` generate the visuals for each specific scene.
+The code in Vy- User Input.js integrates a story-state controller with sketch.js drawing functions. 
+
+The `mousePressed()` function handles user interaction and scene transitions; `updateAndDrawVy()` determines which effects and content to render; and functions such as `drawCharacterAndKite()`, `drawRain()`, and `drawPinkCharacterReveal()` generate the visuals for each specific scene.
 Regarding the narrative flow design, I have organized the program into distinct, modular sections to maintain overall control and facilitate integration with other mechanics, specifically state management, interaction handling, asset loading, and visual rendering. This structure allows for the addition of new scenes simply by defining a new state, specifying the corresponding transition conditions, and implementing the associated drawing logic.
 
 ### AI acknowledgement
