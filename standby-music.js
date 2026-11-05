@@ -1,11 +1,11 @@
 // ========================================
 // STANDBY MUSIC (Zicen, audio mechanic)
 // ========================================
-// A soft looping song fills the quiet moments of the whole story. It always
-// gives way to the team's own music:
-//   • Emery's group-dance song or Zicen's finale song playing → fade out;
-//   • when that music stops → fade back in and continue where it paused;
-//   • Vy's rain and wind are sound effects, so they keep playing on top.
+// A soft looping song fills the quiet moments of the whole story. It never
+// plays over the team's own sounds:
+//   • Vy's rain (sketch.js), Emery's group-dance song or Zicen's finale song
+//     starts → quick fade-out (0.3 s), then pause;
+//   • when they stop → slow fade back in, continuing where it paused.
 // It stays off during the final dance, because the microphone is listening
 // to the visitor there and background music would confuse the analysis.
 // Called from preloadAudioAssets() and updateAudio() in audio-scene.js, so
@@ -19,7 +19,8 @@
 
 const STANDBY_MUSIC_PATH = 'assets/audio/background-ambient.mp3';
 const STANDBY_MUSIC_VOLUME = 0.12; // soft enough to sit under the rain (0.15)
-const STANDBY_FADE_PER_SECOND = 0.1; // full fade takes a little over 1 second
+const STANDBY_FADE_OUT_PER_SECOND = 0.4; // out in 0.3 s – team sound comes first
+const STANDBY_FADE_IN_PER_SECOND = 0.08; // back in over 1.5 s
 
 let standbyMusic;
 let standbyMusicLevel = 0;
@@ -28,12 +29,16 @@ function preloadStandbyMusic() {
   standbyMusic = loadSound(STANDBY_MUSIC_PATH);
 }
 
-// True while any team member's own music is audible.
+// True while any team member's own sound is audible. These are the only
+// sounds in the project: rainMusic (Vy, sketch.js), groupDanceMusic (Emery)
+// and finaleSoundtrack (Zicen).
 function isTeamMusicPlaying() {
-  const emerySongPlaying = typeof groupDanceMusic !== 'undefined' &&
-    groupDanceMusic && groupDanceMusic.isPlaying();
-  const zicenSongPlaying = finaleSoundtrack && finaleSoundtrack.isPlaying();
-  return Boolean(emerySongPlaying || zicenSongPlaying);
+  const isOn = (sound) => Boolean(sound && sound.isPlaying());
+  const vyRain = typeof rainMusic !== 'undefined' &&
+    (isOn(rainMusic) || (typeof rainMusicPlaying !== 'undefined' && rainMusicPlaying));
+  const emerySong = typeof groupDanceMusic !== 'undefined' && isOn(groupDanceMusic);
+  const zicenSong = isOn(finaleSoundtrack);
+  return vyRain || emerySong || zicenSong;
 }
 
 function updateStandbyMusic(deltaSeconds) {
@@ -43,10 +48,9 @@ function updateStandbyMusic(deltaSeconds) {
 
   const shouldPlay = storyStage !== 'audioDance' && !isTeamMusicPlaying();
   const targetLevel = shouldPlay ? STANDBY_MUSIC_VOLUME : 0;
-  const step = STANDBY_FADE_PER_SECOND * deltaSeconds;
   standbyMusicLevel = targetLevel > standbyMusicLevel
-    ? min(standbyMusicLevel + step, targetLevel)
-    : max(standbyMusicLevel - step, targetLevel);
+    ? min(standbyMusicLevel + STANDBY_FADE_IN_PER_SECOND * deltaSeconds, targetLevel)
+    : max(standbyMusicLevel - STANDBY_FADE_OUT_PER_SECOND * deltaSeconds, targetLevel);
 
   if (standbyMusicLevel > 0) {
     if (!standbyMusic.isPlaying()) standbyMusic.loop();
