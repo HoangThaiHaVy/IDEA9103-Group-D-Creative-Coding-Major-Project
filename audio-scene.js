@@ -95,6 +95,13 @@ let towerStartedAt = -Infinity;
 const STAR_CHIME_PATH = 'assets/audio/star-chime.mp3';
 const STAR_CHIME_VOLUME = 0.5;
 let starChime;
+
+// Applause for the curtain-call handstand wave after the song. Also an
+// original sound synthesised by Claude (32 virtual clappers: band-passed
+// noise bursts at 3.6–5.2 claps per second, swelling in and fading out).
+const APPLAUSE_PATH = 'assets/audio/applause.mp3';
+const APPLAUSE_VOLUME = 0.45;
+let applause;
 let starChimePlayedFor = null; // towerStartedAt of the tower that already chimed
 
 // During the soundtrack, drum hits make random dancers flip into a short
@@ -179,6 +186,7 @@ function preloadAudioAssets() {
   audioHandstandImages = AUDIO_HANDSTAND_PATHS.map((path) => loadImage(path));
   preloadStandbyMusic();
   starChime = loadSound(STAR_CHIME_PATH);
+  applause = loadSound(APPLAUSE_PATH);
   towerLayerImages = TOWER_LAYER_PATHS.map((path) => loadImage(
     path,
     () => { towerLayersLoaded += 1; }
@@ -337,6 +345,10 @@ function handleSoundtrackEnded() {
   // Ending: the group bows with a handstand wave, then climbs into a human
   // tower to touch the star they lifted together. Then it is the visitor's turn.
   startHandstandWave(finaleSoundtrackFinishedAt);
+  if (applause && applause.isLoaded()) {
+    applause.setVolume(APPLAUSE_VOLUME);
+    applause.play(); // the audience applauds the curtain call
+  }
   towerStartedAt = finaleSoundtrackFinishedAt + HANDSTAND_TOTAL +
     HANDSTAND_WAVE_STAGGER * 4 + 0.3;
   const micTakesOver = audioMechanic.useMicrophone();

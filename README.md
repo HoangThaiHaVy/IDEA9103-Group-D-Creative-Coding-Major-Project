@@ -337,7 +337,8 @@ audience can join.
    the light the friends lifted together now answers their shared sound.
 5. **Final bow** – when the song ends the group performs a *handstand wave*
    (each dancer flips onto their hands a moment after their neighbour – a nod
-   to the upside-down figures in Haring's dance drawings). Then the five climb
+   to the upside-down figures in Haring's dance drawings) while an audience
+   applauds. Then the five climb
    into a human tower and the top dancer touches the star they lifted at the
    start of the chapter; the star flares with a sparkling chime and the
    caption reads *"Together, they reach the light"*. The tower artwork originally held a moon; the moon
@@ -473,9 +474,10 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries
 - Soundtrack: *Funky Drums Bass And Claps* by Emmraan, Pixabay Content
   License – https://pixabay.com/service/license-summary/
-- Star chime (`star-chime.mp3`): an original sound synthesised for this
-  project (Python/NumPy bell partials + high shimmer), credited in the AI
-  acknowledgement.
+- Star chime (`star-chime.mp3`) and applause (`applause.mp3`): original
+  sounds synthesised for this project with Python/NumPy/SciPy (bell partials
+  with high shimmer; 32 virtual clappers made of band-passed noise bursts),
+  credited in the AI acknowledgement.
 - Standby music: *Child Play – Happy Kids School Background Music* by
   SunnyVibesAudio, Pixabay Content License (re-encoded to 128 kbps)
 - Spectral centroid as a measure of "brightness" –
@@ -500,7 +502,7 @@ so the soundtrack and the microphone can each drive the dancers, the
 end-of-song prompt, the glow / squash / shadow / burst reaction layers in
 `AudioDancer`, the persistent sound-reactive star, the handstand-wave easter
 egg and human-tower ending, the hum detector and level-by-level tower,
-the standby music, the synthesised star-chime sound, the `SoundHud` panel and its CSS, the responsive page layout in
+the standby music, the synthesised star-chime and applause sounds, the `SoundHud` panel and its CSS, the responsive page layout in
 `style.css`, and the rewritten audio section of this README. Zicen chose
 which suggestions to keep, tuned the limits by testing in the browser, and the
 header comment of each file states what was assisted.
