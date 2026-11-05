@@ -68,11 +68,6 @@ Details, sources, AI acknowledgements and individual decisions are recorded in t
 - `style.css`: CSS styling for the webpage.
 - `assets/user input`: Vy's put image character and rain audio 
 
-# Changed point for Week 9 Feedback
-
-
-
-
 # Development Notes
 - Update this section when major features change.
 - Record known bugs and future improvements.
@@ -84,7 +79,10 @@ Details, sources, AI acknowledgements and individual decisions are recorded in t
 ## USER INPUT – Vy
 
 # Overview
-Developed the opening interaction and story progression for the *Move Together* project using p5.js. This section introduces a character flying a kite and allows the user to trigger the character's movement and kite release through mouse clicks.
+Vy developed the opening scenes to introduce the character flying a kite and establish the initial interaction. This section allows users to trigger the character’s movements and release the kite through mouse clicks, creating a more engaging and interactive experience. The mechanic concludes when the second character offers an umbrella, creating a connection with Emery’s section and establishing a transition into the next stage of the experience. 
+
+**Purpose**
+The scenes in the User Input mechanic are designed to establish a sense of loneliness and emotional distance, creating the initial context for the story. Through mouse-click interactions, users trigger the character’s movements and kite release, gradually unfolding the opening narrative. This sense of isolation serves as a catalyst for the friendship and connection that develop in the subsequent scenes, which are further explored through Emery’s and Zichen’s mechanics
 
 ### User Input → change logic flow (response to tutor feedback)
 Major Design Revisions
@@ -129,7 +127,7 @@ I placed the light behind the character to express their emotional energy and he
 - Interaction Prompts: Added contextual text prompts to guide users through the interaction and communicate the character's actions.
 - Image Preloading: Integrated `preloadCharacterImages()` to load character assets before the animation begins.
 
-### Technical Implementation
+### Techniques used and design decisions
 1. Overview: 
 The main components of the code include:
 * Loading character images and tracking their loading status.
@@ -154,15 +152,9 @@ In the `rainFace` scene, the user must click the blue dots before clicking the c
 
 3. State variables and images
 3.1. Image of the main character
-let standingImage;
-let surprisedImage;
-let walkImage;
-let walk1Image;
-let walk2Image;
-let sadnessImage;
-let sadRainImage;
-let soSadImage;
-let pointingForwardImage;
+let standingImage; let surprisedImage; let walkImage; let walk1Image;
+let walk2Image; let sadnessImage; let sadRainImage;
+let soSadImage; let pointingForwardImage;
 let wetImage;
 These variables store images used to represent various poses:
 * standingImage: the character standing normally.
@@ -295,7 +287,7 @@ drawRainDropsAndPuddles(): Animates rain droplets transforming into expanding pu
 drawPinkSparkleDot(): Creates the glowing pink sparkle that introduces the second character.
 These effects use mathematical functions, transparency, and layered shapes to create a dynamic visual environment.
 
-5. Interaction Detection
+7. Interaction Detection
 The project uses custom hit-detection functions to identify user interactions with visual elements.
 
 clickOnCharacter(): detects clicks on the main character and its interaction area.
@@ -305,14 +297,14 @@ clickOnCave(): checks whether the user clicks within the cave area.
 
 These functions ensure that interactive elements respond appropriately to user input.
 
-6. Asset Management
+8. Asset Management
 The preloadCharacterImages() function loads the visual assets required for the experience, including character poses, walking animations, emotional expressions, and the second character.
 
 Image loading callbacks track whether assets have loaded successfully. The imageLoadFailed() function provides console warnings when an image cannot be loaded, helping identify incorrect filenames or asset paths.
 
 The project also includes drawFallbackCharacter(), a function that creates a simplified character using basic shapes as an alternative visual representation.
 
-7. Technical Implementation
+9. Technical Implementation
 The User Input Mechanic combines several key p5.js techniques:
 Conditional statements: Control story progression and interaction logic.
 Time-based animation: Synchronise character movement and visual effects with elapsed time.
@@ -324,6 +316,22 @@ Together, these mechanics and techniques transform individual user interactions 
 
 The code integrates a story-state controller with p5.js drawing functions. The `mousePressed()` function handles user interaction and scene transitions; `updateAndDrawVy()` determines which effects and content to render; and functions such as `drawCharacterAndKite()`, `drawRain()`, and `drawPinkCharacterReveal()` generate the visuals for each specific scene.
 Regarding the narrative flow design, I have organized the program into distinct, modular sections to maintain overall control and facilitate integration with other mechanics, specifically state management, interaction handling, asset loading, and visual rendering. This structure allows for the addition of new scenes simply by defining a new state, specifying the corresponding transition conditions, and implementing the associated drawing logic.
+
+### AI acknowledgement
+For the user input mechanism, I utilized OpenAI Codex to debug and fix errors that arose during the coding process. For elements such as the kite and the wind, I leveraged this tool to enhance their visual aesthetics, building upon the codebase I had previously written to render them. I also used OpenAI Codex to handle the rendering of an MP4 file containing rain sounds, to draw a hand-shaped cursor for the opening scene, and to create a more natural and visually appealing wind effect.
+
+Use Microsoft Copilot and Google Gemini to generate character image in `assets/user input`folder
+
+### External references
+
+For all the character images, I used Microsoft Copilot and Google Gemini to create characters that closely resemble the original artwork. I provided descriptions of the characters I envisioned, and Copilot and Google Gemini helped me generate the images accordingly. Afterward, I used Figma to remove the white backgrounds, resulting in character images with transparent backgrounds.
+
+- **Music:** *Rainy day with piano | Sad | Loneliness* by **Pixabayc**, supplied from (https://pixabay.com/music/modern-classical-rainy-day-with-piano-sad-loneliness-187567/). Stored as `assets/user input/rainsound/rainsound.mp3`,This music is intended to enhance the realism of scenes featuring rain. The MP4 preview uses an edited excerpt, incorporating added latency and a crossfade effect. This is a recording from an external source it is not an original composition by our team; please retain the artist/source information and adhere to the attribution terms specified on the original track's page.
+
+- Reference Project Inspiration: 
+Essie King. (2026). Movement and Dance in Keith Haring's Iconography. https://www.myartbroker.com/artist-keith-haring/articles/movement-dance-keith-haring-iconography
+
+Mariaelena Gherardi (n.d). Art in Action: Color the School. https://www.haring.com/!/learn/art-in-action-color-the-school
 
 -------------------------------------------------------------------------------
 
@@ -652,7 +660,6 @@ Zicen:
 - Converting p5.FFT's decibel-scaled values back to linear energy
   (`10^(dB/10)`) for the hum detector – https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData
 
----------------------------------------------------------------------------------
 
 ### AI acknowledgement
 
@@ -681,4 +688,4 @@ image (so the top hand can hold the code-drawn star), split it into three
 layers by colour so it can be built level by level, and resized them for
 the web.
 
-Regarding the User input mechanic, I used Codex to debug and fix errors during the coding process. For certain elements—such as the depiction of a kite and the wind. I utilized this tool to enhance the visual aesthetics, building upon the initial code I had written to render them.
+
