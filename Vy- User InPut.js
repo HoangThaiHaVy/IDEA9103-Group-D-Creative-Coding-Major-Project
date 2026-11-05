@@ -8,7 +8,6 @@
 // ========================================
 let standingImage;
 let surprisedImage;
-let walkImage;
 let walk1Image;
 let walk2Image;
 let sadnessImage;
@@ -20,7 +19,6 @@ let sadRainImageReady = false;
 // Declare the load flag used by the So sad.png callback.
 let soSadImageReady = false;
 // Track loading so So sad.png is drawn only after it is ready.
-let walkImageReady = false;
 let walk1ImageReady = false;
 let walk2ImageReady = false;
 let standingImageReady = false;

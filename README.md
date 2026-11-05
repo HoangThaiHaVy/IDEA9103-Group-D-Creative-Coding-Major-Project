@@ -46,6 +46,7 @@ Connecting with the audio's storyline: After the five characters form a circle, 
 - `jsconfig.json`: JavaScript project configuration for the editor.
 - `sketch.js`: Main p5.js sketch and interactive experience.
 - `style.css`: CSS styling for the webpage.
+- `assets` folder: put image character and audio 
 
 
 # Development Notes
@@ -122,6 +123,70 @@ The user input code handles mouse interactions for the Vy-User Input file. It re
 Some values it uses are declared in sketch.js, including storyStage, characterX, characterFade, GROUND_Y, finishedAt, and arrivalAt. The p5.js library provides width, height, mouseX, mouseY, frameCount, millis(), and drawing functions. Additionally, in the preload() function, I have added the audio for the rain sequence corresponding to the RAIN_STAGES: ['rainStorm', 'soSad', 'rainFace', 'wet', 'pinkReveal'].
 
 2. How the story transitions between scenes
+
+The narrative is controlled by the `storyStage` variable. Each time the user clicks the mouse, the `mousePressed()` function checks the current stage and determines the next action.
+
+The `storyStage` variable represents the current scene. The `mousePressed()` function checks the current scene and the click location to handle interactions; other scene transitions are time-based and managed within `sketch.js`.
+
+Main sequence:
+`intro`: click → `ready`: click "start" button → `fadeIn` → `holding`:click character → `released`:click character → `walking` → `arrival`:click character → `walking` → `finished`:wait, then click character→ `lostKite`:click character → `rainStorm`:click character → `soSad`:click character → `rainFace`:click all raindrops, then click character → `wet`:wait 5 seconds, then click the pink dot → `pinkReveal`.
+
+In the `rainFace` scene, the user must click the blue dots before clicking the character to proceed. In `pinkReveal`, subsequent clicks control a second character: clicking the blue character causes them to walk toward the main character, and clicking this second character triggers a pose where they offer an umbrella. Clicking the character holding the umbrella calls `startTimeBased()` and transitions the story into its time dependent phase.
+
+3. State variables and images
+3.1. Image of the main character
+let standingImage;
+let surprisedImage;
+let walkImage;
+let walk1Image;
+let walk2Image;
+let sadnessImage;
+let sadRainImage;
+let soSadImage;
+let pointingForwardImage;
+let wetImage;
+These variables store images used to represent various poses:
+* standingImage: the character standing normally.
+* surprisedImage: the character looking surprised.
+* walk1Image, walk2Image: two frames of a walking animation, alternated to create movement.
+* sadnessImage: a sad pose.
+* sadRainImage: a sad expression in the rain.
+* soSadImage: an image used for the "so sad" scene.
+* pointingForwardImage: the character pointing forward or toward the cave.
+* wetImage: the character appearing wet.
+
+3.2. Second character photo
+let character2PinkImage;
+let character2PointingImage;
+let character2Walk1Image;
+let character2Walk2Image;
+let character2GiveImage;
+These images depict the actions of the second character:
+* character2PinkImage: initial pose, with the character holding an umbrella.
+* character2PointingImage: the character pointing toward the main character.
+* character2Walk1Image, character2Walk2Image: two frames showing the character walking.
+* character2GiveImage: a pose in which the character is handing over the umbrella.
+
+3.3. Image loading flag
+Example: 
+let standingImageReady = false;
+let standingImageFailed = false;
+The "...Ready" variables indicate whether an image has loaded successfully and is ready to be drawn. The "...Failed" variables are used to track instances where an image failed to load.Checking these flags before drawing prevents the code from attempting to use an image that hasn't finished loading. If an image is not ready, the drawing function can either skip it or use a different image as a fallback.
+
+3.4. Timer and coordinates
+Some variables save scene start time or character position:
+* sadStartedAt: the moment the story begins in the sad part.
+* sadRainStartedAt: starting time of sad face in the rain scene.
+* wetStartedAt: the time the character gets wet in the scene.
+* pinkDotStartedAt: time to start counting time before allowing the pink dot to be pressed.
+* character2X: horizontal coordinates of the second character.
+* character2WalkStartedAt: the time the second character starts walking.
+* character2WalkStartX, character2WalkTargetX: start and destination of movement.
+* character2PinkRevealStartedAt: starting time for the second character to appear.
+
+3.5. Five raindrops that can be pressed
+
+
 
 
 -------------------------------------------------------------------------------
