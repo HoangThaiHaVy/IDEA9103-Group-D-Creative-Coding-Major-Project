@@ -13,6 +13,7 @@
 //   long sound (hum / held note)→ smooth Perlin-noise travel inside a lane
 //   short sound (clap / drum hit)→ pose change + a short burst of rays
 //   spectral brightness        → spacing of the row (see audio-mechanic.js)
+//   soundtrack beat             → a random dancer flips into a quick handstand
 //   triple clap (easter egg)    → handstand wave, started by audio-scene.js
 // Every reaction is smoothed with lerp() and limited with constrain(), so loud
 // or noisy input never makes the drawings shake, overlap badly or leave the
@@ -55,6 +56,7 @@ class AudioDancer {
     this.previousPoseIndex = 0;
     this.burstStartedAt = -Infinity;
     this.handstandStartedAt = -Infinity;
+    this.handstandHold = HANDSTAND_HOLD;
     this.dancePhase = (options.phase / TWO_PI) % 1;
     this.lastUpdateTime = null;
     this.previousShortSound = false;
@@ -62,23 +64,25 @@ class AudioDancer {
 
   // Easter egg: the scene gives each dancer a slightly later start time, so
   // the five flips travel along the row like a wave.
-  startHandstand(startTime) {
+  // holdSeconds: how long to stay upside down (short for a solo beat flip).
+  startHandstand(startTime, holdSeconds = HANDSTAND_HOLD) {
     if (this.isInHandstand(startTime)) return;
     this.handstandStartedAt = startTime;
+    this.handstandHold = holdSeconds;
   }
 
   isInHandstand(time) {
     const elapsed = time - this.handstandStartedAt;
-    return elapsed >= 0 && elapsed < HANDSTAND_TOTAL;
+    return elapsed >= 0 && elapsed < HANDSTAND_FLIP * 2 + this.handstandHold;
   }
 
   // 0 = on the feet, 1 = fully upside down; eased flips at both ends.
   handstandAmount(time) {
     const elapsed = time - this.handstandStartedAt;
-    if (elapsed < 0 || elapsed >= HANDSTAND_TOTAL) return 0;
+    if (elapsed < 0 || elapsed >= HANDSTAND_FLIP * 2 + this.handstandHold) return 0;
     if (elapsed < HANDSTAND_FLIP) return strongEaseInOut(elapsed / HANDSTAND_FLIP);
-    if (elapsed < HANDSTAND_FLIP + HANDSTAND_HOLD) return 1;
-    return 1 - strongEaseInOut((elapsed - HANDSTAND_FLIP - HANDSTAND_HOLD) / HANDSTAND_FLIP);
+    if (elapsed < HANDSTAND_FLIP + this.handstandHold) return 1;
+    return 1 - strongEaseInOut((elapsed - HANDSTAND_FLIP - this.handstandHold) / HANDSTAND_FLIP);
   }
 
   setEntranceOrigin(x, y) {

@@ -89,6 +89,11 @@ const TOWER_RELEASE = 0.9; // the tower fades back into the row
 const TOWER_TOTAL = TOWER_GATHER + TOWER_HOLD + TOWER_RELEASE;
 let towerStartedAt = -Infinity;
 
+// During the soundtrack, drum hits make random dancers flip into a short
+// handstand, so the group keeps tumbling to the music (random() + chance).
+const SOLO_FLIP_CHANCE = 0.85; // chance per detected beat (beats are ≥ 1 s apart)
+const SOLO_FLIP_HOLD = 0.9; // seconds upside down for a solo flip
+
 // Easter egg: delay between neighbouring dancers in the handstand wave.
 const HANDSTAND_WAVE_STAGGER = 0.14;
 let handstandWaveStartedAt = -Infinity;
@@ -442,6 +447,11 @@ function drawAudioFinale(time) {
     startHandstandWave(time);
     soundHud.revealSecret();
   }
+  const waveBusy = time - handstandWaveStartedAt < HANDSTAND_TOTAL + 1;
+  if (audioMechanic.source === 'track' && audioData.shortSound && rowProgress >= 1 &&
+      tower.cover === 0 && !waveBusy) {
+    startSoloFlip(time);
+  }
   // The row fades out while the tower is visible, and fades back afterwards.
   drawAudioDancers(time, imageCharacterProgress, 1 - tower.cover);
   drawHumanTower(tower);
@@ -555,6 +565,13 @@ function drawSharedStar(time, settleProgress, flare = 0) {
   pop();
 
   drawRisingStar(time, width / 2, SHARED_STAR_Y, 1, 1 + energy * 0.35);
+}
+
+// One random dancer that is not already upside down flips on this beat.
+function startSoloFlip(time) {
+  if (audioReducedMotion || random() > SOLO_FLIP_CHANCE) return;
+  const readyDancers = audioDancers.filter((dancer) => !dancer.isInHandstand(time));
+  if (readyDancers.length > 0) random(readyDancers).startHandstand(time, SOLO_FLIP_HOLD);
 }
 
 // Easter egg: the five dancers flip into handstands one after another.

@@ -362,6 +362,7 @@ rule, each sound feature now controls a different, readable property:
 | Short sound (clap / drum hit) | Switches to the next hand-drawn pose with a burst of rays | 320 ms cooldown (mic), 1 s (song) |
 | Long sound (hum / held note) | Smooth Perlin-noise travel inside the dancer's own lane | ±24 px per lane, no collisions |
 | Bright vs. bass-heavy sound | Row spreads out or gathers closer together | Spread 0.72–1, campfire stays visible |
+| Soundtrack drum hit | A random dancer flips into a quick handstand (`random()`, 85% chance per beat) | Beats ≥ 1 s apart, 0.9 s upside down, never the same dancer twice at once |
 | **Easter egg:** three claps within 1.5 s | Handstand wave across the row | Only one wave at a time |
 | **Hum** (microphone): one steady note, no beat | Builds the human tower level by level; 3 s completes it and the top dancer touches the star | Progress falls back when the hum stops |
 
