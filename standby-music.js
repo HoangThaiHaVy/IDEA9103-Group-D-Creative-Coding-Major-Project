@@ -6,8 +6,9 @@
 //   • Vy's rain (sketch.js), Emery's group-dance song or Zicen's finale song
 //     starts → quick fade-out (0.3 s), then pause;
 //   • when they stop → slow fade back in, continuing where it paused.
-// It stays off during the final dance, because the microphone is listening
-// to the visitor there and background music would confuse the analysis.
+// It stays off for the whole audio chapter (rising star and final dance):
+// the gap after Emery's song is short, and in the dance the microphone is
+// listening to the visitor, so background music would confuse the analysis.
 // Called from preloadAudioAssets() and updateAudio() in audio-scene.js, so
 // no other file needs to change.
 //
@@ -46,7 +47,7 @@ function updateStandbyMusic(deltaSeconds) {
   // Browsers only allow sound after the visitor's first click.
   if (getAudioContext().state !== 'running') return;
 
-  const shouldPlay = storyStage !== 'audioDance' && !isTeamMusicPlaying();
+  const shouldPlay = !isAudioFinaleStage() && !isTeamMusicPlaying();
   const targetLevel = shouldPlay ? STANDBY_MUSIC_VOLUME : 0;
   standbyMusicLevel = targetLevel > standbyMusicLevel
     ? min(standbyMusicLevel + STANDBY_FADE_IN_PER_SECOND * deltaSeconds, targetLevel)

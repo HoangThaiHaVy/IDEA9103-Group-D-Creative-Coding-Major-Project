@@ -339,8 +339,8 @@ audience can join.
    (each dancer flips onto their hands a moment after their neighbour – a nod
    to the upside-down figures in Haring's dance drawings). Then the five climb
    into a human tower and the top dancer touches the star they lifted at the
-   start of the chapter; the star flares and the caption reads *"Together,
-   they reach the light"*. The tower artwork originally held a moon; the moon
+   start of the chapter; the star flares with a sparkling chime and the
+   caption reads *"Together, they reach the light"*. The tower artwork originally held a moon; the moon
    was removed so the climax reuses the story's own symbol instead of adding
    a second moon to the sky.
 6. **Your turn** – a banner asks the visitor to play music, clap, hum or
@@ -412,7 +412,8 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   numbers. The secret chip reads `??? → clap 3 times fast` until the easter
   egg is found.
 - **Standby music** (`standby-music.js`) – a soft looping song for the
-  quiet parts of the whole story. It never plays over a teammate's sound:
+  quiet parts of the story before the audio chapter (it stays off from the
+  rising star onwards). It never plays over a teammate's sound:
   whenever Vy's rain, Emery's group-dance song or the finale song is playing
   it fades out in 0.3 s and pauses, then fades back in (resuming, not
   restarting) when they stop. It is off during the final dance so the microphone
@@ -472,6 +473,9 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries
 - Soundtrack: *Funky Drums Bass And Claps* by Emmraan, Pixabay Content
   License – https://pixabay.com/service/license-summary/
+- Star chime (`star-chime.mp3`): an original sound synthesised for this
+  project (Python/NumPy bell partials + high shimmer), credited in the AI
+  acknowledgement.
 - Standby music: *Child Play – Happy Kids School Background Music* by
   SunnyVibesAudio, Pixabay Content License (re-encoded to 128 kbps)
 - Spectral centroid as a measure of "brightness" –
@@ -496,7 +500,7 @@ so the soundtrack and the microphone can each drive the dancers, the
 end-of-song prompt, the glow / squash / shadow / burst reaction layers in
 `AudioDancer`, the persistent sound-reactive star, the handstand-wave easter
 egg and human-tower ending, the hum detector and level-by-level tower,
-the standby music, the `SoundHud` panel and its CSS, the responsive page layout in
+the standby music, the synthesised star-chime sound, the `SoundHud` panel and its CSS, the responsive page layout in
 `style.css`, and the rewritten audio section of this README. Zicen chose
 which suggestions to keep, tuned the limits by testing in the browser, and the
 header comment of each file states what was assisted.

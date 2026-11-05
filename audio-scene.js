@@ -89,6 +89,14 @@ const TOWER_RELEASE = 0.9; // the tower fades back into the row
 const TOWER_TOTAL = TOWER_GATHER + TOWER_HOLD + TOWER_RELEASE;
 let towerStartedAt = -Infinity;
 
+// A short sparkle sound plays the moment the top hand touches the star.
+// Original sound, synthesised by Claude for this project (bell arpeggio
+// C6–E6–G6–C7–E7 with high shimmer), so no licence is needed.
+const STAR_CHIME_PATH = 'assets/audio/star-chime.mp3';
+const STAR_CHIME_VOLUME = 0.5;
+let starChime;
+let starChimePlayedFor = null; // towerStartedAt of the tower that already chimed
+
 // During the soundtrack, drum hits make random dancers flip into a short
 // handstand, so the group keeps tumbling to the music (random() + chance).
 const SOLO_FLIP_CHANCE = 0.85; // chance per detected beat (beats are ≥ 1 s apart)
@@ -170,6 +178,7 @@ function preloadAudioAssets() {
   finaleSoundtrack = loadSound(FINALE_SOUNDTRACK_PATH);
   audioHandstandImages = AUDIO_HANDSTAND_PATHS.map((path) => loadImage(path));
   preloadStandbyMusic();
+  starChime = loadSound(STAR_CHIME_PATH);
   towerLayerImages = TOWER_LAYER_PATHS.map((path) => loadImage(
     path,
     () => { towerLayersLoaded += 1; }
@@ -443,6 +452,7 @@ function drawAudioFinale(time) {
     audioMechanic.resetHum();
   }
   drawSharedStar(time, peopleTransition, tower.flare);
+  playStarChimeOnTouch(time);
   if (audioData.tripleClap && rowProgress >= 1 && tower.cover === 0) {
     startHandstandWave(time);
     soundHud.revealSecret();
@@ -457,6 +467,19 @@ function drawAudioFinale(time) {
   drawHumanTower(tower);
   drawHandstandCaption(time);
   if (tower.cover === 0) drawSoundtrackFinishedPrompt(time);
+}
+
+// Plays the sparkle once per tower, when the climb finishes and the hand
+// reaches the star (the start of the hold / star flare).
+function playStarChimeOnTouch(time) {
+  const elapsed = time - towerStartedAt;
+  const touching = elapsed >= TOWER_GATHER && elapsed < TOWER_GATHER + 0.5;
+  if (!touching || starChimePlayedFor === towerStartedAt) return;
+  starChimePlayedFor = towerStartedAt;
+  if (starChime && starChime.isLoaded()) {
+    starChime.setVolume(STAR_CHIME_VOLUME);
+    starChime.play();
+  }
 }
 
 // Describes the human tower for this frame:
