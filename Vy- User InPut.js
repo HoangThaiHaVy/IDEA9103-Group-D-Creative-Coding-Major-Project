@@ -142,12 +142,11 @@ if (
     soSad: storyStage === 'soSad',
 
     // Hide the kite while the character points forward toward the cave.
-    hideKite: storyStage === 'soSad' || storyStage === 'caveEntered' || storyStage === 'wet' || storyStage === 'pinkReveal',
+    hideKite: storyStage === 'soSad' || storyStage === 'wet' || storyStage === 'pinkReveal',
     kiteEscaped,
     escapeTime: kiteEscaped ? finishedElapsed - 0.8 : 0,
     kiteRise,
     fade: characterFade,
-    pointingForward: storyStage === 'caveEntered',
     wet: storyStage === 'wet' || storyStage === 'pinkReveal'
   });
   
@@ -181,9 +180,6 @@ if (
   drawLightning(time);
 }
 
-  if (storyStage === 'caveEntered') {
-    drawCharacterHint('Click to gather everyone around the light');
-  }
 if (storyStage === 'wet' && pinkDotStartedAt === null) {
   pinkDotStartedAt = time;
 }
@@ -598,7 +594,7 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
     sadness = false,
     sadRain = false,
     sadRainProgress = 0,
-      // Passed from the soSad story state.
+  // Passed from the soSad story state.
     hideKite = false,
     kiteEscaped = false,
     escapeTime = 0,
