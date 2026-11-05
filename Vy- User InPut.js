@@ -204,8 +204,7 @@ if (storyStage === 'wet') {
   drawCharacterHint(
     'Click the green figure to accept the umbrella and move together.'
   );
-} else if (character2Pointing && character2PointingImageReady) {
-  }
+    }
 }
 }
 
@@ -278,7 +277,7 @@ function mousePressed(event) {
 
   if (storyStage === 'intro') {
     storyStage = 'ready';
-  } else if (storyStage === 'ready') {
+} else if (storyStage === 'ready') {
     const overStart = abs(mouseX - width / 2) < 85 && abs(mouseY - 275) < 35;
     if (overStart) {
       storyStage = 'fadeIn';
@@ -288,28 +287,28 @@ function mousePressed(event) {
       midpointReached = false;
       walkFinished = false;
     }
-  } else if (storyStage === 'holding' && clickOnCharacter()) {
+} else if (storyStage === 'holding' && clickOnCharacter()) {
     storyStage = 'released';
-  } else if (storyStage === 'released' && clickOnCharacter()) {
+} else if (storyStage === 'released' && clickOnCharacter()) {
     storyStage = 'walking';
-    } else if (storyStage === 'arrival' && clickOnCharacter()) {
+} else if (storyStage === 'arrival' && clickOnCharacter()) {
     // Continue walking from the midpoint to the end of the path.
     midpointReached = true;
     storyStage = 'walking';
     // Updated: clicks on character advance the three post-escape emotional beats.
-    } else if (storyStage === 'finished' &&
+} else if (storyStage === 'finished' &&
              millis() / 1000 - finishedAt >= 1.8 &&
              clickOnCharacter()) {
     storyStage = 'lostKite';
     sadnessStartedAt = millis() / 1000;
     
-    } else if (storyStage === 'lostKite' && clickOnCharacter()) {
+} else if (storyStage === 'lostKite' && clickOnCharacter()) {
     storyStage = 'rainStorm';
   // Click on the character during heavy rain to trigger a "so sad" scene.
 } else if (storyStage === 'rainStorm' && clickOnCharacter()) {
   storyStage = 'soSad';
 
-// Click on the character in the "So sad" scene to enter "rainFace."
+  // Click on the character in the "So sad" scene to enter "rainFace."
 } else if (storyStage === 'soSad' && clickOnCharacter()) {
   storyStage = 'rainFace';
   sadRainStartedAt = millis() / 1000;
@@ -549,7 +548,7 @@ function preloadCharacterImages() {
   );
 
 
-surprisedImage = loadImage(
+  surprisedImage = loadImage(
     'assets/user input/stand-suprise 1.png',
     (img) => {
       surprisedImage = img;
@@ -560,18 +559,6 @@ surprisedImage = loadImage(
       imageLoadFailed('assets/user input/stand-suprise 1.png');
     }
   );
-
-  let loadedWalkImages = 0;
-  const onWalkImageLoaded = () => {
-    loadedWalkImages++;
-    if (loadedWalkImages === 2) walkImagesReady = true;
-  };
-
-  const onWalkImageFailed = (filename) => {
-    walkImageFailed = true;
-    imageLoadFailed(filename);
-  };
-  
 
     walk1Image = loadImage(
     'assets/user input/walk.png',
@@ -880,14 +867,6 @@ function drawRain(time, heavy = true) {
   pop();
 }
 
-function clickOnCave() {
-  const caveScale = min(width * 0.44 / 520, GROUND_Y * 0.70 / 360);
-
-  return mouseX >= 0 &&
-    mouseX <= 520 * caveScale &&
-    mouseY >= GROUND_Y - 360 * caveScale &&
-    mouseY <= GROUND_Y;
-}
 
 function drawLightning(time) {
 // A flash of lightning appears briefly every few seconds

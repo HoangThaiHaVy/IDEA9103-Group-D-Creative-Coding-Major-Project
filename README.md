@@ -234,7 +234,66 @@ display a prompt appropriate for the current scene. In the 'rainStorm' stage, th
 * Character clicked to begin interaction: a prompt instructing the user to click on each blue dot.
 * All five dots clicked: a prompt instructing the user to click on the character to continue the story.
 
+5. Second Character
 
+The drawPinkCharacterReveal() function manages the appearance and animation of the second character. The character is revealed after the user interacts with the pink sparkle. Its animations include pointing, walking towards the main character, and offering an umbrella.
+
+The character2X variable controls horizontal movement, while drawCharacter2Umbrella() creates the umbrella using custom Bézier shapes.Time-based interpolation creates a smooth walking animation, allowing the second character to approach the main character before offering support.
+
+6. Visual Effects and Environment
+
+The project uses custom drawing functions to create animated environmental effects and enhance the storytelling experience.
+Function:
+drawKite() : Draws the kite, including its colourful body, frame, string, and decorative elements.
+
+drawWind(): Creates moving wind effects using animated curves and sine-based motion.
+
+drawRain(): Generates animated rain with different intensities.
+
+drawLightning():Creates brief lightning flashes during the rain scene.
+
+drawCharacterGlow(): Adds atmospheric lighting around the character based on the current story stage.
+
+drawRainDropsAndPuddles(): Animates rain droplets transforming into expanding puddles after interaction.
+
+drawPinkSparkleDot(): Creates the glowing pink sparkle that introduces the second character.
+These effects use mathematical functions, transparency, and layered shapes to create a dynamic visual environment.
+
+5. Interaction Detection
+
+The project uses custom hit-detection functions to identify user interactions with visual elements.
+
+clickOnCharacter() detects clicks on the main character and its interaction area.
+
+clickOnCharacter2() detects clicks on the second character.
+
+clickRainDot() identifies interactions with individual rain droplets.
+
+clickOnCave() checks whether the user clicks within the cave area.
+
+These functions ensure that interactive elements respond appropriately to user input.
+
+6. Asset Management
+
+The preloadCharacterImages() function loads the visual assets required for the experience, including character poses, walking animations, emotional expressions, and the second character.
+
+Image loading callbacks track whether assets have loaded successfully. The imageLoadFailed() function provides console warnings when an image cannot be loaded, helping identify incorrect filenames or asset paths.
+
+The project also includes drawFallbackCharacter(), a function that creates a simplified character using basic shapes as an alternative visual representation.
+
+7. Technical Implementation
+
+The User Input Mechanic combines several key p5.js techniques:
+Conditional statements: Control story progression and interaction logic.
+Time-based animation: Synchronise character movement and visual effects with elapsed time.
+Interpolation: Create smooth movement between positions using lerp() and constrain().
+Mathematical animation: Use sin() and cos() to generate natural movement and visual effects.
+Custom drawing: Construct visual elements using shapes, Bézier curves, and layered graphics.
+Asset management: Load and organise character images and visual resources.
+Together, these mechanics and techniques transform individual user interactions into a continuous interactive narrative, supporting the project's central concept: Where individual movements become a shared rhythm.
+
+The code integrates a story-state controller with p5.js drawing functions. The `mousePressed()` function handles user interaction and scene transitions; `updateAndDrawVy()` determines which effects and content to render; and functions such as `drawCharacterAndKite()`, `drawRain()`, and `drawPinkCharacterReveal()` generate the visuals for each specific scene.
+Regarding the narrative flow design, I have organized the program into distinct, modular sections to maintain overall control and facilitate integration with other mechanics, specifically state management, interaction handling, asset loading, and visual rendering. This structure allows for the addition of new scenes simply by defining a new state, specifying the corresponding transition conditions, and implementing the associated drawing logic.
 
 -------------------------------------------------------------------------------
 
