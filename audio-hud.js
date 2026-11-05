@@ -127,8 +127,8 @@ class SoundHud {
     this.setChip('short', sound.shortSound);
     this.setChip('long', sound.longSound);
     this.setChip('hum', sound.humming);
-    this.setChip('spread', sourceName && sound.spread > 0.9);
-    this.setChip('gather', sourceName && sound.spread < 0.84);
+    this.setChip('spread', sourceName && sound.spread > 0.85);
+    this.setChip('gather', sourceName && sound.spread < 0.6);
     this.setChip('secret', sound.tripleClap);
   }
 

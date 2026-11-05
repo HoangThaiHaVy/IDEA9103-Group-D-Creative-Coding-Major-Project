@@ -7,7 +7,7 @@
 //
 // Sound → visual mapping (designed by Zicen, refined after tutor feedback that
 // asked for more detailed and visually appealing character reactions):
-//   intensity (overall volume) → dance tempo and jump height
+//   intensity (overall volume) → dance tempo and jump height (quiet ≈ still, loud ≈ high)
 //   bass                       → squash on landing + darker ground shadow
 //   treble                     → coloured glow halo and extra tilt
 //   long sound (hum / held note)→ smooth Perlin-noise travel inside a lane
@@ -124,8 +124,9 @@ class AudioDancer {
     // Jump: squared positive half of a sine wave gives a quick take-off and a
     // soft landing. pow(intensity, 0.62) makes quiet sounds still visible.
     const jumpBeat = pow(max(0, sin(TWO_PI * this.dancePhase)), 2);
-    const jumpTarget = jumpBeat * pow(intensity, 0.62) *
-      this.jumpStrength * 1.55;
+    // pow(intensity, 1.3) widens the contrast: quiet sound barely lifts the
+    // feet, loud sound sends the dancer up to ~2.6 × jumpStrength (≤ 125 px).
+    const jumpTarget = min(jumpBeat * pow(intensity, 1.3) * this.jumpStrength * 2.6, 125);
 
     // Squash: strongest when the dancer is close to the ground and the bass
     // is heavy, like knees bending on the beat. Limited to 9%.
@@ -136,7 +137,7 @@ class AudioDancer {
     const tiltTarget = sin(TWO_PI * this.dancePhase + this.phase) *
       constrain(intensity * 0.035 + treble * 0.03, 0, 0.07);
 
-    this.jump = lerp(this.jump, jumpTarget, 0.24);
+    this.jump = lerp(this.jump, jumpTarget, 0.38);
     this.squash = lerp(this.squash, squashTarget, 0.3);
     this.rotation = lerp(this.rotation, tiltTarget, 0.18);
     this.soundScale = lerp(this.soundScale, 1 + intensity * 0.06, 0.18);
@@ -150,7 +151,7 @@ class AudioDancer {
   // samples stay close together, so the travel is smooth rather than jumpy,
   // and each dancer stays inside its own lane to avoid collisions.
   updateTravel(time, sound, deltaSeconds) {
-    const spread = constrain(sound.spread || SILENT_SOUND_DATA.spread, MIN_SPREAD, 1);
+    const spread = constrain(sound.spread || SILENT_SOUND_DATA.spread, MIN_SPREAD, MAX_SPREAD);
     const laneAnchor = width / 2 + (this.baseX - width / 2) * spread;
 
     if (sound.longSound) {
@@ -236,7 +237,7 @@ class AudioDancer {
   // The shadow stays on the ground: it shrinks and fades while the dancer is
   // in the air, which makes the height of each jump easy to read.
   drawShadow(x, groundY, alpha) {
-    const lift = constrain(this.jump / (this.jumpStrength * 1.55), 0, 1);
+    const lift = constrain(this.jump / (this.jumpStrength * 2.6), 0, 1);
     push();
     noStroke();
     fill(4, 6, 24, 120 * alpha * (1 - lift * 0.6));

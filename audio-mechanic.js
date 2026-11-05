@@ -44,7 +44,26 @@ const SOURCE_LEVEL_RANGE = {
   mic: { quiet: 0.002, loud: 0.035, shortSoundCooldown: 320 },
   track: { quiet: 0.02, loud: 0.2, shortSoundCooldown: 1000 }
 };
-const MIN_SPREAD = 0.72; // closest the row may gather (1 = full width)
+const MIN_SPREAD = 0.4; // tight huddle (1 = full width of the row)
+const MAX_SPREAD = 1;
+
+// TONE BALANCE (bass / mid / treble). p5.FFT gives absolute, decibel-scaled
+// values, so a quiet microphone made treble read almost 0 and every sound
+// looked "bassy". Instead the mechanic measures the *balance* of the sound,
+// which does not depend on how loud it is:
+//   treble = spectral centroid (the frequency where the energy is centred,
+//            on a log scale) mapped from 250 Hz (dark) to 2000 Hz (bright);
+//   bass   = share of energy below 250 Hz;  mid = share from 250 Hz to 2 kHz.
+// Measured centroids: funky drum track ≈ 140 Hz, standby song 225–805 Hz,
+// soprano ≈ 1250 Hz, whistle ≈ 2500 Hz (the same at 1/10 of the volume).
+// Reference (spectral centroid): https://en.wikipedia.org/wiki/Spectral_centroid
+const BALANCE_SETTINGS = {
+  darkCentroid: 250,
+  brightCentroid: 2000,
+  bassShareRange: [0.15, 0.85],
+  midShareRange: [0.1, 0.7],
+  smoothing: 0.3
+};
 const TRIPLE_CLAP_WINDOW = 1500; // ms in which three short sounds count as a combo
 
 // HUM DETECTION (builds the human tower). Music is also continuous, so a hum
@@ -89,7 +108,8 @@ class AudioMechanic {
     this.voiceSustain = 0;
     this.lastAnalysisAt = null;
     this.spreadAmount = SILENT_SOUND_DATA.spread;
-
+    this.balance = { bass: 0, mid: 0, treble: 0 };
+    this.averageTilt = 0; // slow average of (treble − bass) for the spread
     // Hum detection memory.
     this.lastOnsetAt = -Infinity;
     this.dominantBin = -1;
@@ -151,6 +171,33 @@ class AudioMechanic {
     return true;
   }
 
+  // Volume-independent tone balance of one FFT frame (see BALANCE_SETTINGS).
+  measureBalance(spectrum) {
+    const nyquist = sampleRate() / 2;
+    let total = 0;
+    let weightedLogFrequency = 0;
+    let low = 0;
+    let middle = 0;
+    for (let i = 1; i < spectrum.length; i += 1) {
+      const frequency = i * nyquist / spectrum.length;
+      if (frequency < 40 || frequency > 8000) continue;
+      // Decibel-like byte → linear energy (minus the silent floor of 1).
+      const energy = pow(10, spectrum[i] * 0.0275) - 1;
+      total += energy;
+      weightedLogFrequency += energy * Math.log2(frequency);
+      if (frequency < 250) low += energy;
+      else if (frequency < 2000) middle += energy;
+    }
+    if (total <= 0) return { bass: 0, mid: 0, treble: 0 };
+    const centroid = pow(2, weightedLogFrequency / total);
+    const { darkCentroid, brightCentroid, bassShareRange, midShareRange } = BALANCE_SETTINGS;
+    return {
+      treble: constrain(map(Math.log2(centroid), Math.log2(darkCentroid), Math.log2(brightCentroid), 0, 1), 0, 1),
+      bass: constrain(map(low / total, bassShareRange[0], bassShareRange[1], 0, 1), 0, 1),
+      mid: constrain(map(middle / total, midShareRange[0], midShareRange[1], 0, 1), 0, 1)
+    };
+  }
+
   // Returns true while the spectrum looks like one held, steady note.
   detectHum(spectrum, intensity, now) {
     const nyquist = sampleRate() / 2;
@@ -203,10 +250,10 @@ class AudioMechanic {
 
     const spectrum = fft.analyze();
     const rawVolume = amplitude.getLevel();
-    const bass = fft.getEnergy('bass') / 255;
-    const mid = fft.getEnergy('mid') / 255;
+    // Raw band energies are still used for clap detection (a sharp jump in
+    // high frequencies), which was tuned with them.
     const highMid = fft.getEnergy('highMid') / 255;
-    const treble = fft.getEnergy('treble') / 255;
+    const rawTreble = fft.getEnergy('treble') / 255;
     const intensity = constrain(
       map(rawVolume, levelRange.quiet, levelRange.loud, 0, 1),
       0,
@@ -221,7 +268,20 @@ class AudioMechanic {
 
     // SHORT SOUND: a clap or drum hit is a sudden broadband jump, not simply a
     // loud sound. The cooldown stops one hit from counting twice.
-    const clapEnergy = intensity * 0.45 + highMid * 0.35 + treble * 0.2;
+    const clapEnergy = intensity * 0.45 + highMid * 0.35 + rawTreble * 0.2;
+
+    // Tone balance (volume independent), only updated while there is sound.
+    if (intensity > 0.05) {
+      const measured = this.measureBalance(spectrum);
+      for (const key of ['bass', 'mid', 'treble']) {
+        this.balance[key] = lerp(this.balance[key], measured[key], BALANCE_SETTINGS.smoothing);
+      }
+    } else {
+      for (const key of ['bass', 'mid', 'treble']) {
+        this.balance[key] = lerp(this.balance[key], 0, 0.1);
+      }
+    }
+    const { bass, mid, treble } = this.balance;
     const onset = clapEnergy - this.previousClapEnergy > 0.07 && clapEnergy > 0.16;
     if (onset) this.lastOnsetAt = now; // every percussive hit, for hum detection
     const shortSound = onset && now - this.lastClapAt > levelRange.shortSoundCooldown;
@@ -246,10 +306,10 @@ class AudioMechanic {
     // the spectrum is steady and drains when it changes. This is a simple
     // hand-made classifier, not speech recognition.
     const spectralChange = abs(mid - this.previousMid) +
-      abs(highMid - this.previousHighMid);
+      abs(treble - this.previousHighMid);
     this.previousMid = mid;
-    this.previousHighMid = highMid;
-    const voiceActive = intensity > 0.07 && mid + highMid > 0.14;
+    this.previousHighMid = treble;
+    const voiceActive = intensity > 0.07;
 
     if (voiceActive && spectralChange < 0.13 && !shortSound) {
       this.voiceSustain = min(this.voiceSustain + deltaSeconds, 1);
@@ -258,15 +318,18 @@ class AudioMechanic {
     }
     const longSound = voiceActive && this.voiceSustain > 0.42 && !shortSound;
 
-    // SPREAD: bright sounds open the row of dancers; bass-heavy sounds pull
-    // them closer together. The range MIN_SPREAD–1 keeps them inside the
-    // canvas, lets their hands overlap only slightly and keeps the campfire visible.
-    const spectralTotal = bass + mid + highMid + treble + 0.08;
-    const brightness = (highMid + treble + 0.04) / spectralTotal;
+    // SPREAD: bright sounds throw the row wide open, dark / bass-heavy sounds
+    // pull the dancers into a tight huddle. Two parts:
+    //   • the overall tone (treble − bass), so a whistle and a bass hum differ;
+    //   • how much brighter or darker it is than the last ~4 s, so the row
+    //     keeps opening and closing inside one song as well.
+    const tilt = treble - bass;
+    this.averageTilt = lerp(this.averageTilt, tilt, constrain(deltaSeconds / 4, 0, 1));
+    const tiltScore = tilt * 0.3 + (tilt - this.averageTilt) * 1.6;
     const spreadTarget = voiceActive
-      ? constrain(map(brightness, 0.28, 0.58, MIN_SPREAD, 1), MIN_SPREAD, 1)
+      ? constrain(map(tiltScore, -0.35, 0.35, MIN_SPREAD, MAX_SPREAD), MIN_SPREAD, MAX_SPREAD)
       : SILENT_SOUND_DATA.spread;
-    this.spreadAmount = lerp(this.spreadAmount, spreadTarget, 0.12);
+    this.spreadAmount = lerp(this.spreadAmount, spreadTarget, 0.15);
 
     const humming = this.detectHum(spectrum, intensity, now) &&
       (this.source === 'mic' || this.allowHumFromTrack);

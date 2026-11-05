@@ -355,16 +355,27 @@ rule, each sound feature now controls a different, readable property:
 
 | Sound feature (`AudioMechanic`) | Dancer reaction (`AudioDancer`) | Limit that keeps it tidy |
 | --- | --- | --- |
-| Overall volume (`p5.Amplitude`) | Dance tempo and jump height, slight scale-up; star size and halo | Jump ≤ ~1.5 × `jumpStrength`, scale ≤ 6% |
-| Bass energy (`p5.FFT`) | Squash on landing, ground shadow, star rays, campfire pulse | Squash ≤ 9%, only near the ground |
-| Mid energy | Campfire flame grows taller | Flame ≤ 18% taller |
-| Treble energy | Coloured glow halo in the dancer's own colour, extra tilt | Tilt ≤ ~4°, glow 0–1 |
+| Overall volume (`p5.Amplitude`) | Dance tempo and jump height – `pow(volume, 1.3)` makes quiet sound barely lift the feet and loud sound jump high; star size and halo | Jump ≤ 125 px, scale ≤ 6% |
+| Bass (share of energy below 250 Hz) | Squash on landing, ground shadow, star rays, campfire pulse | Squash ≤ 9%, only near the ground |
+| Mid (share of energy 250 Hz – 2 kHz) | Campfire flame grows taller | Flame ≤ 18% taller |
+| Treble (spectral centroid, 250 Hz dark → 2 kHz bright) | Coloured glow halo in the dancer's own colour, extra tilt | Tilt ≤ ~4°, glow 0–1 |
 | Short sound (clap / drum hit) | Switches to the next hand-drawn pose with a burst of rays | 320 ms cooldown (mic), 1 s (song) |
 | Long sound (hum / held note) | Smooth Perlin-noise travel inside the dancer's own lane | ±24 px per lane, no collisions |
-| Bright vs. bass-heavy sound | Row spreads out or gathers closer together | Spread 0.72–1, campfire stays visible |
+| Bright vs. dark sound, and brighter / darker than the last ~4 s | Row throws itself wide open or squeezes into a tight huddle | Spread 0.4–1 of the row width |
 | Soundtrack drum hit | A random dancer flips into a quick handstand (`random()`, 85% chance per beat) | Beats ≥ 1 s apart, 0.9 s upside down, never the same dancer twice at once |
 | **Easter egg:** three claps within 1.5 s | Handstand wave across the row | Only one wave at a time |
 | **Hum** (microphone): one steady note, no beat | Builds the human tower level by level; 3 s completes it and the top dancer touches the star | Progress falls back when the hum stops |
+
+**Why bass / mid / treble are measured as a balance.** p5.FFT returns
+absolute, decibel-scaled energies. A microphone is about 20 dB quieter than a
+music file, so with the raw `getEnergy('treble')` values almost every sound
+read as "bass" and high-pitched songs barely registered. The mechanic now
+uses the *spectral centroid* (where the energy is centred) and the *share* of
+energy in each band, which do not change with volume. Measured: the funky
+drum track ≈ 140 Hz, the standby song 225–805 Hz, a soprano note ≈ 1250 Hz, a
+whistle ≈ 2500 Hz – and the whistle at one tenth of the volume still ≈ 2450 Hz.
+In tests a whistle opens the row fully (spread 1.0) while a bass line
+squeezes it to 0.4, and both songs swing between 0.4 and 1.0.
 
 **Telling a hum apart from music.** Music is continuous too, so "a long
 sound" alone would be triggered by any song. The hum detector therefore needs
@@ -463,6 +474,8 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   License – https://pixabay.com/service/license-summary/
 - Standby music: *Child Play – Happy Kids School Background Music* by
   SunnyVibesAudio, Pixabay Content License (re-encoded to 128 kbps)
+- Spectral centroid as a measure of "brightness" –
+  https://en.wikipedia.org/wiki/Spectral_centroid
 - Converting p5.FFT's decibel-scaled values back to linear energy
   (`10^(dB/10)`) for the hum detector – https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData
 
