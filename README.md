@@ -23,7 +23,7 @@ Just when everything seems at its worst, a soft pink glow appears in the distanc
 
 02. Synchronization: Time-based (Emery)
 
-Continuing from the user-input storyline, Character One get pulled up, triggering the timed sequence. As the rain clears, Character Two throws the umbrella off-screen and gently helps Character One stand. The pair begin swaying and stepping together. Their movements gradually synchronize, turning an initial encounter into a shared rhythm and marking the beginning of their friendship.
+Following the umbrella-sharing interaction, the timed sequence begins as Character Two gently helps Character One stand. As the rain clears, Character Two throws the umbrella off-screen and gently helps Character One stand. The pair begin swaying and stepping together. Their movements gradually synchronize, turning an initial encounter into a shared rhythm and marking the beginning of their friendship.
 
 As clouds drift across the daytime sky, three more friends enter from the left. The original pair move towards them, and all five settle into a horizontal line. The two main characters demonstrate a shared arm gesture and foot tap, which the newcomers imitate one after another. This passing of movement makes their growing connection visible: each person responds to another before becoming part of the collective rhythm.
 
@@ -370,7 +370,6 @@ Follow Vy's click prompts until the pink character offers the umbrella, then cli
 
 ### How the code works and communicates
 
-How the code works and communicates
 The time-based mechanic separates story coordination, choreography and character drawing. sketch.js coordinates the stages, Emery- Time-Base.js calculates movement over time, and character.js turns those movement values into visible figures. These scripts are loaded by index.html and communicate through shared functions and state within one p5.js sketch.
 
 1. Loading assets and creating characters
