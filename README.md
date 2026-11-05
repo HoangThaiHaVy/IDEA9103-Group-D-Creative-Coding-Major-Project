@@ -2,7 +2,7 @@
 Move Together Story
 
 # Project Inspiration: Keith Haring’s "Untitled (Dance)" (1987)
-Move Together draws inspiration from Keith Haring’s *Untitled (Dance)* (1987), a work that captures the energy of dance through simplified human figures, dynamic poses and expressive movement. Haring’s distinctive visual language transforms the human body into a powerful symbol of movement, interaction and connection. Rather than relying on realistic details or facial expressions, he uses bold outlines, exaggerated gestures and rhythmic compositions to communicate emotion and energy. The relationships between the figures are particularly significant, as their movements appear interconnected, creating a sense of collective rhythm and shared experience.
+Move Together draws inspiration from Keith Haring’s "Untitled (Dance)" (1987), a work that captures the energy of dance through simplified human figures, dynamic poses and expressive movement. Haring’s distinctive visual language transforms the human body into a powerful symbol of movement, interaction and connection. Rather than relying on realistic details or facial expressions, he uses bold outlines, exaggerated gestures and rhythmic compositions to communicate emotion and energy. The relationships between the figures are particularly significant, as their movements appear interconnected, creating a sense of collective rhythm and shared experience.
 
 These visual and conceptual qualities directly informed the design approach of Move Together. The project adopts Haring’s simplified figures and expressive movement as its visual foundation, translating the static composition of the original artwork into an interactive digital choreography. The use of individual characters, dynamic poses and movement-based interactions reflects Haring’s ability to communicate through the body and its relationship with others.
 
@@ -52,9 +52,11 @@ Connecting with the audio's storyline: After the five characters form a circle, 
 - Update this section when major features change.
 - Record known bugs and future improvements.
 
+--------------------------------------------------------------------------------
+|| MECHANIC 1 ||
 ## USER INPUT – Vy
 
-### Overview
+# Overview
 Developed the opening interaction and story progression for the *Move Together* project using p5.js. This section introduces a character flying a kite and allows the user to trigger the character's movement and kite release through mouse clicks.
 
 # Story Progression:
@@ -98,22 +100,33 @@ I placed the light behind the character to express their emotional energy and he
 
 ### Implemented Features
 
-- **Canvas Setup:** Created an 800 × 500 canvas and configured rounded stroke caps, rounded joins, and Arial typography.
-- **Background Design:** Designed a simple outdoor environment with an off-white sky, green grass, a yellow sun, and white clouds.
-- **Story Stage Management:** Implemented a state-based system to control the story progression, including the introduction, start prompt, character fade-in, holding, release, walking, and finished stages.
-- **Character Animation:** Controlled the character's horizontal movement using time-based updates and gradually increased the character's opacity during the fade-in transition.
-- **Kite Interaction:** Prepared the interaction states for releasing the kite, allowing the character to walk, and triggering the kite's upward movement after the walking sequence finishes.
-- **Wind Animation:** Added animated wind lines to create a sense of movement in the outdoor environment when the story reaches the finished stage.
-- **Interaction Prompts:** Added contextual text prompts to guide users through the interaction and communicate the character's actions.
-- **Image Preloading:** Integrated `preloadCharacterImages()` to load character assets before the animation begins.
+- Canvas Setup: Created an 800 × 500 canvas and configured rounded stroke caps, rounded joins, and Arial typography.
+- Background Design: Designed a simple outdoor environment with an off-white sky, green grass, a yellow sun, and white clouds.
+- Story Stage Management: Implemented a state-based system to control the story progression, including the introduction, start prompt, character fade-in, holding, release, walking, and finished stages.
+- Character Animation: Controlled the character's horizontal movement using time-based updates and gradually increased the character's opacity during the fade-in transition.
+- Kite Interaction: Prepared the interaction states for releasing the kite, allowing the character to walk, and triggering the kite's upward movement after the walking sequence finishes.
+- Wind Animation: Added animated wind lines to create a sense of movement in the outdoor environment when the story reaches the finished stage.
+- Interaction Prompts: Added contextual text prompts to guide users through the interaction and communicate the character's actions.
+- Image Preloading: Integrated `preloadCharacterImages()` to load character assets before the animation begins.
 
 ### Technical Implementation
+1. Overview: 
+The main components of the code include:
+* Loading character images and tracking their loading status.
+* Rendering the character, kite, wind, rain, light, lightning, and puddles.
+* Detecting the coordinates of user mouse clicks.
+* Transitioning the narrative from one scene to another.
+* Displaying a second character, along with animations for walking, pointing, or offering an umbrella.
+The user input code handles mouse interactions for the Vy-User Input file. It reads storyStage and updates it when the user clicks the start button, a character, or a rain or pink dot. It also updates related state, such as characterX, characterFade, rainDrops, and the second character’s position and animation.
 
-- Used `setup()` to initialise the canvas and drawing settings.
-- Used `draw()` as the main animation loop to update
-- I updated file html & update character illustrator image (Vy)
+Some values it uses are declared in sketch.js, including storyStage, characterX, characterFade, GROUND_Y, finishedAt, and arrivalAt. The p5.js library provides width, height, mouseX, mouseY, frameCount, millis(), and drawing functions. Additionally, in the preload() function, I have added the audio for the rain sequence corresponding to the RAIN_STAGES: ['rainStorm', 'soSad', 'rainFace', 'wet', 'pinkReveal'].
+
+2. How the story transitions between scenes
 
 
+-------------------------------------------------------------------------------
+
+|| MECHANIC 2 ||
 ## AUDIO – Zicen
 
 Zicen developed the microphone-driven mechanic. The **Enable microphone**
