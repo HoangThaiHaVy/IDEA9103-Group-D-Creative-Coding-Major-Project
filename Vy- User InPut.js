@@ -872,15 +872,6 @@ function drawRain(time, heavy = true) {
   pop();
 }
 
-function clickOnCave() {
-  const caveScale = min(width * 0.44 / 520, GROUND_Y * 0.70 / 360);
-
-  return mouseX >= 0 &&
-    mouseX <= 520 * caveScale &&
-    mouseY >= GROUND_Y - 360 * caveScale &&
-    mouseY <= GROUND_Y;
-}
-
 function drawLightning(time) {
 // A flash of lightning appears briefly every few seconds
   const cycle = time % 4.5;
