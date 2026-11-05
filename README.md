@@ -412,8 +412,13 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
 5. The page scales to the browser window (the canvas keeps its 800 × 500
    drawing coordinates and is enlarged with CSS; p5 maps mouse positions back,
    so Vy's clicks still work at any size).
-6. Testing shortcuts: `?audioTest=star` (start at the rising star),
-   `?audioTest=dance` (start at the dance; click once to allow audio).
+6. Testing shortcuts – add one to the page address to skip the earlier
+   chapters (click once on the page so the browser allows audio):
+   - `?audioTest=handoff` – last seconds of Emery's circle, then the handoff
+   - `?audioTest=star` – the rising star and nightfall
+   - `?audioTest=dance` – the soundtrack dance
+   - `?audioTest=ending` – skips to the end of the song: handstand wave,
+     human tower and the "your turn" prompt
 
 ### External references
 - p5.sound `p5.AudioIn`, `p5.Amplitude`, `p5.FFT`, `userStartAudio()` –

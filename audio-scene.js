@@ -209,16 +209,37 @@ function enableAudioInput() {
   );
 }
 
+// Testing shortcuts, so the audio chapter can be checked without replaying
+// the whole story. Add one of these to the page address:
+//   ?audioTest=handoff – the last 3 s of Emery's circle, then the real handoff
+//   ?audioTest=star    – the rising star and nightfall
+//   ?audioTest=dance   – the soundtrack dance (click once to allow audio)
+//   ?audioTest=ending  – the dance, then skip to the end of the song
+//                        (handstand wave, human tower, "your turn")
+let audioTestSkipToEnding = false;
+
 function setupAudioTestMode() {
   const params = new URLSearchParams(window.location.search);
   const testMode = params.get('audioTest');
   if (testMode === 'time') startTimeBased();
-  else if (testMode === 'timeHandoff') {
+  else if (testMode === 'handoff' || testMode === 'timeHandoff') {
     startTimeBased();
-    timeStartedAt -= 31.5;
+    timeStartedAt -= TIME_END - 3;
   }
   else if (testMode === 'entry' || testMode === 'star' || testMode === '1') startStarGather();
   else if (testMode === 'dance') startAudioDance();
+  else if (testMode === 'ending') {
+    startAudioDance();
+    audioTestSkipToEnding = true;
+  }
+}
+
+// ?audioTest=ending: once the row has formed, jump to the last half second
+// of the song so its normal "ended" event starts the real ending.
+function updateTestSkipToEnding(danceElapsed) {
+  if (!audioTestSkipToEnding || !finaleSoundtrackStarted || danceElapsed < 6.5) return;
+  audioTestSkipToEnding = false;
+  finaleSoundtrack.jump(finaleSoundtrack.duration() - 0.5);
 }
 
 function isAudioFinaleStage() {
@@ -366,6 +387,7 @@ function drawAudioFinale(time) {
   }
 
   const elapsed = audioDanceStartedAt > 0 ? time - audioDanceStartedAt : 0;
+  updateTestSkipToEnding(elapsed);
   const rowStart = audioReducedMotion ? 0 : 0.35;
   const rowDuration = audioReducedMotion ? 0.2 : 5.2;
   const rowProgress = constrain(
