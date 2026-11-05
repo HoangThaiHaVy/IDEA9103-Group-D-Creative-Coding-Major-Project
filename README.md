@@ -40,6 +40,7 @@ Connecting with the audio's storyline: when the five friends close their circle,
 - `audio-dancer.js`: Zicen's reusable `AudioDancer` class – how one dancer reacts to sound.
 - `audio-scene.js`: Zicen's finale – star, nightfall, handoff from Emery's circle, soundtrack, microphone and easter egg.
 - `audio-hud.js`: Zicen's `SoundHud` class – the live sound panel under the canvas.
+- `standby-music.js`: Zicen's soft background song that fills quiet moments and gives way to each member's music.
 - `assets/audio`: Zicen's dancer poses, handstand poses, human-tower image, campfire, sun/cloud images and finale soundtrack.
 - `Emery- Time-Base.js`: Emery's time-based interaction component.
 - `LICENSE`: Project license and usage terms.
@@ -362,6 +363,18 @@ rule, each sound feature now controls a different, readable property:
 | Long sound (hum / held note) | Smooth Perlin-noise travel inside the dancer's own lane | ±24 px per lane, no collisions |
 | Bright vs. bass-heavy sound | Row spreads out or gathers closer together | Spread 0.72–1, campfire stays visible |
 | **Easter egg:** three claps within 1.5 s | Handstand wave across the row | Only one wave at a time |
+| **Hum** (microphone): one steady note, no beat | Builds the human tower level by level; 3 s completes it and the top dancer touches the star | Progress falls back when the hum stops |
+
+**Telling a hum apart from music.** Music is continuous too, so "a long
+sound" alone would be triggered by any song. The hum detector therefore needs
+three things at once: the loudest frequency (80 Hz–1 kHz) stays in the same
+FFT bin for 0.25 s (*one steady pitch*), at least 90% of the energy sits in
+the 12 strongest bins (*a voice's note and harmonics, not a band*), and no
+percussive onset in the last 0.45 s (*no beat*). Measured on recordings, a
+synthetic hum kept a steady pitch for over 1 s in 81% of frames; the standby
+song and Emery's song in 0%; the funky drum track in 24% but always with
+drum hits. Feeding the three songs into the detector never built a single
+level, while the hum completed the tower.
 
 All values are smoothed with `lerp()` and limited with `constrain()`, so a
 loud or noisy microphone never makes the drawings shake, overlap badly or leave
@@ -386,6 +399,13 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   deep sound) and *what* each one controls – replacing the earlier raw debug
   numbers. The secret chip reads `??? → clap 3 times fast` until the easter
   egg is found.
+- **Standby music** (`standby-music.js`) – a soft looping song for the
+  quiet parts of the whole story. It fades out whenever Emery's group-dance
+  song or the finale song is playing and fades back in (resuming, not
+  restarting) when they stop; Vy's rain and wind are sound effects and keep
+  playing on top of it. It is off during the final dance so the microphone
+  only hears the visitor. Hooked into `preloadAudioAssets()` /
+  `updateAudio()`, so no teammate's file had to change.
 - **Scene functions** (`audio-scene.js`) – `preloadAudioAssets()`,
   `setupAudio()`, `updateAudio()`, `drawAudioFinale()` and `drawAudio()` are
   the only calls `sketch.js` needs. The scene reuses Emery's `Character` class
@@ -404,7 +424,10 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
    - whistling or bright sounds → brighter coloured glow and a wider row;
    - a sharp clap → every dancer changes pose with a small burst;
    - a long steady hum → the dancers drift smoothly left and right.
-   - **easter egg:** clap three times quickly for a handstand wave.
+   - **easter egg:** clap three times quickly for a handstand wave;
+   - **hum one steady note** (no music playing) – the friends climb into a
+     human tower one level per second; keep humming for 3 s to touch the
+     star. In class, everyone can hum together.
 4. The **sound panel** under the canvas shows what is being listened to,
    four live meters (volume, bass, mid, treble) with what each one controls,
    and chips that light up when a clap, a held note, or a bright / deep sound
@@ -433,6 +456,10 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
   https://developer.mozilla.org/en-US/docs/Web/CSS/min
 - Soundtrack: *Funky Drums Bass And Claps* by Emmraan, Pixabay Content
   License – https://pixabay.com/service/license-summary/
+- Standby music: *Child Play – Happy Kids School Background Music* by
+  SunnyVibesAudio, Pixabay Content License (re-encoded to 128 kbps)
+- Converting p5.FFT's decibel-scaled values back to linear energy
+  (`10^(dB/10)`) for the hum detector – https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getByteFrequencyData
 
 ---------------------------------------------------------------------------------
 
@@ -450,7 +477,8 @@ against the brief and the tutor feedback. It helped write: separate analysers
 so the soundtrack and the microphone can each drive the dancers, the
 end-of-song prompt, the glow / squash / shadow / burst reaction layers in
 `AudioDancer`, the persistent sound-reactive star, the handstand-wave easter
-egg and human-tower ending, the `SoundHud` panel and its CSS, the responsive page layout in
+egg and human-tower ending, the hum detector and level-by-level tower,
+the standby music, the `SoundHud` panel and its CSS, the responsive page layout in
 `style.css`, and the rewritten audio section of this README. Zicen chose
 which suggestions to keep, tuned the limits by testing in the browser, and the
 header comment of each file states what was assisted.
@@ -458,5 +486,6 @@ header comment of each file states what was assisted.
 The five handstand drawings and the human-tower drawing were generated by
 Zicen with an AI image generator, using the existing dancer artwork as the
 style reference. Claude then cropped them, removed the moon from the tower
-image (so the top hand can hold the code-drawn star) and resized them for
+image (so the top hand can hold the code-drawn star), split it into three
+layers by colour so it can be built level by level, and resized them for
 the web.
