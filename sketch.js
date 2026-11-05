@@ -7,10 +7,6 @@
 // Zicen  → Audio
 // ========================================
 
-// AI acknowledgement — Emery's shared integration additions:
-// OpenAI Codex assisted with the time-based preload/setup/update hooks and the
-// timeCircleReady -> startStarGather handoff. These connect Emery's module to
-// the shared controller; this is not an authorship claim over teammates' code.
 // Main controller for the staged kite story.
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 500;
