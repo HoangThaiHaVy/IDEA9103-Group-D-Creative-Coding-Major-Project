@@ -4,24 +4,38 @@
 // cloud assets. Zicen selected the mapping and visual behaviour.
 
 let audioMechanic;
-let audioData = { intensity: 0, bass: 0, treble: 0 };
+let audioData = {
+  intensity: 0,
+  bass: 0,
+  mid: 0,
+  treble: 0,
+  singing: false,
+  speaking: false,
+  longSound: false,
+  shortSound: false,
+  sustain: 0,
+  spread: 0.88,
+  clap: false
+};
 let audioButton;
 let audioStatus;
+let audioValuesPanel;
 let audioSunImage;
 let audioCloudImage;
-let audioPsychedelicCaveImage;
-let audioHoldingHandsImage;
+let audioCampfireImage;
 let audioDancerImages = [];
+let audioDancerPoseImages = [];
 let audioDancers = [];
 let audioSunReady = false;
 let audioCloudReady = false;
-let audioPsychedelicCaveReady = false;
-let audioHoldingHandsReady = false;
+let audioCampfireReady = false;
 let audioDancersReady = false;
+let audioAlternateDancersReady = false;
 let audioCloudOffset = 0;
 let starGatherStartedAt = 0;
 let audioDanceStartedAt = 0;
 let audioReducedMotion = false;
+let audioStartsFromTimeCircle = false;
 
 const AUDIO_DANCER_PATHS = [
   'assets/audio/classic-red.png',
@@ -31,12 +45,23 @@ const AUDIO_DANCER_PATHS = [
   'assets/audio/classic-pink.png'
 ];
 
+const AUDIO_DANCER_POSE_PATHS = [
+  ['assets/audio/dancer-red-alt.png?v=20261105-3'],
+  [
+    'assets/audio/dancer-yellow-alt.png?v=20261105-3',
+    'assets/audio/dancer-yellow-alt-2.png?v=20261105-3'
+  ],
+  ['assets/audio/dancer-green-alt.png?v=20261105-3'],
+  ['assets/audio/dancer-blue-alt.png?v=20261105-3'],
+  ['assets/audio/dancer-pink-alt.png?v=20261105-3']
+];
+
 const AUDIO_DANCER_LAYOUT = [
-  { x: 88, y: 458, height: 190, phase: 0, jumpStrength: 30 },
-  { x: 238, y: 442, height: 158, phase: 0.65, jumpStrength: 33 },
-  { x: 400, y: 454, height: 174, phase: 1.3, jumpStrength: 36 },
-  { x: 562, y: 442, height: 158, phase: 1.95, jumpStrength: 39 },
-  { x: 712, y: 458, height: 190, phase: 2.6, jumpStrength: 42 }
+  { x: 64, y: 458, height: 152, phase: 0, jumpStrength: 36 },
+  { x: 230, y: 458, height: 146, phase: 0.65, jumpStrength: 39 },
+  { x: 400, y: 458, height: 150, phase: 1.3, jumpStrength: 42 },
+  { x: 570, y: 458, height: 146, phase: 1.95, jumpStrength: 45 },
+  { x: 736, y: 458, height: 152, phase: 2.6, jumpStrength: 48 }
 ];
 
 function preloadAudioAssets() {
@@ -51,15 +76,10 @@ function preloadAudioAssets() {
     () => { audioCloudReady = false; }
   );
 
-  audioPsychedelicCaveImage = loadImage(
-    'assets/audio/psychedelic-cave.png',
-    () => { audioPsychedelicCaveReady = true; },
-    () => { audioPsychedelicCaveReady = false; }
-  );
-  audioHoldingHandsImage = loadImage(
-    'assets/audio/holding-hands-circle-v2.png',
-    () => { audioHoldingHandsReady = true; },
-    () => { audioHoldingHandsReady = false; }
+  audioCampfireImage = loadImage(
+    'assets/audio/campfire.png',
+    () => { audioCampfireReady = true; },
+    () => { audioCampfireReady = false; }
   );
   let loadedDancers = 0;
   audioDancerImages = AUDIO_DANCER_PATHS.map((path) => loadImage(
@@ -70,13 +90,31 @@ function preloadAudioAssets() {
     },
     () => { audioDancersReady = false; }
   ));
+  let loadedAlternateDancers = 0;
+  const alternateDancerCount = AUDIO_DANCER_POSE_PATHS
+    .reduce((total, paths) => total + paths.length, 0);
+  audioDancerPoseImages = AUDIO_DANCER_POSE_PATHS.map((paths) =>
+    paths.map((path) => loadImage(
+      path,
+      () => {
+        loadedAlternateDancers += 1;
+        audioAlternateDancersReady =
+          loadedAlternateDancers === alternateDancerCount;
+      },
+      () => { audioAlternateDancersReady = false; }
+    ))
+  );
 }
 
 function setupAudio() {
   audioMechanic = new AudioMechanic();
   audioReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   audioDancers = audioDancerImages.map((imageAsset, index) =>
-    new AudioDancer(imageAsset, AUDIO_DANCER_LAYOUT[index])
+    new AudioDancer(
+      imageAsset,
+      audioDancerPoseImages[index],
+      AUDIO_DANCER_LAYOUT[index]
+    )
   );
 
   audioButton = createButton('Enable microphone');
@@ -88,6 +126,20 @@ function setupAudio() {
   audioStatus.style('font-family', 'Arial, sans-serif');
   audioStatus.style('font-size', '13px');
   audioStatus.style('margin', '4px 0 0');
+
+  audioValuesPanel = createDiv('Live sound values will appear after enabling the microphone.');
+  audioValuesPanel.parent(document.querySelector('main'));
+  audioValuesPanel.style('font-family', 'ui-monospace, SFMono-Regular, Menlo, monospace');
+  audioValuesPanel.style('font-size', '12px');
+  audioValuesPanel.style('line-height', '1.55');
+  audioValuesPanel.style('margin-top', '8px');
+  audioValuesPanel.style('padding', '9px 12px');
+  audioValuesPanel.style('max-width', '776px');
+  audioValuesPanel.style('box-sizing', 'border-box');
+  audioValuesPanel.style('border', '2px solid #171722');
+  audioValuesPanel.style('border-radius', '8px');
+  audioValuesPanel.style('background', '#f4f0df');
+  audioValuesPanel.style('color', '#171722');
 }
 
 function enableAudioInput() {
@@ -100,8 +152,8 @@ function enableAudioInput() {
       audioButton.attribute('disabled', '');
       const inFinale = ['starGather', 'audioDance'].includes(storyStage);
       audioStatus.html(inFinale
-        ? 'Speak, clap, or play music to control the dance.'
-        : 'Speak, clap, or play music to move the sky.');
+        ? 'Loudness makes them jump; hold a sound to move; use a short sound to change pose.'
+        : 'Microphone active. Continue to the final dance scene.');
     },
     () => {
       audioStatus.html('Microphone unavailable. Check browser permission.');
@@ -112,7 +164,12 @@ function enableAudioInput() {
 function setupAudioTestMode() {
   const params = new URLSearchParams(window.location.search);
   const testMode = params.get('audioTest');
-  if (testMode === 'entry' || testMode === 'star' || testMode === '1') startStarGather();
+  if (testMode === 'time') startTimeBased();
+  else if (testMode === 'timeHandoff') {
+    startTimeBased();
+    timeStartedAt -= 31.5;
+  }
+  else if (testMode === 'entry' || testMode === 'star' || testMode === '1') startStarGather();
   else if (testMode === 'dance') startAudioDance();
 }
 
@@ -121,6 +178,9 @@ function isAudioFinaleStage() {
 }
 
 function startStarGather() {
+  // Preserve Emery's actual final character arrangement for the handoff.
+  audioStartsFromTimeCircle = storyStage === 'timeBased' &&
+    typeof timeFigures !== 'undefined' && timeFigures.length > 0;
   storyStage = 'starGather';
   starGatherStartedAt = millis() / 1000;
   audioDanceStartedAt = 0;
@@ -128,6 +188,15 @@ function startStarGather() {
 }
 
 function startAudioDance() {
+  if (audioStartsFromTimeCircle && timeFigures.length >= 5) {
+    // Match each image colour to Emery's Character colour order so every
+    // sticker grows from its own figure instead of appearing like a page cut.
+    const figureOrderForImages = [2, 4, 0, 3, 1];
+    audioDancers.forEach((dancer, index) => {
+      const figure = timeFigures[figureOrderForImages[index]];
+      dancer.setEntranceOrigin(figure.x, figure.y);
+    });
+  }
   storyStage = 'audioDance';
   audioDanceStartedAt = millis() / 1000;
   if (audioStatus) {
@@ -138,6 +207,12 @@ function startAudioDance() {
 }
 
 function handleAudioSceneClick() {
+  // Formal handoff from Emery's final circle: once the time-based sequence
+  // reports that the five characters are in place, a click begins the star.
+  if (storyStage === 'timeBased' && timeCircleReady) {
+    startStarGather();
+    return true;
+  }
   if (storyStage === 'caveEntered') {
     startStarGather();
     return true;
@@ -148,19 +223,33 @@ function handleAudioSceneClick() {
 function updateAudio() {
   audioData = audioMechanic
     ? audioMechanic.getSoundData()
-    : { intensity: 0, bass: 0, treble: 0 };
+    : {
+      intensity: 0,
+      bass: 0,
+      mid: 0,
+      treble: 0,
+      singing: false,
+      speaking: false,
+      longSound: false,
+      shortSound: false,
+      sustain: 0,
+      spread: 0.88,
+      clap: false
+    };
 
   const seconds = min(deltaTime, 50) / 1000;
   const cloudSpeed = 10 + audioData.intensity * 65 + audioData.treble * 45;
   audioCloudOffset = (audioCloudOffset + cloudSpeed * seconds) % (width + 220);
 }
 
-function drawAudioSky(time) {
+function drawAudioSky(time, opacityAmount = 1) {
+  if (opacityAmount <= 0) return;
   const sunPulse = 1 + audioData.intensity * 0.28 + audioData.bass * 0.14;
   const sunSize = 86 * sunPulse;
   const sunY = 78 - audioData.bass * 10;
 
   push();
+  drawingContext.globalAlpha *= opacityAmount;
   imageMode(CENTER);
   if (audioSunReady) {
     image(audioSunImage, 98, sunY, sunSize, sunSize);
@@ -189,19 +278,30 @@ function drawAudioFinale(time) {
     return;
   }
 
-  const transitionDuration = audioReducedMotion ? 0.2 : 2.5;
   const elapsed = audioDanceStartedAt > 0 ? time - audioDanceStartedAt : 0;
-  const rawProgress = storyStage === 'audioDance'
-    ? constrain(elapsed / transitionDuration, 0, 1)
-    : 0;
-  const revealProgress = strongEaseOut(rawProgress);
+  const rowStart = audioReducedMotion ? 0 : 0.35;
+  const rowDuration = audioReducedMotion ? 0.2 : 4.0;
+  const peopleTransition = strongEaseInOut(constrain(
+    (elapsed - rowStart) / rowDuration,
+    0,
+    1
+  ));
+  // The campfire waits until the row transformation has fully settled.
+  const fireProgress = strongEaseOut(constrain(
+    (elapsed - (audioReducedMotion ? 0 : rowStart + rowDuration + 0.6)) /
+      (audioReducedMotion ? 0.2 : 1.15),
+    0,
+    1
+  ));
 
-  drawBackground(time, false);
-  drawHoldingHandsGroup(time, 1 - revealProgress);
-  drawNightfall(1);
-  drawRisingStar(time, width / 2, 82, 1 - revealProgress, 1);
-  drawPsychedelicCave(revealProgress);
-  drawAudioDancers(time, elapsed, revealProgress);
+  // The finale stays in the same code-drawn outdoor night landscape. Emery's
+  // completed circle hands directly into the star and night sequence.
+  drawNightLandscape(time, 1);
+  // Fire is drawn first, so it remains behind both generations of characters.
+  drawCampfire(time, fireProgress, 1);
+  drawGatheredCharacters(time, 1 - peopleTransition);
+  drawRisingStar(time, width / 2, 82, 1 - peopleTransition, 1);
+  drawAudioDancers(time, peopleTransition, 1);
 }
 
 function drawStarGathering(time) {
@@ -214,9 +314,11 @@ function drawStarGathering(time) {
   const nightDuration = audioReducedMotion ? 0.5 : 2.15;
   const nightProgress = strongEaseInOut(constrain((elapsed - nightStart) / nightDuration, 0, 1));
 
-  drawBackground(time, false);
-  drawHoldingHandsGroup(time, 1);
-  drawNightfall(nightProgress);
+  drawLandscape();
+  // The sun and clouds disappear as the night overlay arrives.
+  drawAudioSky(time, 1 - nightProgress);
+  drawNightLandscape(time, nightProgress);
+  drawGatheredCharacters(time, 1);
   const starY = audioReducedMotion ? 82 : lerp(318, 82, rise);
   const starScale = lerp(0.72, 1.08, strongEaseOut(rise));
   drawRisingStar(time, width / 2, starY, 1, starScale);
@@ -238,34 +340,17 @@ function drawStarGathering(time) {
   if (elapsed >= totalDuration) startAudioDance();
 }
 
-function drawHoldingHandsGroup(time, opacityAmount) {
-  // Emery integration: keep the completed circle for Zicen's rising-star scene.
-  // Zicen's AudioDancer objects and audio-reactive finale remain in this module.
-  if (timeCircleReady && timeFigures.length > 0) {
-    if (opacityAmount <= 0) return;
-    updateTimeBased(time);
+function drawGatheredCharacters(time, opacityAmount) {
+  if (opacityAmount <= 0) return;
+
+  if (audioStartsFromTimeCircle) {
+    // drawTimeBased() reuses the same Character instances, positions and
+    // hand links from Emery's final frame instead of replacing them with art.
     push();
     drawingContext.globalAlpha *= opacityAmount;
     drawTimeBased();
     pop();
-    return;
   }
-  if (!audioHoldingHandsReady || opacityAmount <= 0) return;
-  const elapsed = max(0, time - starGatherStartedAt);
-  const entrance = strongEaseOut(constrain(elapsed / (audioReducedMotion ? 0.2 : 0.5), 0, 1));
-  const sway = audioReducedMotion ? 0 : sin(time * 1.6) * radians(2);
-  const targetHeight = 326;
-  const targetWidth = targetHeight * audioHoldingHandsImage.width / audioHoldingHandsImage.height;
-
-  push();
-  translate(width / 2, 472);
-  rotate(sway);
-  scale(0.95 + entrance * 0.05);
-  imageMode(CENTER);
-  tint(255, 255 * opacityAmount * entrance);
-  image(audioHoldingHandsImage, 0, -targetHeight / 2, targetWidth, targetHeight);
-  noTint();
-  pop();
 }
 
 function drawNightfall(progress) {
@@ -309,27 +394,41 @@ function drawRisingStar(time, x, y, opacityAmount, scaleAmount) {
   pop();
 }
 
-function drawPsychedelicCave(progress) {
-  if (!audioPsychedelicCaveReady) return;
+function drawCampfire(time, progress, backgroundProgress) {
+  if (!audioCampfireReady || progress <= 0) return;
+
+  const soundPulse = 1 + audioData.intensity * 0.1 + audioData.bass * 0.08;
+  const flicker = audioReducedMotion ? 1 : 1 + sin(time * 8) * 0.025;
+  const campfireHeight = 158;
+  const campfireWidth = campfireHeight *
+    audioCampfireImage.width / audioCampfireImage.height;
 
   push();
-  imageMode(CORNER);
-  tint(255, 255 * progress);
-  image(audioPsychedelicCaveImage, 0, 0, width, height);
+  translate(width / 2, 412);
+  noStroke();
+  fill(255, 111, 45, 42 * progress * backgroundProgress);
+  circle(0, -52, 190 * progress * soundPulse);
+  fill(255, 215, 70, 55 * progress * backgroundProgress);
+  circle(0, -48, 118 * progress * soundPulse);
+  imageMode(CENTER);
+  tint(255, 255 * progress * backgroundProgress);
+  scale(soundPulse * flicker);
+  image(audioCampfireImage, 0, -campfireHeight / 2, campfireWidth, campfireHeight);
   noTint();
   pop();
 }
 
-function drawAudioDancers(time, elapsed, backgroundProgress) {
-  if (!audioDancersReady || audioDancers.length === 0) return;
-
-  const entranceDuration = audioReducedMotion ? 0.2 : 0.5;
-  const staggerSeconds = audioReducedMotion ? 0 : 0.06;
+function drawAudioDancers(time, rowProgress, backgroundProgress) {
+  if (!audioDancersReady || !audioAlternateDancersReady || audioDancers.length === 0) return;
 
   for (let i = 0; i < audioDancers.length; i += 1) {
     const dancer = audioDancers[i];
-    const dancerElapsed = elapsed - 0.45 - i * staggerSeconds;
-    const entrance = strongEaseOut(constrain(dancerElapsed / entranceDuration, 0, 1));
+    const delay = audioReducedMotion ? 0 : i * 0.025;
+    const entrance = strongEaseInOut(constrain(
+      (rowProgress - delay) / (1 - delay),
+      0,
+      1
+    ));
     dancer.update(time, audioData, audioReducedMotion);
     dancer.display(entrance, backgroundProgress);
   }
@@ -387,6 +486,26 @@ function strongEaseInOut(progress) {
 function drawAudio() {
   if (!audioMechanic || !audioMechanic.started) return;
 
+  const mode = audioData.shortSound
+    ? 'SHORT'
+    : audioData.longSound
+      ? 'HOLD'
+      : audioData.intensity > 0.07
+        ? 'JUMP'
+        : 'LISTEN';
+  const spacing = audioData.spread < 0.84 ? 'GATHER' : 'SPREAD';
+  if (audioValuesPanel) {
+    audioValuesPanel.html(
+      `<strong>MODE: ${mode}</strong> &nbsp; <strong>SPACING: ${spacing}</strong><br>` +
+      `VOLUME ${audioData.intensity.toFixed(2)} &nbsp; ` +
+      `BASS ${audioData.bass.toFixed(2)} &nbsp; ` +
+      `MID ${audioData.mid.toFixed(2)} &nbsp; ` +
+      `TREBLE ${audioData.treble.toFixed(2)}<br>` +
+      `SUSTAIN ${audioData.sustain.toFixed(2)} &nbsp; ` +
+      `SPREAD ${audioData.spread.toFixed(2)}`
+    );
+  }
+
   // A compact level meter makes the sound response legible without covering
   // the story. Bass raises the bars; treble changes their colour intensity.
   push();
@@ -398,19 +517,43 @@ function drawAudio() {
     fill(220 + audioData.treble * 35, 48, 45, 190);
     rect(meterX + i * 11, meterBottom - barHeight, 7, barHeight, 3);
   }
+  fill(255, 235);
+  textAlign(RIGHT, BOTTOM);
+  textSize(10);
+  textStyle(BOLD);
+  text(mode, width - 18, meterBottom - 39);
+  textSize(9);
+  text(spacing, width - 18, meterBottom - 27);
+  textStyle(NORMAL);
   pop();
 }
 
 function resetAudio() {
   if (audioMechanic) audioMechanic.stopAudio();
-  audioData = { intensity: 0, bass: 0, treble: 0 };
+  audioData = {
+    intensity: 0,
+    bass: 0,
+    mid: 0,
+    treble: 0,
+    singing: false,
+    speaking: false,
+    longSound: false,
+    shortSound: false,
+    sustain: 0,
+    spread: 0.88,
+    clap: false
+  };
   audioCloudOffset = 0;
   starGatherStartedAt = 0;
   audioDanceStartedAt = 0;
+  audioStartsFromTimeCircle = false;
 
   if (audioButton) {
     audioButton.removeAttribute('disabled');
     audioButton.html('Enable microphone');
   }
   if (audioStatus) audioStatus.html('Audio is off');
+  if (audioValuesPanel) {
+    audioValuesPanel.html('Live sound values will appear after enabling the microphone.');
+  }
 }
