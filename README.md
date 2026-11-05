@@ -330,6 +330,20 @@ visitor's own sound – drive five dancers. It is the payoff of the story: the
 friendship built by Vy's clicks and Emery's timeline becomes a dance that the
 audience can join.
 
+### Week 9 feedback and what changed
+**Feedback:** show more detail in how the characters react to sound, keep them
+visually appealing, and connect the audio part to the rest of the program with
+classes.
+
+**What we changed:** each sound feature now controls a different visible
+reaction: volume sets jump height, low sounds pull the dancers into a huddle,
+high sounds spread them out and make them glow, and claps and drum hits change
+poses or start handstands. All values are smoothed and limited, so the dancers
+never shake or leave the screen. The code is organised into classes
+(`AudioMechanic`, `AudioDancer`, `SoundHud`, `FlipSynth`), and the chapter
+starts from Emery's `Character` circle, so the three parts share the same
+characters and the same world.
+
 ### Story beats (`audio-scene.js`)
 1. **Handoff** – `sketch.js` calls `startStarGather()` once Emery's
    `timeCircleReady` flag is true, so the finale always starts from Emery's
