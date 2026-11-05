@@ -40,6 +40,8 @@ class AudioDancer {
     this.phase = options.phase;
     this.jumpStrength = options.jumpStrength;
     this.colour = options.colour;
+    // Hand-drawn handstand artwork; without it the pose image is simply flipped.
+    this.handstandImage = options.handstandImage || null;
 
     // Current (smoothed) reaction values.
     this.jump = 0;
@@ -192,6 +194,12 @@ class AudioDancer {
 
     // Upside down the legs keep kicking gently to the music.
     const kick = flip > 0.95 ? sin(time * 9 + this.phase) * 0.07 : 0;
+    // Near the end of the flip, the rotated sticker cross-fades into the real
+    // hands-on-the-ground handstand drawing (and back again on the way out).
+    const handstandArt = this.handstandImage
+      ? constrain((flip - 0.55) / 0.35, 0, 1)
+      : 0;
+    const stickerAlpha = overallAlpha * (1 - handstandArt);
 
     push();
     translate(stagedX, stagedY);
@@ -202,9 +210,23 @@ class AudioDancer {
     // Squash and stretch keep the area roughly constant: wider when shorter.
     scale(bodyScale * (1 + this.squash * 0.6), bodyScale * (1 - this.squash));
     imageMode(CENTER);
-    this.drawPose(this.poseImages[this.previousPoseIndex], 1 - this.poseBlend, overallAlpha);
-    this.drawPose(this.poseImages[this.poseIndex], this.poseBlend, overallAlpha);
+    this.drawPose(this.poseImages[this.previousPoseIndex], 1 - this.poseBlend, stickerAlpha);
+    this.drawPose(this.poseImages[this.poseIndex], this.poseBlend, stickerAlpha);
     pop();
+
+    if (handstandArt > 0) {
+      // The handstand drawing is already upside down, so it is not rotated
+      // by PI – only the small kick, around the middle of the body.
+      push();
+      translate(stagedX, stagedY);
+      translate(0, -this.targetHeight / 2);
+      rotate(kick * 0.6);
+      translate(0, this.targetHeight / 2);
+      scale(bodyScale);
+      imageMode(CENTER);
+      this.drawPose(this.handstandImage, handstandArt, overallAlpha);
+      pop();
+    }
   }
 
   // The shadow stays on the ground: it shrinks and fades while the dancer is
