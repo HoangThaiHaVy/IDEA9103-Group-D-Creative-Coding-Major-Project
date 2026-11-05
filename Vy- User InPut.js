@@ -36,6 +36,7 @@ let wetImage;
 let wetImageReady = false;
 let wetStartedAt = 0;
 let pinkDotStartedAt = null;
+// Character 2. 
 let character2PinkImage;
 let character2PinkImageReady = false;
 let character2PinkRevealStartedAt = null;

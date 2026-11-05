@@ -61,43 +61,26 @@ Connecting with the audio's storyline: After the five characters form a circle, 
 Developed the opening interaction and story progression for the *Move Together* project using p5.js. This section introduces a character flying a kite and allows the user to trigger the character's movement and kite release through mouse clicks.
 
 # Story Progression:
-Opening Scene: The screen displays a landscape featuring a grassy field, mountain ranges, the sun, and clouds. A cursor icon in the shape of a hand appears; the user must click on this icon to begin the story.
-
-Second Scene: Once the user clicks "Start" (located below the text "Move Together Story"), a character gradually appears, and the narrative commences. (The story is introduced by a caption below the scene: "Let the kite take flight.")
+**Opening Scene**: The screen displays a landscape featuring a grassy field, mountain ranges, the sun, and clouds. A cursor icon in the shape of a hand appears; the user must click on this icon to begin the story.
+**Scene 2**: Once the user clicks "Start" (located below the text "Move Together Story"), a character gradually appears, and the narrative commences. (The story is introduced by a caption below the scene: "Let the kite take flight.")
 -> This caption helps the user identify where the story begins and serves as a narrative guide.
-
-Third Scene: The caption below the scene reads: "One click—let’s take the kite up to the sky!" The character begins to move, and a kite starts to soar in the sky.
-
-Scene 4: The character stops in the middle of the scene, but the kite continues to fly. The caption below changes to “Click the character to continue flying the kite,” at which point the kite soars even higher, and the wind begins to pick up.
-
-Scene 5: The caption updates to “Windy~ the kite floats higher,” and the character’s expression shifts to one of surprise (marking a turning point in the story).
-
-Scene 6: The character now looks sad, and the caption changes to “Oh no! My kite is gone!” Upon clicking the character, they bow their head, and a light rain begins to fall.
-
-Scene 6 (continued): After clicking the character again, the caption below changes to “The rain is getting heavier…”
-
-Scene 7: Clicking the character once more causes them to turn to the left with an even sadder expression, while the rain continues to fall.
-
-Scene 8: When the character is clicked, they reach out a hand to catch the raindrops as the rain intensifies; the narrative progresses to: “Slowly reaching out a hand to catch the raindrops.”
-
-Scene 9: The user clicks on each blue circle, which transforms into a puddle on the grass—illustrating how the heavy rain has pooled on the ground.
-
-Scene 10: Once the user has clicked on all the blue circles, the next part of the story is revealed: “Now, click on the character to see how the story unfolds!” Scene 11: Click on the character again; the character’s state changes to a slumped, sitting position, completely drenched. The caption updates to: “...hoping the rain stops soon so I can go home…”
-
-Scene 12: After a few seconds, the on-screen caption changes to: “Look to the left and click the pink dot.” The user clicks the pink dot that appears on the left side of the screen, at which point a second character enters, carrying an umbrella.
-
-Scene 13: The caption then reads: “Another person appeared, holding a white umbrella… (click the pink figure).” The user clicks on the second character, whose pose shifts so that their right arm points toward the first character, who is still sitting.
-
-Scene 14: The caption changes to: “Who is sitting over there in the rain? (Click on the green character).”
-
-Scene 15: When the user clicks on the first character, the second character walks over, and the caption displays: “Character approaches Character 1 (click the pink figure to continue).”
-
-Scene 16: The user clicks on the second character, who then hands the umbrella to the first character.
+**Scene 3**: The caption below the scene reads: "One click—let’s take the kite up to the sky!" The character begins to move, and a kite starts to soar in the sky.
+**Scene 4**: The character stops in the middle of the scene, but the kite continues to fly. The caption below changes to “Click the character to continue flying the kite,” at which point the kite soars even higher, and the wind begins to pick up.
+**Scene 5**: The caption updates to “Windy~ the kite floats higher,” and the character’s expression shifts to one of surprise (marking a turning point in the story).
+**Scene 6**: The character now looks sad, and the caption changes to “Oh no! My kite is gone!” Upon clicking the character, they bow their head, and a light rain begins to fall.
+**Scene 6 (continued)**: After clicking the character again, the caption below changes to “The rain is getting heavier…”
+**Scene 7**: Clicking the character once more causes them to turn to the left with an even sadder expression, while the rain continues to fall.
+**Scene 8**: When the character is clicked, they reach out a hand to catch the raindrops as the rain intensifies; the narrative progresses to: “Slowly reaching out a hand to catch the raindrops.”
+**Scene 9**: The user clicks on each blue circle, which transforms into a puddle on the grass—illustrating how the heavy rain has pooled on the ground.
+**Scene 10**: Once the user has clicked on all the blue circles, the next part of the story is revealed: “Now, click on the character to see how the story unfolds!” **Scene 11**: Click on the character again; the character’s state changes to a slumped, sitting position, completely drenched. The caption updates to: “...hoping the rain stops soon so I can go home…”
+**Scene 12**: After a few seconds, the on-screen caption changes to: “Look to the left and click the pink dot.” The user clicks the pink dot that appears on the left side of the screen, at which point a second character enters, carrying an umbrella.
+**Scene 13**: The caption then reads: “Another person appeared, holding a white umbrella… (click the pink figure).” The user clicks on the second character, whose pose shifts so that their right arm points toward the first character, who is still sitting.
+**Scene 14**: The caption changes to: “Who is sitting over there in the rain? (Click on the green character).”
+**Scene 15**: When the user clicks on the first character, the second character walks over, and the caption displays: “Character approaches Character 1 (click the pink figure to continue).”
+**Scene 16**: The user clicks on the second character, who then hands the umbrella to the first character.
 
 At this point, the sequence transitions into a time-based mechanic to connect the two characters.
-
 I placed the light behind the character to express their emotional energy and help users recognise that they need to click on the character to continue the story. The lighting effect disappears once the second character appears, as the focus then shifts to the interaction between the two characters.
-
 
 ### Implemented Features
 
@@ -185,13 +168,88 @@ Some variables save scene start time or character position:
 * character2PinkRevealStartedAt: starting time for the second character to appear.
 
 3.5. Five raindrops that can be pressed
+const rainDropCount = 5;
+let rainDrops = Array.from({ length: rainDropCount }, () => ({
+clicked: false,
+clickedAt: 0
+}));
+Each drop has two properties:
+* clicked: whether the user has clicked on this drop.
+* clickedAt: the timestamp of when the drop was clicked, used to trigger the puddle animation. This array is recreated whenever the user enters the 'rainFace' scene, which resets the state of the five drops.
 
+4. Main update and draw function: updateAndDrawVy(time, dt)
+4.1. Defining the conditions of the scene
+This function updates certain states over time and calls the corresponding drawing functions. I designed it to be called repeatedly from the main drawing loop.
+const walking = storyStage === 'walking';
+'walking' indicates whether the character is currently walking.
+
+The const `released` variable tracks whether the kite has been released, a state that persists through subsequent scenes. It influences the kite's position, altitude, and the kite string.
+
+const finishedElapsed =
+finishedAt > 0 ? max(0, time - finishedAt) : 0;
+`finishedElapsed` represents the number of seconds that have passed since the `finishedAt` timestamp. If the completion time has not been set, the value is 0.
+const kiteEscaped =
+['finished', 'lostKite', 'rainStorm', 'rainFace'].includes(storyStage) &&
+finishedElapsed >= 0.8;
+
+This flag is activated only when the program has reached one of the post-completion scenes and at least 0.8 seconds have elapsed. It is passed to the rendering function to trigger the kite’s departure from the character.
+const kiteRise =
+arrivalAt > 0 ? min(120, max(0, time - arrivalAt) * 35) : 0;
+`kiteRise` causes the kite to gradually ascend once the arrival scene begins. The maximum altitude is 120 units.
+
+4.2. Drawing the wind effect
+const windStartsNearEnd = walking && characterX >= width - 220;
+const windyCaptionVisible = storyStage === 'finished';
+The wind begins to appear when the character walks near the right edge of the screen. In the 'finished' stage, the wind is rendered with greater intensity, and a corresponding caption is displayed.
+if (windStartsNearEnd || windyCaptionVisible) {
+drawWind(time, windyCaptionVisible);
+}
+The `drawWind()` function uses the `time` parameter to animate the movement of the wind streaks. The second parameter determines the intensity of the wind.
+
+4.3. Drawing the rain
+const sadnessElapsed =
+sadnessStartedAt > 0 ? time - sadnessStartedAt : 0;
+This variable calculates the time elapsed since the beginning of the sad segment of the story.
+Rain is rendered during states such as `lostKite`, `rainStorm`, `soSad`, `rainFace`, `caveEntered`, `wet`, and `pinkReveal`, provided that at least 1.5 seconds have passed since the onset of the sad sequence.
+drawRain(time, storyStage !== 'lostKite');
+The second parameter determines the intensity of the rain. The rain is lighter during the `lostKite` stage, while the other states feature heavier rain.
+
+4.4. Drawing the glow around the character
+The `drawCharacterGlow()` function is called to render a glowing area around the character across various scenes. The color varies based on the current state:
+* A yellow glow during standard scenes.
+* A purple glow during sad or rainy scenes.
+* A soft gray glow during the `wet` scene.
+In the current codebase, there are two conditional blocks that call `drawCharacterGlow()` for largely overlapping lists of scenes. Consequently, for scenes included in both lists, the glow effect may be rendered twice.
+
+4.5. Drawing the character and the kite
+The drawCharacterAndKite() function takes a position and an options object.
+
+4.6. Displaying prompts (narrative annotations)
+Conditions such as:
+if (storyStage === 'rainStorm') {
+drawCharacterHint('The rain is getting heavier...');
+}
+display a prompt appropriate for the current scene. In the 'rainStorm' stage, the content of the prompt further depends on whether or not the user has already interacted with the raindrops:
+* No interaction yet: a prompt reading “Slowly reaching out...”.
+* Character clicked to begin interaction: a prompt instructing the user to click on each blue dot.
+* All five dots clicked: a prompt instructing the user to click on the character to continue the story.
 
 
 
 -------------------------------------------------------------------------------
 
 || MECHANIC 2 ||
+## TIME-BASE – Emery
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+|| MECHANIC 3 ||
 ## AUDIO – Zicen
 
 Zicen developed the microphone-driven mechanic. The **Enable microphone**
@@ -217,6 +275,9 @@ motion preference.
 4. Continue clicking the character and scene prompts to experience the story.
 5. After entering the cave, click the campfire to reveal the audio-controlled
    dance. For direct testing, open the project with `?audioTest=1`.
+
+
+---------------------------------------------------------------------------------
 
 ### AI acknowledgement
 
