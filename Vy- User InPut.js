@@ -59,6 +59,7 @@ let character2GiveImageReady = false;
 let character2Giving = false;
 
 
+
 const rainDropCount = 5;
 let rainDrops = Array.from({ length: rainDropCount }, () => ({
   clicked: false,

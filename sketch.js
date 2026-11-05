@@ -24,10 +24,21 @@ let midpointReached = false;
 let lastStoryTime = 0;
 let walkFinished = false;
 
+let rainMusic;
+let rainMusicPlaying = false;
+const RAIN_STAGES = [
+  'rainStorm', 'soSad', 'rainFace', 'wet', 'pinkReveal'
+];
+
+  
 function preload() {
+  
   preloadCharacterImages();
   preloadAudioAssets();
+  rainMusic = loadSound('assets/user input/rainsound/rainsound.mp3');
 }
+
+
 
 function setup() {
   const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -45,6 +56,19 @@ function draw() {
   lastStoryTime = time;
   updateAudio();
 
+  const inRainScene = RAIN_STAGES.includes(storyStage);
+
+if (inRainScene && rainMusic?.isLoaded() && !rainMusicPlaying) {
+  rainMusic.setLoop(true);
+  rainMusic.setVolume(0.15);
+  rainMusic.play();
+  rainMusicPlaying = true;
+} else if (!inRainScene && rainMusicPlaying) {
+  rainMusic.stop();
+  rainMusicPlaying = false;
+}
+ 
+
   // The final audio scene owns the whole canvas after the character enters
   // the cave, so the outdoor story is intentionally skipped in these states.
   if (isAudioFinaleStage()) {
@@ -52,6 +76,7 @@ function draw() {
     drawAudio();
     return;
   }
+
 
   // Wind stops after the kite escapes; rain starts on the next click.
   drawBackground(time, storyStage === 'finished');

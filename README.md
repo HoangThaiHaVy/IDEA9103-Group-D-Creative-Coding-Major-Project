@@ -1,8 +1,5 @@
 # IDEA9103-Group-D-Creative-Coding-Major-Project
-Move Together group 
-# IDEA9103-Group-D-Creative-Coding-Major-Project
-Move Together group 
-
+Move Together Story
 # Move Together
 
 # About
