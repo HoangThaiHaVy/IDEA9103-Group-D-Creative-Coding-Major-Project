@@ -414,7 +414,7 @@ coordinated but not robotic. The OS *reduced motion* setting is respected.
 | Classes (`AudioMechanic`, `AudioDancer`, `SoundHud`, `FlipSynth`) and reuse of Emery's `Character` class | all audio files | **Tutor feedback:** connect the audio part to the rest of the program through classes. Each dancer instance stores its own position, poses, colour and phase. |
 | Transformations: `push/pop`, `translate`, `rotate`, `scale`; `tint()` crossfades; `blendMode(ADD)` | `AudioDancer.display()` | Squash on landing, handstand flips around the body centre, smooth pose changes and a coloured glow, without redrawing the hand-made art. |
 | `sin()` motion and cubic-bezier easing (Newton's method) | `audio-dancer.js`, `audio-scene.js` | Jump rhythm, flip arc and the slow-in/slow-out timing of the star, row and tower. |
-| Time-based sequencing with `millis()` | `audio-scene.js` | Star rise → nightfall → dance → handstand bow → human tower → visitor's turn. |
+| Time-based sequencing with its own pausable clock, `audioSceneTime()` | `audio-scene.js` | Star rise → nightfall → dance → handstand bow → human tower → visitor's turn; Space pauses the whole chapter for presenting without skipping any step. |
 | Sound synthesis (`p5.Oscillator`, `p5.Envelope`) and playback control (`play`, `pause`, `onended`) | `flip-synth.js`, `standby-music.js` | Live xylophone notes for every flip and a "Ta-da!" chord; standby music that pauses whenever a teammate's sound plays. |
 | p5 DOM (`createDiv`, `createSpan`, `createButton`) and CSS container queries | `audio-hud.js`, `style.css` | A sound panel that shows the audience what is being heard, and a stage that fits any window without scrolling. |
 
@@ -489,6 +489,9 @@ Zicen:
    - **hum one steady note** (no music playing) – the friends climb into a
      human tower one level per second; keep humming for 3 s to touch the
      star. In class, everyone can hum together.
+   - **press Space** at any point of the audio chapter to pause it (the song
+     and every timed step freeze and later continue exactly where they
+     stopped) – useful while presenting.
 4. The **sound panel** under the canvas shows what is being listened to,
    four live meters (volume, bass, mid, treble) with what each one controls,
    and chips that light up when a clap, a held note, or a bright / deep sound

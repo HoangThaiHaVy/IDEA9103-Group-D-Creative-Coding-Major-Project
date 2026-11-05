@@ -99,6 +99,8 @@ class SoundHud {
       const item = createElement('li', `<b style="color:${meter.colour}">■</b> <b>${meter.label}</b> → ${meter.effect}`);
       item.parent(list);
     }
+    const presenterTip = createElement('li', '<b>Space</b> → pause / continue this chapter (for presenting)');
+    presenterTip.parent(list);
     this.secretItem = null;
     for (const event of SOUND_EVENTS) {
       const item = createElement('li', `<b>${event.text}</b> → ${event.effect}`);

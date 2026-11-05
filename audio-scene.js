@@ -108,6 +108,15 @@ let starChimePlayedFor = null; // towerStartedAt of the tower that already chime
 const SOLO_FLIP_CHANCE = 0.85; // chance per detected beat (beats are ≥ 1 s apart)
 const SOLO_FLIP_HOLD = 0.9; // seconds upside down for a solo flip
 
+// PRESENTER PAUSE: Space freezes the audio chapter (and its song) so it can be
+// explained during a live presentation; Space again continues. The chapter
+// runs on its own clock, audioSceneTime(), which stops while paused, so every
+// timed step (star, row, bow, tower) continues exactly where it stopped.
+let audioPaused = false;
+let audioPausedAt = 0; // real seconds when the pause began
+let audioPausedTotal = 0; // real seconds spent paused so far
+let soundtrackPausedByPresenter = false;
+
 // Easter egg: delay between neighbouring dancers in the handstand wave.
 const HANDSTAND_WAVE_STAGGER = 0.14;
 let handstandWaveStartedAt = -Infinity;
@@ -218,6 +227,38 @@ function setupAudio() {
   // Browsers keep audio paused until the first click or key press; this
   // resumes the AudioContext on that gesture (also needed for ?audioTest=dance).
   userStartAudio();
+
+  // A plain keydown listener (not p5's keyPressed) so no teammate's key
+  // handling is replaced. Reference: https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
+  window.addEventListener('keydown', (event) => {
+    if (event.code !== 'Space' || !isAudioFinaleStage()) return;
+    event.preventDefault(); // stop the page from scrolling
+    toggleAudioPause();
+  });
+}
+
+// The chapter's clock in seconds: real time minus the time spent paused.
+function audioSceneTime() {
+  const now = audioPaused ? audioPausedAt : millis() / 1000;
+  return now - audioPausedTotal;
+}
+
+function toggleAudioPause() {
+  if (!audioPaused) {
+    audioPaused = true;
+    audioPausedAt = millis() / 1000;
+    if (finaleSoundtrack && finaleSoundtrack.isPlaying()) {
+      // pause() also fires the song's "ended" callback, so mark it first.
+      soundtrackPausedByPresenter = true;
+      finaleSoundtrack.pause();
+    }
+  } else {
+    audioPausedTotal += millis() / 1000 - audioPausedAt;
+    audioPaused = false;
+    if (soundtrackPausedByPresenter) {
+      finaleSoundtrack.play(); // resumes from where it was paused
+    }
+  }
 }
 
 function enableAudioInput() {
@@ -280,7 +321,7 @@ function startStarGather() {
   audioStartsFromTimeCircle = storyStage === 'timeBased' &&
     typeof timeFigures !== 'undefined' && timeFigures.length > 0;
   storyStage = 'starGather';
-  starGatherStartedAt = millis() / 1000;
+  starGatherStartedAt = audioSceneTime();
   audioDanceStartedAt = 0;
   if (audioStatus) audioStatus.html('A star is rising between the dancers...');
 }
@@ -313,7 +354,7 @@ function startAudioDance() {
     }));
   }
   storyStage = 'audioDance';
-  audioDanceStartedAt = millis() / 1000;
+  audioDanceStartedAt = audioSceneTime();
   if (audioStatus) {
     audioStatus.html(audioMechanic && audioMechanic.micReady
       ? 'Your sound now controls the dancers.'
@@ -324,7 +365,7 @@ function startAudioDance() {
 // Starts the soundtrack once, on the first frame of the dance where the browser
 // allows audio. Until the microphone is enabled, the dancers follow the track.
 function updateFinaleSoundtrack() {
-  if (storyStage !== 'audioDance' || finaleSoundtrackStarted) return;
+  if (audioPaused || storyStage !== 'audioDance' || finaleSoundtrackStarted) return;
   if (!finaleSoundtrack || !finaleSoundtrack.isLoaded()) return;
   if (getAudioContext().state !== 'running') return;
 
@@ -337,9 +378,15 @@ function updateFinaleSoundtrack() {
 
 // When the track finishes, the dance continues with the visitor's own sound.
 function handleSoundtrackEnded() {
+  if (soundtrackPausedByPresenter) {
+    // Not a real ending: the presenter paused the song. Once it is playing
+    // again, the next "ended" event will be the real one.
+    if (!audioPaused) soundtrackPausedByPresenter = false;
+    return;
+  }
   if (!finaleSoundtrackStarted || finaleSoundtrackFinished) return;
   finaleSoundtrackFinished = true;
-  finaleSoundtrackFinishedAt = millis() / 1000;
+  finaleSoundtrackFinishedAt = audioSceneTime();
   // Ending: the group bows with a handstand wave, then climbs into a human
   // tower to touch the star they lifted together. Then it is the visitor's turn.
   startHandstandWave(finaleSoundtrackFinishedAt);
@@ -366,6 +413,11 @@ function handleAudioSceneClick() {
 }
 
 function updateAudio() {
+  // While paused nothing listens, so no clap or hum can change the scene.
+  if (audioPaused) {
+    audioData = createSilentSoundData();
+    return;
+  }
   audioData = audioMechanic
     ? audioMechanic.getSoundData()
     : createSilentSoundData();
@@ -406,10 +458,13 @@ function drawAudioSky(time, opacityAmount = 1) {
   pop();
 }
 
-function drawAudioFinale(time) {
+function drawAudioFinale() {
+  // The chapter's own clock (see PRESENTER PAUSE), not the global time.
+  const time = audioSceneTime();
   updateFinaleSoundtrack();
   if (storyStage === 'starGather') {
     drawStarGathering(time);
+    drawPauseOverlay();
     return;
   }
 
@@ -474,6 +529,28 @@ function drawAudioFinale(time) {
   drawHumanTower(tower);
   drawHandstandCaption(time);
   if (tower.cover === 0) drawSoundtrackFinishedPrompt(time);
+  drawPauseOverlay();
+}
+
+// A clear "paused" sign so the audience knows the scene is frozen on purpose.
+function drawPauseOverlay() {
+  if (!audioPaused) return;
+  push();
+  noStroke();
+  fill(10, 12, 30, 90);
+  rect(0, 0, width, height);
+  rectMode(CENTER);
+  stroke('#171722');
+  strokeWeight(3);
+  fill('#FFF7D6');
+  rect(width / 2, height / 2, 360, 54, 12);
+  noStroke();
+  fill('#171722');
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(17);
+  text('Paused — press Space to continue', width / 2, height / 2);
+  pop();
 }
 
 // Plays the sparkle once per tower, when the climb finishes and the hand
@@ -572,7 +649,7 @@ function drawHumanTower(tower) {
 // The rising star's final position, now reacting to the music: louder sound
 // makes it bigger with a wider halo, and bass sends out short rays.
 function drawSharedStar(time, settleProgress, flare = 0) {
-  sharedStarEnergy = lerp(sharedStarEnergy, audioData.intensity, 0.1);
+  if (!audioPaused) sharedStarEnergy = lerp(sharedStarEnergy, audioData.intensity, 0.1);
   // When the tower touches the star, it flares as if the music peaked.
   const energy = max(sharedStarEnergy * settleProgress, flare);
   const rayAmount = audioData.bass * energy;
@@ -852,7 +929,7 @@ function drawAudioDancers(time, rowProgress, backgroundProgress) {
       0,
       1
     ));
-    dancer.update(time, audioData, audioReducedMotion);
+    if (!audioPaused) dancer.update(time, audioData, audioReducedMotion);
     dancer.display(entrance, backgroundProgress, time);
   }
 }
