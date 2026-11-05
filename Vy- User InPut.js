@@ -338,8 +338,12 @@ function mousePressed() {
     storyStage = 'pinkReveal';
     character2PinkRevealStartedAt = millis() / 1000;
   }
-} else if (storyStage === 'pinkReveal' && character2Giving) {
-  // Giữ cảnh give sau khi ảnh đã xuất hiện.
+} else if (
+  storyStage === 'pinkReveal' &&
+  character2Giving &&
+  clickOnCharacter()
+) {
+  startTimeBased();
 } else if (
   storyStage === 'pinkReveal' &&
   character2WalkStartedAt > 0 &&
@@ -1109,6 +1113,7 @@ image(
   imageWidth,
   imageHeight
 );
+pop();
 
   function drawCharacter2Umbrella(x, y) {
   push();
