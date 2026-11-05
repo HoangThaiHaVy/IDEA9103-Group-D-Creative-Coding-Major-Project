@@ -1,4 +1,4 @@
-// SHARED DAYTIME SKY — Emery / Xinran Xu
+// SHARED DAYTIME SKY — Emery Xu
 // AI acknowledgement: the cloud-motion helpers below were generated and revised
 // with the help of OpenAI Codex. They calculate automatic drift from elapsed
 // seconds, wrap clouds at the canvas edges and draw the shared daytime sky.
