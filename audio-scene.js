@@ -1,22 +1,22 @@
-// Zicen's audio-driven mechanic for the shared scene.
-// Developed with assistance from OpenAI Codex. The assistance was used to
-// connect p5.sound microphone analysis to the independently drawn sun and
-// cloud assets. Zicen selected the mapping and visual behaviour.
+// ========================================
+// AUDIO MECHANIC – FINALE SCENE (Zicen)
+// ========================================
+// Connects the sound analysis (audio-mechanic.js) and the AudioDancer class
+// (audio-dancer.js) to the shared story. Read in this order:
+//   startStarGather()  – called by sketch.js when Emery's circle is ready
+//   drawStarGathering() – the star rises and night falls (6.8 s)
+//   startAudioDance()  – Emery's figures become Zicen's five dancers
+//   drawAudioFinale()  – the soundtrack, then the visitor's own sound,
+//                         drives the dancers until the page is closed
+// Also owns the on-page "Enable microphone" button and live sound panel.
+//
+// AI acknowledgement: developed with help from OpenAI Codex (scene handoff,
+// easing curves, image-asset generation for the sun/cloud/campfire) and
+// Claude (soundtrack → microphone handover and end-of-track prompt). Zicen
+// designed the story beat, the mappings and the timing, and tested every change.
 
 let audioMechanic;
-let audioData = {
-  intensity: 0,
-  bass: 0,
-  mid: 0,
-  treble: 0,
-  singing: false,
-  speaking: false,
-  longSound: false,
-  shortSound: false,
-  sustain: 0,
-  spread: 0.92,
-  clap: false
-};
+let audioData = createSilentSoundData();
 let audioButton;
 let audioStatus;
 let audioValuesPanel;
@@ -38,6 +38,17 @@ let audioReducedMotion = false;
 let audioStartsFromTimeCircle = false;
 let timeCircleHandoff = [];
 
+// Finale soundtrack: "Funky Drums Bass And Claps" by Emmraan (Pixabay Content
+// License, https://pixabay.com/service/license-summary/). It plays once when the
+// dancers appear, so the scene reacts to an audio track even before the
+// visitor enables the microphone.
+const FINALE_SOUNDTRACK_PATH = 'assets/audio/funky-drums-bass-and-claps.mp3';
+const FINALE_SOUNDTRACK_VOLUME = 0.45;
+let finaleSoundtrack;
+let finaleSoundtrackStarted = false;
+let finaleSoundtrackFinished = false;
+let finaleSoundtrackFinishedAt = 0;
+
 const AUDIO_DANCER_PATHS = [
   'assets/audio/classic-red.png',
   'assets/audio/classic-yellow.png',
@@ -57,12 +68,14 @@ const AUDIO_DANCER_POSE_PATHS = [
   ['assets/audio/dancer-pink-alt.png?v=20261105-3']
 ];
 
+// Different phases and jump strengths stop the five dancers moving in perfect
+// unison; colours match Emery's Character colours for the glow halo.
 const AUDIO_DANCER_LAYOUT = [
-  { x: 64, y: 458, height: 152, phase: 0, jumpStrength: 36 },
-  { x: 230, y: 458, height: 146, phase: 0.65, jumpStrength: 39 },
-  { x: 400, y: 458, height: 150, phase: 1.3, jumpStrength: 42 },
-  { x: 570, y: 458, height: 146, phase: 1.95, jumpStrength: 45 },
-  { x: 736, y: 458, height: 152, phase: 2.6, jumpStrength: 48 }
+  { x: 64, y: 458, height: 152, phase: 0, jumpStrength: 36, colour: '#FA4945' },
+  { x: 230, y: 458, height: 146, phase: 0.65, jumpStrength: 39, colour: '#FFD02E' },
+  { x: 400, y: 458, height: 150, phase: 1.3, jumpStrength: 42, colour: '#20CD0A' },
+  { x: 570, y: 458, height: 146, phase: 1.95, jumpStrength: 45, colour: '#18A9EE' },
+  { x: 736, y: 458, height: 152, phase: 2.6, jumpStrength: 48, colour: '#F00085' }
 ];
 
 function preloadAudioAssets() {
@@ -105,6 +118,7 @@ function preloadAudioAssets() {
       () => { audioAlternateDancersReady = false; }
     ))
   );
+  finaleSoundtrack = loadSound(FINALE_SOUNDTRACK_PATH);
 }
 
 function setupAudio() {
@@ -141,19 +155,23 @@ function setupAudio() {
   audioValuesPanel.style('border-radius', '8px');
   audioValuesPanel.style('background', '#f4f0df');
   audioValuesPanel.style('color', '#171722');
+
+  if (finaleSoundtrack) finaleSoundtrack.onended(handleSoundtrackEnded);
+  // Browsers keep audio paused until the first click or key press; this
+  // resumes the AudioContext on that gesture (also needed for ?audioTest=dance).
+  userStartAudio();
 }
 
 function enableAudioInput() {
-  if (audioMechanic.started) return;
+  if (audioMechanic.micReady) return;
 
   audioStatus.html('Waiting for microphone permission...');
-  audioMechanic.startAudio(
+  audioMechanic.startMicrophone(
     () => {
       audioButton.html('Microphone active');
       audioButton.attribute('disabled', '');
-      const inFinale = ['starGather', 'audioDance'].includes(storyStage);
-      audioStatus.html(inFinale
-        ? 'Loudness makes them jump; hold a sound to move; use a short sound to change pose.'
+      audioStatus.html(isAudioFinaleStage()
+        ? 'Loudness makes them jump; hold a sound to move; clap to change pose.'
         : 'Microphone active. Continue to the final dance scene.');
     },
     () => {
@@ -218,9 +236,37 @@ function startAudioDance() {
   storyStage = 'audioDance';
   audioDanceStartedAt = millis() / 1000;
   if (audioStatus) {
-    audioStatus.html(audioMechanic && audioMechanic.started
+    audioStatus.html(audioMechanic && audioMechanic.micReady
       ? 'Your sound now controls the dancers.'
-      : 'Enable the microphone, then make some sound to control the dancers.');
+      : 'The music is moving the dancers. Enable the microphone to take over with your own sound.');
+  }
+}
+
+// Starts the soundtrack once, on the first frame of the dance where the browser
+// allows audio. Until the microphone is enabled, the dancers follow the track.
+function updateFinaleSoundtrack() {
+  if (storyStage !== 'audioDance' || finaleSoundtrackStarted) return;
+  if (!finaleSoundtrack || !finaleSoundtrack.isLoaded()) return;
+  if (getAudioContext().state !== 'running') return;
+
+  finaleSoundtrack.setLoop(false);
+  finaleSoundtrack.setVolume(FINALE_SOUNDTRACK_VOLUME);
+  finaleSoundtrack.play();
+  finaleSoundtrackStarted = true;
+  if (!audioMechanic.micReady) audioMechanic.useTrack(finaleSoundtrack);
+}
+
+// When the track finishes, the dance continues with the visitor's own sound.
+function handleSoundtrackEnded() {
+  if (!finaleSoundtrackStarted || finaleSoundtrackFinished) return;
+  finaleSoundtrackFinished = true;
+  finaleSoundtrackFinishedAt = millis() / 1000;
+  const micTakesOver = audioMechanic.useMicrophone();
+  if (!micTakesOver) audioMechanic.source = null;
+  if (audioStatus) {
+    audioStatus.html(micTakesOver
+      ? 'Play your favourite music, or clap, hum and sing to make them dance!'
+      : 'The song has ended. Enable the microphone to keep the dance going.');
   }
 }
 
@@ -241,19 +287,7 @@ function handleAudioSceneClick() {
 function updateAudio() {
   audioData = audioMechanic
     ? audioMechanic.getSoundData()
-    : {
-      intensity: 0,
-      bass: 0,
-      mid: 0,
-      treble: 0,
-      singing: false,
-      speaking: false,
-      longSound: false,
-      shortSound: false,
-      sustain: 0,
-      spread: 0.92,
-      clap: false
-    };
+    : createSilentSoundData();
 
   const seconds = min(deltaTime, 50) / 1000;
   const cloudSpeed = 10 + audioData.intensity * 65 + audioData.treble * 45;
@@ -291,6 +325,7 @@ function drawAudioSky(time, opacityAmount = 1) {
 }
 
 function drawAudioFinale(time) {
+  updateFinaleSoundtrack();
   if (storyStage === 'starGather') {
     drawStarGathering(time);
     return;
@@ -330,6 +365,38 @@ function drawAudioFinale(time) {
   drawTimeCharactersToRow(rowProgress, oldCharacterOpacity);
   drawRisingStar(time, width / 2, 82, 1 - peopleTransition, 1);
   drawAudioDancers(time, imageCharacterProgress, 1);
+  drawSoundtrackFinishedPrompt(time);
+}
+
+// After the soundtrack ends, a banner invites the visitor to keep the dance
+// going with their own music, claps, humming or singing.
+function drawSoundtrackFinishedPrompt(time) {
+  if (!finaleSoundtrackFinished || storyStage !== 'audioDance') return;
+
+  const fadeDuration = audioReducedMotion ? 0.2 : 0.8;
+  const opacityAmount = strongEaseOut(constrain(
+    (time - finaleSoundtrackFinishedAt) / fadeDuration,
+    0,
+    1
+  ));
+  const message = audioMechanic.micReady
+    ? 'Now play your favourite music — or clap, hum and sing — to make them dance!'
+    : 'Enable the microphone below, then clap, hum or sing to make them dance!';
+
+  push();
+  drawingContext.globalAlpha *= opacityAmount;
+  rectMode(CENTER);
+  stroke('#171722');
+  strokeWeight(3);
+  fill('#FFF7D6');
+  rect(width / 2, 35, 650, 48, 12);
+  noStroke();
+  fill('#171722');
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(15);
+  text(message, width / 2, 35);
+  pop();
 }
 
 function drawStarGathering(time) {
@@ -438,23 +505,6 @@ function drawTimeCharactersToRow(progress, opacityAmount) {
   }
 }
 
-function drawNightfall(progress) {
-  if (progress <= 0) return;
-
-  push();
-  noStroke();
-  fill(8, 13, 52, 240 * progress);
-  rect(0, 0, width, height);
-
-  fill(255, 244, 183, 220 * progress);
-  const stars = [[58, 66], [182, 104], [286, 54], [515, 92], [628, 48], [742, 118], [92, 205], [691, 222]];
-  for (let i = 0; i < stars.length; i += 1) {
-    const twinkle = audioReducedMotion ? 1 : 0.75 + sin(i * 1.7 + frameCount * 0.025) * 0.25;
-    circle(stars[i][0], stars[i][1], (3 + i % 3) * twinkle);
-  }
-  pop();
-}
-
 function drawRisingStar(time, x, y, opacityAmount, scaleAmount) {
   const pulse = audioReducedMotion ? 1 : 1 + sin(time * 2.4) * 0.045;
   push();
@@ -515,7 +565,7 @@ function drawAudioDancers(time, rowProgress, backgroundProgress) {
       1
     ));
     dancer.update(time, audioData, audioReducedMotion);
-    dancer.display(entrance, backgroundProgress);
+    dancer.display(entrance, backgroundProgress, time);
   }
 }
 
@@ -571,6 +621,7 @@ function strongEaseInOut(progress) {
 function drawAudio() {
   if (!audioMechanic || !audioMechanic.started) return;
 
+  const sourceLabel = audioMechanic.source === 'mic' ? 'MICROPHONE' : 'SOUNDTRACK';
   const mode = audioData.shortSound
     ? 'SHORT'
     : audioData.longSound
@@ -581,6 +632,7 @@ function drawAudio() {
   const spacing = audioData.spread < 0.84 ? 'GATHER' : 'SPREAD';
   if (audioValuesPanel) {
     audioValuesPanel.html(
+      `<strong>SOURCE: ${sourceLabel}</strong> &nbsp; ` +
       `<strong>MODE: ${mode}</strong> &nbsp; <strong>SPACING: ${spacing}</strong><br>` +
       `VOLUME ${audioData.intensity.toFixed(2)} &nbsp; ` +
       `BASS ${audioData.bass.toFixed(2)} &nbsp; ` +
@@ -613,33 +665,3 @@ function drawAudio() {
   pop();
 }
 
-function resetAudio() {
-  if (audioMechanic) audioMechanic.stopAudio();
-  audioData = {
-    intensity: 0,
-    bass: 0,
-    mid: 0,
-    treble: 0,
-    singing: false,
-    speaking: false,
-    longSound: false,
-    shortSound: false,
-    sustain: 0,
-    spread: 0.92,
-    clap: false
-  };
-  audioCloudOffset = 0;
-  starGatherStartedAt = 0;
-  audioDanceStartedAt = 0;
-  audioStartsFromTimeCircle = false;
-  timeCircleHandoff = [];
-
-  if (audioButton) {
-    audioButton.removeAttribute('disabled');
-    audioButton.html('Enable microphone');
-  }
-  if (audioStatus) audioStatus.html('Audio is off');
-  if (audioValuesPanel) {
-    audioValuesPanel.html('Live sound values will appear after enabling the microphone.');
-  }
-}
