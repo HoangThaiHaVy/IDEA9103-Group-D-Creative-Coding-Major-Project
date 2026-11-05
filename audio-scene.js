@@ -8,7 +8,8 @@
 //   startAudioDance()  – Emery's figures become Zicen's five dancers
 //   drawAudioFinale()  – the soundtrack, then the visitor's own sound,
 //                         drives the dancers until the page is closed
-// Also owns the on-page "Enable microphone" button and live sound panel.
+// Also owns the "Enable microphone" button, the sound panel (audio-hud.js),
+// the star that stays in the sky and the handstand-wave easter egg.
 //
 // AI acknowledgement: developed with help from OpenAI Codex (scene handoff,
 // easing curves, image-asset generation for the sun/cloud/campfire) and
@@ -19,7 +20,7 @@ let audioMechanic;
 let audioData = createSilentSoundData();
 let audioButton;
 let audioStatus;
-let audioValuesPanel;
+let soundHud;
 let audioSunImage;
 let audioCloudImage;
 let audioCampfireImage;
@@ -48,6 +49,15 @@ let finaleSoundtrack;
 let finaleSoundtrackStarted = false;
 let finaleSoundtrackFinished = false;
 let finaleSoundtrackFinishedAt = 0;
+
+// The star lifted by the group stays above the dance; its glow follows the
+// smoothed loudness of everyone's sound.
+const SHARED_STAR_Y = 82;
+let sharedStarEnergy = 0;
+
+// Easter egg: delay between neighbouring dancers in the handstand wave.
+const HANDSTAND_WAVE_STAGGER = 0.14;
+let handstandWaveStartedAt = -Infinity;
 
 const AUDIO_DANCER_PATHS = [
   'assets/audio/classic-red.png',
@@ -132,29 +142,17 @@ function setupAudio() {
     )
   );
 
+  // One panel under the canvas holds every audio control and live reading.
+  soundHud = new SoundHud(document.querySelector('main'));
+
   audioButton = createButton('Enable microphone');
-  audioButton.parent(document.querySelector('main'));
+  audioButton.parent(soundHud.controls);
+  audioButton.addClass('sound-hud__button');
   audioButton.mousePressed(enableAudioInput);
 
   audioStatus = createP('Audio is off');
-  audioStatus.parent(document.querySelector('main'));
-  audioStatus.style('font-family', 'Arial, sans-serif');
-  audioStatus.style('font-size', '13px');
-  audioStatus.style('margin', '4px 0 0');
-
-  audioValuesPanel = createDiv('Live sound values will appear after enabling the microphone.');
-  audioValuesPanel.parent(document.querySelector('main'));
-  audioValuesPanel.style('font-family', 'ui-monospace, SFMono-Regular, Menlo, monospace');
-  audioValuesPanel.style('font-size', '12px');
-  audioValuesPanel.style('line-height', '1.55');
-  audioValuesPanel.style('margin-top', '8px');
-  audioValuesPanel.style('padding', '9px 12px');
-  audioValuesPanel.style('max-width', '776px');
-  audioValuesPanel.style('box-sizing', 'border-box');
-  audioValuesPanel.style('border', '2px solid #171722');
-  audioValuesPanel.style('border-radius', '8px');
-  audioValuesPanel.style('background', '#f4f0df');
-  audioValuesPanel.style('color', '#171722');
+  audioStatus.parent(soundHud.controls);
+  audioStatus.addClass('sound-hud__status');
 
   if (finaleSoundtrack) finaleSoundtrack.onended(handleSoundtrackEnded);
   // Browsers keep audio paused until the first click or key press; this
@@ -261,6 +259,8 @@ function handleSoundtrackEnded() {
   if (!finaleSoundtrackStarted || finaleSoundtrackFinished) return;
   finaleSoundtrackFinished = true;
   finaleSoundtrackFinishedAt = millis() / 1000;
+  // The group takes a bow with the easter-egg move, so every visitor sees it.
+  startHandstandWave(finaleSoundtrackFinishedAt);
   const micTakesOver = audioMechanic.useMicrophone();
   if (!micTakesOver) audioMechanic.source = null;
   if (audioStatus) {
@@ -363,9 +363,69 @@ function drawAudioFinale(time) {
     ? strongEaseOut(constrain((rowProgress - 0.78) / 0.22, 0, 1))
     : peopleTransition;
   drawTimeCharactersToRow(rowProgress, oldCharacterOpacity);
-  drawRisingStar(time, width / 2, 82, 1 - peopleTransition, 1);
+  // The star from the previous scene keeps shining above the dancers.
+  drawSharedStar(time, peopleTransition);
+  if (audioData.tripleClap && rowProgress >= 1) {
+    startHandstandWave(time);
+    soundHud.revealSecret();
+  }
   drawAudioDancers(time, imageCharacterProgress, 1);
+  drawHandstandCaption(time);
   drawSoundtrackFinishedPrompt(time);
+}
+
+// The rising star's final position, now reacting to the music: louder sound
+// makes it bigger with a wider halo, and bass sends out short rays.
+function drawSharedStar(time, settleProgress) {
+  sharedStarEnergy = lerp(sharedStarEnergy, audioData.intensity, 0.1);
+  const energy = sharedStarEnergy * settleProgress;
+  const rayAmount = audioData.bass * energy;
+
+  push();
+  translate(width / 2, SHARED_STAR_Y);
+  blendMode(ADD);
+  noStroke();
+  fill(255, 236, 120, 38 * energy);
+  circle(0, 0, 150 + energy * 90);
+  stroke(255, 240, 150, 170 * rayAmount);
+  strokeWeight(3);
+  for (let ray = 0; ray < 12; ray += 1) {
+    const angle = ray * TWO_PI / 12 + time * 0.3;
+    const inner = 48 + energy * 12;
+    const outer = inner + 12 + rayAmount * 30;
+    line(cos(angle) * inner, sin(angle) * inner, cos(angle) * outer, sin(angle) * outer);
+  }
+  blendMode(BLEND);
+  pop();
+
+  drawRisingStar(time, width / 2, SHARED_STAR_Y, 1, 1 + energy * 0.35);
+}
+
+// Easter egg: the five dancers flip into handstands one after another.
+function startHandstandWave(time) {
+  if (audioReducedMotion || time - handstandWaveStartedAt < HANDSTAND_TOTAL) return;
+  handstandWaveStartedAt = time;
+  audioDancers.forEach((dancer, index) => {
+    dancer.startHandstand(time + index * HANDSTAND_WAVE_STAGGER);
+  });
+}
+
+function drawHandstandCaption(time) {
+  const elapsed = time - handstandWaveStartedAt;
+  const duration = HANDSTAND_TOTAL + HANDSTAND_WAVE_STAGGER * 4;
+  if (elapsed < 0 || elapsed > duration) return;
+  const fade = min(1, elapsed / 0.3, (duration - elapsed) / 0.4);
+
+  push();
+  textAlign(CENTER, CENTER);
+  textStyle(BOLD);
+  textSize(20);
+  stroke('#171722');
+  strokeWeight(5);
+  fill(255, 244, 183, 255 * fade);
+  drawingContext.globalAlpha *= fade;
+  text('Handstand wave!', width / 2, height - 28);
+  pop();
 }
 
 // After the soundtrack ends, a banner invites the visitor to keep the dance
@@ -547,7 +607,9 @@ function drawCampfire(time, progress, backgroundProgress) {
   circle(0, -48, 118 * progress * soundPulse);
   imageMode(CENTER);
   tint(255, 255 * progress * backgroundProgress);
-  scale(soundPulse * flicker);
+  // Mid frequencies stretch the flame upwards (at most 18% taller).
+  const flameLift = 1 + constrain(audioData.mid, 0, 1) * 0.18;
+  scale(soundPulse * flicker, soundPulse * flicker * flameLift);
   image(audioCampfireImage, 0, -campfireHeight / 2, campfireWidth, campfireHeight);
   noTint();
   pop();
@@ -618,50 +680,8 @@ function strongEaseInOut(progress) {
     3 * inverse * parameter * parameter * y2 + parameter * parameter * parameter;
 }
 
+// Called every frame from sketch.js: refreshes the sound panel under the canvas.
 function drawAudio() {
-  if (!audioMechanic || !audioMechanic.started) return;
-
-  const sourceLabel = audioMechanic.source === 'mic' ? 'MICROPHONE' : 'SOUNDTRACK';
-  const mode = audioData.shortSound
-    ? 'SHORT'
-    : audioData.longSound
-      ? 'HOLD'
-      : audioData.intensity > 0.07
-        ? 'JUMP'
-        : 'LISTEN';
-  const spacing = audioData.spread < 0.84 ? 'GATHER' : 'SPREAD';
-  if (audioValuesPanel) {
-    audioValuesPanel.html(
-      `<strong>SOURCE: ${sourceLabel}</strong> &nbsp; ` +
-      `<strong>MODE: ${mode}</strong> &nbsp; <strong>SPACING: ${spacing}</strong><br>` +
-      `VOLUME ${audioData.intensity.toFixed(2)} &nbsp; ` +
-      `BASS ${audioData.bass.toFixed(2)} &nbsp; ` +
-      `MID ${audioData.mid.toFixed(2)} &nbsp; ` +
-      `TREBLE ${audioData.treble.toFixed(2)}<br>` +
-      `SUSTAIN ${audioData.sustain.toFixed(2)} &nbsp; ` +
-      `SPREAD ${audioData.spread.toFixed(2)}`
-    );
-  }
-
-  // A compact level meter makes the sound response legible without covering
-  // the story. Bass raises the bars; treble changes their colour intensity.
-  push();
-  noStroke();
-  const meterX = width - 68;
-  const meterBottom = height - 18;
-  for (let i = 0; i < 4; i += 1) {
-    const barHeight = 5 + audioData.intensity * (10 + i * 7) + audioData.bass * 8;
-    fill(220 + audioData.treble * 35, 48, 45, 190);
-    rect(meterX + i * 11, meterBottom - barHeight, 7, barHeight, 3);
-  }
-  fill(255, 235);
-  textAlign(RIGHT, BOTTOM);
-  textSize(10);
-  textStyle(BOLD);
-  text(mode, width - 18, meterBottom - 39);
-  textSize(9);
-  text(spacing, width - 18, meterBottom - 27);
-  textStyle(NORMAL);
-  pop();
+  if (!soundHud || !audioMechanic) return;
+  soundHud.update(audioData, audioMechanic.source);
 }
-
