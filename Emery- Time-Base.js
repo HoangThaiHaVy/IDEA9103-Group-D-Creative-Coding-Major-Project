@@ -6,7 +6,48 @@ let timeStartedAt = 0;
 let timeElapsed = 0;
 let timeStartX = [640, 520];
 let timeCircleReady = false;
-const TIME_END = 32;
+const GROUP_MUSIC_START = 14;
+const MUSIC_BPM = 125;
+const MUSIC_BEAT_SECONDS = 60 / MUSIC_BPM;
+const GROUP_PHRASE_SECONDS = MUSIC_BEAT_SECONDS * 8;
+const GROUP_DANCE_END = GROUP_MUSIC_START + GROUP_PHRASE_SECONDS * 5; // 33.2s
+const DANCE_EXTENSION = GROUP_DANCE_END - 23; // Only the middle is extended.
+const TIME_END = 32 + DANCE_EXTENSION; // 42.2s, same circle-ready interface.
+let groupDanceMusic;
+let groupMusicStarted = false;
+const GROUP_MUSIC_VOLUME = 0.32;
+
+function preloadTimeBasedAssets() {
+  preloadCharacterHeads();
+  // Happy Commercial (Piano) — MaxKoMusic, supplied by Emery.
+  // Source/credit: https://www.chosic.com/download-audio/27305/
+  groupDanceMusic = loadSound('assets/time-based/group-dance.mp3');
+}
+function stopGroupMusic() {
+  if (groupDanceMusic && groupDanceMusic.isPlaying()) groupDanceMusic.stop();
+}
+function updateGroupMusic(elapsed) {
+  // Offline video recording mixes this same track afterwards.
+  if (window.__exportMode || !groupDanceMusic || !groupDanceMusic.isLoaded()) return;
+  if (elapsed >= GROUP_MUSIC_START && elapsed < TIME_END) {
+    if (!groupMusicStarted) {
+      groupDanceMusic.setVolume(0);
+      groupDanceMusic.play();
+      groupMusicStarted = true;
+    }
+    const volume = GROUP_MUSIC_VOLUME * timeEase(elapsed, 14, 14.5) *
+      (1 - timeEase(elapsed, TIME_END - 1.2, TIME_END));
+    groupDanceMusic.setVolume(volume);
+  } else if (elapsed >= TIME_END) {
+    stopGroupMusic();
+  }
+}
+function choreographyTime(elapsed) {
+  // The original opening and complete line-to-circle sequence are reused.
+  if (elapsed <= 23) return elapsed;
+  if (elapsed < GROUP_DANCE_END) return 23;
+  return elapsed - DANCE_EXTENSION;
+}
 const DANCE_PERIOD = 1.8;
 const TIME_LINE_X = [580, 485, 390, 295, 200];
 const TIME_COLOURS = ['#20CD0A', '#F00085', '#FA4945', '#18A9EE', '#FFD02E'];
@@ -23,6 +64,8 @@ function setupTimeBased() {
 }
 
 function startTimeBased(now = millis() / 1000) {
+  stopGroupMusic();
+  groupMusicStarted = false;
   timeStartedAt = now;
   timeElapsed = 0;
   timeCircleReady = false;
@@ -51,7 +94,7 @@ function updateTimeBased(now = millis() / 1000) {
   // p5 time/interpolation references:
   // https://p5js.org/reference/p5/millis/ and https://p5js.org/reference/p5/lerp/
   timeElapsed = max(0, now - timeStartedAt);
-  const t = timeElapsed;
+  const t = choreographyTime(timeElapsed);
   const rise = timeEase(t, 0.8, 4);
   const sync = timeEase(t, 4, 6.2);
   const joining = timeEase(t, 8.5, 14);
@@ -76,7 +119,7 @@ function updateTimeBased(now = millis() / 1000) {
     const sharedStep = sin(phase + delay);
     const dancing = (pair ? pairDance : 0) + groupDance;
     const march = sin(TWO_PI * (t - 8.5) / 0.75);
-    timeFigures[i].update({
+    let values = {
       x: lerp(lineX, circleX, circle) + sharedStep * 6 * dancing * (1 - circle),
       y: lerp(TIME_BASE_Y[i], circleY, circle),
       stand: i === 0 ? rise : 1,
@@ -88,11 +131,21 @@ function updateTimeBased(now = millis() / 1000) {
       reach: 78 * highKnees * (1 - timeEase(t, 23, 25)),
       scale: lerp(1, 0.9, circle) * TIME_BASE_SCALES[i],
       // Brief profile turn: look left while travelling, then face the audience.
-      facing: pair ? cos(PI * timeWindow(t, 8, 8.8, 13.4, 14.2)) : 1
-    });
+      facing: pair ? cos(PI * timeWindow(t, 8, 8.8, 13.4, 14.2)) : 1,
+      stride: 0,
+      armBend: 0
+    };
+    const danceWeight = groupDanceWeight(timeElapsed);
+    if (danceWeight > 0) {
+      const dance = groupDanceValues(i, timeElapsed);
+      for (const key of Object.keys(dance)) values[key] = lerp(values[key], dance[key], danceWeight);
+    }
+    timeFigures[i].update(values);
   }
   connectTimeFigures(t);
-  timeCircleReady = t >= TIME_END;
+  applyGroupHandPoses(timeElapsed);
+  timeCircleReady = timeElapsed >= TIME_END;
+  updateGroupMusic(timeElapsed);
 }
 
 function timeBlendPoint(a, b, amount) {
@@ -221,7 +274,64 @@ function drawTimeUmbrella(t, opacity) {
   pop();
 }
 
+function groupDanceWeight(elapsed) {
+  return timeEase(elapsed, 14, 14.8) *
+    (1 - timeEase(elapsed, GROUP_DANCE_END - 0.8, GROUP_DANCE_END));
+}
+function groupDanceValues(index, elapsed) {
+  const beat = (elapsed - GROUP_MUSIC_START) / MUSIC_BEAT_SECONDS;
+  const step = sin(PI * beat); // Alternating feet: one step per musical beat.
+  const sway = sin(PI * beat / 2);
+  const pulse = max(0, sin(PI * beat));
+  const common = {
+    x: TIME_LINE_X[index] + sway * 6, y: TIME_BASE_Y[index], stand: 1,
+    scale: TIME_BASE_SCALES[index], facing: 1, armBend: 0.6
+  };
+  const phrases = [
+    { sway: sway * 0.65, step, knee: 10, bounce: abs(step) * 2, open: 0.12, reach: 0, stride: 0 },
+    { sway: sway * 0.55, step, knee: 32, bounce: abs(step) * 3, open: 0.23, reach: 10, stride: 2 },
+    { sway: sway * 0.8, step, knee: 22, bounce: pulse * 3, open: 0.23, reach: 8, stride: 8 },
+    { sway: sway * 0.45, step, knee: 14, bounce: abs(step) * 4, open: 0.55, reach: 0, stride: 5 },
+    { sway: sway * 0.55, step, knee: 18, bounce: abs(step) * 3, open: 0.62, reach: 0, stride: 2 }
+  ];
+  let pose = { ...phrases[0] };
+  for (let phrase = 1; phrase < phrases.length; phrase++) {
+    const change = GROUP_MUSIC_START + GROUP_PHRASE_SECONDS * phrase;
+    const blend = timeEase(elapsed, change - 0.3, change + 0.3);
+    for (const key of Object.keys(pose)) pose[key] = lerp(pose[key], phrases[phrase][key], blend);
+  }
+  return { ...common, ...pose };
+}
+function applyGroupHandPoses(elapsed) {
+  const amount = groupDanceWeight(elapsed);
+  if (amount <= 0) return;
+  const beat = (elapsed - GROUP_MUSIC_START) / MUSIC_BEAT_SECONDS;
+  const clapStart = GROUP_MUSIC_START + GROUP_PHRASE_SECONDS * 3;
+  const waveStart = GROUP_MUSIC_START + GROUP_PHRASE_SECONDS * 4;
+  const clapping = timeEase(elapsed, clapStart - 0.3, clapStart + 0.3) *
+    (1 - timeEase(elapsed, waveStart - 0.3, waveStart + 0.3)) * amount;
+  const waving = timeEase(elapsed, waveStart - 0.3, waveStart + 0.3) * amount;
+  const clap = pow(max(0, cos(PI * (beat - 1))), 4);
+  for (const person of timeFigures) {
+    const p = person.pose, s = person.scale;
+    if (clapping > 0) {
+      const halfGap = (1 - clap) * 36 * s;
+      p.leftHand = timeBlendPoint(p.leftHand, {x:p.shoulder.x-halfGap,y:p.shoulder.y+42*s}, clapping);
+      p.rightHand = timeBlendPoint(p.rightHand, {x:p.shoulder.x+halfGap,y:p.shoulder.y+42*s}, clapping);
+    }
+    if (waving > 0) {
+      const order = TIME_ROW_ORDER.indexOf(person.index);
+      const wave = sin(PI * beat / 2 - order * 0.45);
+      // Original flowing wave: broad, rounded arms rather than angular elbows.
+      p.leftHand = timeBlendPoint(p.leftHand, {x:p.shoulder.x-55*s,y:p.shoulder.y-10*s+wave*28*s}, waving);
+      p.rightHand = timeBlendPoint(p.rightHand, {x:p.shoulder.x+55*s,y:p.shoulder.y-10*s-wave*28*s}, waving);
+    }
+  }
+}
+
 function resetTimeBased() {
+  stopGroupMusic();
+  groupMusicStarted = false;
   timeStartedAt = 0;
   timeElapsed = 0;
   timeCircleReady = false;

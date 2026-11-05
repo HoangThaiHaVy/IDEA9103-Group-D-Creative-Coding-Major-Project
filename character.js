@@ -3,36 +3,17 @@
 // and proportions. An array stores five instances of this reusable class.
 let characterHeads = [];
 
-function prepareCharacterHeads() {
-  // RGBA pixel preparation, explained in README:
-  // https://p5js.org/reference/p5.Image/loadPixels/
-  const sources = [standingImage.get(103, 88, 305, 310), character2PinkImage.get(430, 177, 308, 310)];
-  const colours = ['#20CD0A', '#F00085', '#FA4945', '#18A9EE', '#FFD02E'];
-  characterHeads = colours.map((c, i) => {
-    const head = sources[i === 1 ? 1 : 0].get();
-    head.loadPixels();
-    const target = color(c);
-    for (let j = 0; j < head.pixels.length; j += 4) {
-      const x = (j / 4) % head.width,
-        y = Math.floor(j / 4 / head.width);
-      // Remove neighbouring arm/neck pixels from the rectangular crop.
-      const nx = (x - head.width / 2) / (head.width / 2);
-      const ny = (y - head.height / 2) / (head.height / 2);
-      if (nx * nx + ny * ny > 1) head.pixels[j + 3] = 0;
-      const r = head.pixels[j],
-        g = head.pixels[j + 1],
-        b = head.pixels[j + 2];
-      // Recolour the fill only; retain the original black outline and face.
-      if (max(r, g, b) - min(r, g, b) > 45 && max(r, g, b) > 80) {
-        head.pixels[j] = red(target);
-        head.pixels[j + 1] = green(target);
-        head.pixels[j + 2] = blue(target);
-      }
-    }
-    head.updatePixels();
-    return head;
-  });
+let headAssets = [];
+function preloadCharacterHeads() {
+  const names = ['green', 'pink', 'red', 'blue', 'yellow'];
+  headAssets = names.map(name => loadImage('assets/time-based/heads/' + name + '.png'));
 }
+function prepareCharacterHeads() {
+  // These PNGs were exported from the previous prepareCharacterHeads() pixels.
+  // Bodies, hands and feet are still drawn and articulated with code.
+  characterHeads = headAssets;
+}
+
 class Character {
   constructor(index, x, y, colour) {
     // Copy named initial properties onto this instance (standard JavaScript).
@@ -51,6 +32,8 @@ class Character {
       reach: 0,
       scale: 1,
       facing: 1,
+      stride: 0,
+      armBend: 0,
       pose: null
     });
   }
@@ -76,8 +59,8 @@ class Character {
       rightShoulder: point(lean + 15, shoulderY + 5),
       leftKnee: point(lerp(-23, -14, this.stand) + step * 5, lerp(-10, -40, this.stand) - max(0, step) * this.knee),
       rightKnee: point(lerp(19, 14, this.stand) - step * 5, lerp(-10, -40, this.stand) - max(0, -step) * this.knee),
-      leftFoot: point(lerp(-28, -18, this.stand) + step * 12, -max(0, step) * this.knee),
-      rightFoot: point(lerp(28, 18, this.stand) - step * 12, -max(0, -step) * this.knee),
+      leftFoot: point(lerp(-28, -18, this.stand) + step * (12 + this.stride), -max(0, step) * this.knee),
+      rightFoot: point(lerp(28, 18, this.stand) - step * (12 + this.stride), -max(0, -step) * this.knee),
       leftHand: point(lean - lerp(29, 71, this.open), shoulderY + lerp(66, -29, this.open) - max(0, -step) * this.reach),
       rightHand: point(lean + lerp(29, 71, this.open), shoulderY + lerp(66, -29, this.open) - max(0, step) * this.reach)
     };
@@ -96,8 +79,8 @@ class Character {
         c = outline ? '#10110E' : this.colour;
       characterLimb(p.hip, p.leftKnee, p.leftFoot, c, 14 * s + extra);
       characterLimb(p.hip, p.rightKnee, p.rightFoot, c, 14 * s + extra);
-      characterArm(p.leftShoulder, p.leftHand, c, 10 * s + extra, -1);
-      characterArm(p.rightShoulder, p.rightHand, c, 10 * s + extra, 1);
+      characterArm(p.leftShoulder, p.leftHand, c, 10 * s + extra, -1, this.armBend);
+      characterArm(p.rightShoulder, p.rightHand, c, 10 * s + extra, 1, this.armBend);
       noStroke();
       fill(c);
       ellipse(p.leftFoot.x - 2 * s, p.leftFoot.y - 2 * s, 26 * s + extra, 13 * s + extra);
@@ -119,7 +102,8 @@ class Character {
     push();
     translate(p.head.x, p.head.y);
     rotate(this.sway * 0.045);
-    scale(this.facing, 1);
+    // A direction flip preserves head width; scaling through zero squeezed it.
+    scale(this.facing < 0 ? -1 : 1, 1);
     imageMode(CENTER);
     image(characterHeads[this.index], 0, 0, 56 * s, 57 * s);
     pop();
@@ -134,9 +118,15 @@ function characterLimb(a, j, b, c, w) {
   bezier(a.x, a.y, lerp(a.x, j.x, 0.8), lerp(a.y, j.y, 0.8), lerp(b.x, j.x, 0.8), lerp(b.y, j.y, 0.8), b.x, b.y);
 }
 
-function characterArm(a, b, c, w, side) {
+function characterArm(a, b, c, w, side, bend = 0) {
   noFill();
   stroke(c);
   strokeWeight(w);
-  bezier(a.x, a.y, a.x + side * 8, lerp(a.y, b.y, 0.3), b.x + side * 6, lerp(a.y, b.y, 0.7), b.x, b.y);
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const distance = max(1, Math.hypot(dx, dy));
+  const curveX = -dy / distance * 10 * side * bend;
+  const curveY = dx / distance * 10 * side * bend;
+  // Restore the original continuous, rounded arm silhouette (P2 reference).
+  bezier(a.x, a.y, a.x + side * 8 + curveX, lerp(a.y, b.y, 0.3) + curveY,
+    b.x + side * 6 + curveX, lerp(a.y, b.y, 0.7) + curveY, b.x, b.y);
 }
