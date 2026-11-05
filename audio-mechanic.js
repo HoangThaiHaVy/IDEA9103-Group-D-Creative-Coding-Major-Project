@@ -25,6 +25,8 @@ const SILENT_SOUND_DATA = Object.freeze({
   longSound: false,
   shortSound: false,
   tripleClap: false,
+  humming: false,
+  humProgress: 0,
   sustain: 0,
   spread: 0.92
 });
@@ -44,6 +46,24 @@ const SOURCE_LEVEL_RANGE = {
 };
 const MIN_SPREAD = 0.72; // closest the row may gather (1 = full width)
 const TRIPLE_CLAP_WINDOW = 1500; // ms in which three short sounds count as a combo
+
+// HUM DETECTION (builds the human tower). Music is also continuous, so a hum
+// is recognised by three things music rarely has at the same time:
+//   1. one steady pitch – the loudest frequency stays in the same FFT bin;
+//   2. a concentrated spectrum – most energy sits in a few bins (a voice's
+//      note and its harmonics) instead of being spread by many instruments;
+//   3. no beat – nothing percussive has been heard for a short moment.
+// The thresholds were measured with a synthetic hum, the two soundtracks,
+// Emery's song and Vy's rain: a hum kept a steady pitch for over 1 s in 81%
+// of frames, the background song and Emery's song in 0%.
+const HUM_SETTINGS = {
+  minIntensity: 0.1,
+  minConcentration: 0.9, // share of energy in the 12 strongest bins
+  minSteadyPitch: 0.25, // seconds the loudest bin must stay put
+  quietAfterBeat: 0.45, // seconds since the last percussive onset
+  secondsToBuild: 3, // holding the hum this long completes the tower
+  decayRate: 1.2 // how fast progress falls back when the hum stops
+};
 
 class AudioMechanic {
   constructor() {
@@ -69,13 +89,27 @@ class AudioMechanic {
     this.voiceSustain = 0;
     this.lastAnalysisAt = null;
     this.spreadAmount = SILENT_SOUND_DATA.spread;
+
+    // Hum detection memory.
+    this.lastOnsetAt = -Infinity;
+    this.dominantBin = -1;
+    this.pitchSteadySince = 0;
+    this.humHold = 0; // seconds of hum collected towards the tower
+    // Only the visitor's microphone may build the tower; tests can allow the
+    // track source so a recorded hum can be checked automatically.
+    this.allowHumFromTrack = false;
   }
 
+  // 1024 bins (about 21 Hz each) are fine enough to follow the pitch of a hum.
   createAnalyserPair() {
     return {
       amplitude: new p5.Amplitude(0.85),
-      fft: new p5.FFT(0.8, 64)
+      fft: new p5.FFT(0.8, 1024)
     };
+  }
+
+  resetHum() {
+    this.humHold = 0;
   }
 
   // True whenever some source is currently driving the dancers.
@@ -117,6 +151,44 @@ class AudioMechanic {
     return true;
   }
 
+  // Returns true while the spectrum looks like one held, steady note.
+  detectHum(spectrum, intensity, now) {
+    const nyquist = sampleRate() / 2;
+    const binFor = (frequency) => round(frequency / nyquist * spectrum.length);
+
+    // Loudest bin between 80 Hz and 1 kHz = the pitch of the hum.
+    let loudestValue = -1;
+    let loudestBin = 0;
+    for (let i = binFor(80); i <= binFor(1000); i += 1) {
+      if (spectrum[i] > loudestValue) {
+        loudestValue = spectrum[i];
+        loudestBin = i;
+      }
+    }
+    // Allow one bin of wobble (natural vibrato) before counting a new pitch.
+    if (abs(loudestBin - this.dominantBin) > 1) {
+      this.dominantBin = loudestBin;
+      this.pitchSteadySince = now;
+    }
+
+    // p5.FFT returns decibel-like values 0–255; pow(10, v * 0.0275) turns them
+    // back into linear energy (about 70 dB range) so the shares are meaningful.
+    const energies = [];
+    for (let i = binFor(80); i <= binFor(4000); i += 1) {
+      energies.push(pow(10, spectrum[i] * 0.0275));
+    }
+    const totalEnergy = energies.reduce((sum, value) => sum + value, 0);
+    const strongestEnergy = [...energies].sort((a, b) => b - a)
+      .slice(0, 12)
+      .reduce((sum, value) => sum + value, 0);
+    const concentration = totalEnergy > 0 ? strongestEnergy / totalEnergy : 0;
+
+    return intensity > HUM_SETTINGS.minIntensity &&
+      concentration > HUM_SETTINGS.minConcentration &&
+      (now - this.pitchSteadySince) / 1000 > HUM_SETTINGS.minSteadyPitch &&
+      (now - this.lastOnsetAt) / 1000 > HUM_SETTINGS.quietAfterBeat;
+  }
+
   stopAudio() {
     if (this.micReady) this.mic.stop();
     this.micReady = false;
@@ -129,7 +201,7 @@ class AudioMechanic {
     const { amplitude, fft } = this.analysers[this.source];
     const levelRange = SOURCE_LEVEL_RANGE[this.source];
 
-    fft.analyze();
+    const spectrum = fft.analyze();
     const rawVolume = amplitude.getLevel();
     const bass = fft.getEnergy('bass') / 255;
     const mid = fft.getEnergy('mid') / 255;
@@ -150,8 +222,9 @@ class AudioMechanic {
     // SHORT SOUND: a clap or drum hit is a sudden broadband jump, not simply a
     // loud sound. The cooldown stops one hit from counting twice.
     const clapEnergy = intensity * 0.45 + highMid * 0.35 + treble * 0.2;
-    const shortSound = clapEnergy - this.previousClapEnergy > 0.07 &&
-      clapEnergy > 0.16 && now - this.lastClapAt > levelRange.shortSoundCooldown;
+    const onset = clapEnergy - this.previousClapEnergy > 0.07 && clapEnergy > 0.16;
+    if (onset) this.lastOnsetAt = now; // every percussive hit, for hum detection
+    const shortSound = onset && now - this.lastClapAt > levelRange.shortSoundCooldown;
     this.previousClapEnergy = lerp(this.previousClapEnergy, clapEnergy, 0.38);
     if (shortSound) this.lastClapAt = now;
 
@@ -195,6 +268,12 @@ class AudioMechanic {
       : SILENT_SOUND_DATA.spread;
     this.spreadAmount = lerp(this.spreadAmount, spreadTarget, 0.12);
 
+    const humming = this.detectHum(spectrum, intensity, now) &&
+      (this.source === 'mic' || this.allowHumFromTrack);
+    this.humHold = humming
+      ? min(this.humHold + deltaSeconds, HUM_SETTINGS.secondsToBuild)
+      : max(this.humHold - deltaSeconds * HUM_SETTINGS.decayRate, 0);
+
     return {
       intensity,
       bass,
@@ -203,6 +282,8 @@ class AudioMechanic {
       longSound,
       shortSound,
       tripleClap,
+      humming,
+      humProgress: this.humHold / HUM_SETTINGS.secondsToBuild,
       sustain: this.voiceSustain,
       spread: this.spreadAmount
     };
