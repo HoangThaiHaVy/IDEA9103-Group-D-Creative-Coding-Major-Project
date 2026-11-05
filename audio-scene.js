@@ -66,15 +66,24 @@ const AUDIO_HANDSTAND_PATHS = [
   'assets/audio/handstand-pink.png'
 ];
 let audioHandstandImages = [];
-let towerImage;
-let towerImageReady = false;
+// The tower drawing is split into three layers (bottom pair, middle pair,
+// top dancer) so it can be built one level at a time.
+const TOWER_LAYER_PATHS = [
+  'assets/audio/tower-level-1.png',
+  'assets/audio/tower-level-2.png',
+  'assets/audio/tower-level-3.png'
+];
+let towerLayerImages = [];
+let towerLayersLoaded = 0;
 
 // Human tower: drawn so the top dancer's raised hand meets the shared star.
-// TOWER_HAND_* is the hand position inside tower-reach.png (333 x 640 px).
+// TOWER_HAND_* is the top hand's position inside each layer image (333 x 640 px).
 const TOWER_DRAW_HEIGHT = 410;
 const TOWER_HAND_X = 207;
 const TOWER_HAND_Y = 80;
-const TOWER_GATHER = 0.9; // dancers fade out while the tower rises
+const TOWER_LAYER_DELAY = 0.3; // seconds between levels when it builds itself
+const TOWER_LAYER_RISE = 0.5; // seconds for one level to climb into place
+const TOWER_GATHER = TOWER_LAYER_DELAY * 2 + TOWER_LAYER_RISE; // all three levels
 const TOWER_HOLD = 4.6; // the star flares while the tower holds it
 const TOWER_RELEASE = 0.9; // the tower fades back into the row
 const TOWER_TOTAL = TOWER_GATHER + TOWER_HOLD + TOWER_RELEASE;
@@ -155,11 +164,11 @@ function preloadAudioAssets() {
   );
   finaleSoundtrack = loadSound(FINALE_SOUNDTRACK_PATH);
   audioHandstandImages = AUDIO_HANDSTAND_PATHS.map((path) => loadImage(path));
-  towerImage = loadImage(
-    'assets/audio/tower-reach.png',
-    () => { towerImageReady = true; },
-    () => { towerImageReady = false; }
-  );
+  preloadStandbyMusic();
+  towerLayerImages = TOWER_LAYER_PATHS.map((path) => loadImage(
+    path,
+    () => { towerLayersLoaded += 1; }
+  ));
 }
 
 function setupAudio() {
@@ -343,6 +352,7 @@ function updateAudio() {
   audioData = audioMechanic
     ? audioMechanic.getSoundData()
     : createSilentSoundData();
+  updateStandbyMusic(min(deltaTime, 50) / 1000);
 
   const seconds = min(deltaTime, 50) / 1000;
   const cloudSpeed = 10 + audioData.intensity * 65 + audioData.treble * 45;
@@ -420,7 +430,13 @@ function drawAudioFinale(time) {
     : peopleTransition;
   drawTimeCharactersToRow(rowProgress, oldCharacterOpacity);
   // The star from the previous scene keeps shining above the dancers.
-  const tower = towerProgress(time);
+  const tower = towerProgress(time, rowProgress);
+  // A hum held for 3 s completes the tower: play the same "reach the light"
+  // moment as the song ending, starting from the already-built tower.
+  if (tower.building && audioData.humProgress >= 1) {
+    towerStartedAt = time - TOWER_GATHER;
+    audioMechanic.resetHum();
+  }
   drawSharedStar(time, peopleTransition, tower.flare);
   if (audioData.tripleClap && rowProgress >= 1 && tower.cover === 0) {
     startHandstandWave(time);
@@ -433,45 +449,73 @@ function drawAudioFinale(time) {
   if (tower.cover === 0) drawSoundtrackFinishedPrompt(time);
 }
 
-// Returns how visible the tower is (cover), how far it has risen (rise) and
-// how strongly the star flares (flare), all 0–1.
-function towerProgress(time) {
+// Describes the human tower for this frame:
+//   cover    – how much the dancing row fades out (0–1)
+//   layers   – how far each of the three levels has climbed in (0–1)
+//   flare    – how strongly the star flares when it is touched (0–1)
+//   caption  – opacity of the caption
+//   building – true while a hum (not the song ending) is building it
+function towerProgress(time, rowProgress) {
+  const none = { cover: 0, layers: [0, 0, 0], flare: 0, caption: 0, building: false };
+  if (audioReducedMotion) return none;
+
+  // 1. The full sequence: after the song, or once a hum completes the tower.
   const elapsed = time - towerStartedAt;
-  if (audioReducedMotion || elapsed < 0 || elapsed > TOWER_TOTAL) {
-    return { cover: 0, rise: 0, flare: 0, caption: 0 };
+  if (elapsed >= 0 && elapsed <= TOWER_TOTAL) {
+    audioMechanic.resetHum(); // humming during the sequence does not count
+    const release = strongEaseInOut(constrain(
+      (elapsed - TOWER_GATHER - TOWER_HOLD) / TOWER_RELEASE, 0, 1
+    ));
+    const layers = [0, 1, 2].map((level) => strongEaseInOut(constrain(
+      (elapsed - level * TOWER_LAYER_DELAY) / TOWER_LAYER_RISE, 0, 1
+    )) * (1 - release));
+    const holdTime = elapsed - TOWER_GATHER;
+    return {
+      cover: constrain(elapsed / 0.4, 0, 1) * (1 - release),
+      layers,
+      flare: holdTime > 0 && holdTime < TOWER_HOLD ? sin(PI * holdTime / TOWER_HOLD) : 0,
+      caption: min(1, max(0, holdTime) / 0.4) * (1 - release),
+      building: false
+    };
   }
-  const gather = strongEaseInOut(constrain(elapsed / TOWER_GATHER, 0, 1));
-  const release = strongEaseInOut(constrain(
-    (elapsed - TOWER_GATHER - TOWER_HOLD) / TOWER_RELEASE, 0, 1
-  ));
-  const holdTime = elapsed - TOWER_GATHER;
-  const flare = holdTime > 0 && holdTime < TOWER_HOLD
-    ? sin(PI * holdTime / TOWER_HOLD)
-    : 0;
+
+  // 2. Building with a hum: each third of the hum adds one level.
+  const build = audioData.humProgress || 0;
+  const handstandBusy = time - handstandWaveStartedAt < HANDSTAND_TOTAL + 1;
+  if (build <= 0 || rowProgress < 1 || handstandBusy) return none;
   return {
-    cover: gather * (1 - release),
-    rise: gather,
-    flare,
-    caption: min(1, max(0, holdTime) / 0.4) * (1 - release)
+    cover: constrain(build * 4, 0, 1),
+    layers: [0, 1, 2].map((level) => strongEaseOut(constrain(build * 3 - level, 0, 1))),
+    flare: 0,
+    caption: constrain(build * 4, 0, 1),
+    building: true
   };
 }
 
 function drawHumanTower(tower) {
-  if (!towerImageReady || tower.cover <= 0) return;
-  const towerScale = TOWER_DRAW_HEIGHT / towerImage.height;
-  const towerWidth = towerImage.width * towerScale;
-  // Place the image so the raised hand sits just below-left of the star.
+  if (towerLayersLoaded < TOWER_LAYER_PATHS.length || tower.cover <= 0) return;
+  const towerScale = TOWER_DRAW_HEIGHT / towerLayerImages[0].height;
+  const towerWidth = towerLayerImages[0].width * towerScale;
+  // Place the images so the raised hand sits just below-left of the star.
   const left = width / 2 - TOWER_HAND_X * towerScale - 6;
   const settledTop = SHARED_STAR_Y + 18 - TOWER_HAND_Y * towerScale;
-  const top = settledTop + (1 - tower.rise) * 40; // rises into place
 
   push();
-  tint(255, 255 * tower.cover);
-  image(towerImage, left, top, towerWidth, TOWER_DRAW_HEIGHT);
+  towerLayerImages.forEach((layerImage, level) => {
+    const amount = tower.layers[level];
+    if (amount <= 0) return;
+    tint(255, 255 * amount);
+    // Each level climbs up 30 px into place while it fades in.
+    image(layerImage, left, settledTop + (1 - amount) * 30, towerWidth, TOWER_DRAW_HEIGHT);
+  });
   noTint();
   pop();
 
   if (tower.caption > 0) {
+    const levelsBuilt = tower.layers.filter((amount) => amount >= 0.99).length;
+    const caption = tower.building
+      ? `Keep humming together… ${levelsBuilt} / 3`
+      : 'Together, they reach the light';
     push();
     textAlign(CENTER, CENTER);
     textStyle(BOLD);
@@ -480,7 +524,7 @@ function drawHumanTower(tower) {
     strokeWeight(5);
     drawingContext.globalAlpha *= tower.caption;
     fill('#FFF4B7');
-    text('Together, they reach the light', width / 2, height - 22);
+    text(caption, width / 2, height - 22);
     pop();
   }
 }

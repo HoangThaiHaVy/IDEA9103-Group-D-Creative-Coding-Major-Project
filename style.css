@@ -175,3 +175,8 @@ main {
     transition: none;
   }
 }
+
+/* The hum meter drives the tower, so it gets a full-width row of its own. */
+.sound-hud__meter:last-child {
+  grid-column: 1 / -1;
+}

@@ -18,13 +18,15 @@ const SOUND_METERS = [
   { key: 'intensity', label: 'Volume', colour: '#FA4945', effect: 'jump height + tempo' },
   { key: 'bass', label: 'Bass', colour: '#18A9EE', effect: 'knee squash + star rays' },
   { key: 'mid', label: 'Mid', colour: '#FFD02E', effect: 'campfire flame height' },
-  { key: 'treble', label: 'Treble', colour: '#F00085', effect: 'colour glow + tilt' }
+  { key: 'treble', label: 'Treble', colour: '#F00085', effect: 'colour glow + tilt' },
+  { key: 'humProgress', label: 'Hum', colour: '#20CD0A', effect: 'one steady note, no beat (mic) → build the tower' }
 ];
 
 // Event chips light up while that kind of sound is detected.
 const SOUND_EVENTS = [
   { id: 'short', text: 'Clap / beat → new pose' },
-  { id: 'long', text: 'Hum / held note → drift' },
+  { id: 'long', text: 'Held sound → drift' },
+  { id: 'hum', text: 'Humming detected' },
   { id: 'spread', text: 'Bright sound → spread out' },
   { id: 'gather', text: 'Deep sound → gather in' },
   { id: 'secret', text: '??? → clap 3 times fast', revealedText: 'Triple clap → handstand wave!' }
@@ -108,6 +110,7 @@ class SoundHud {
 
     this.setChip('short', sound.shortSound);
     this.setChip('long', sound.longSound);
+    this.setChip('hum', sound.humming);
     this.setChip('spread', sourceName && sound.spread > 0.9);
     this.setChip('gather', sourceName && sound.spread < 0.84);
     this.setChip('secret', sound.tripleClap);
