@@ -149,7 +149,7 @@ if (
     fade: characterFade,
     wet: storyStage === 'wet' || storyStage === 'pinkReveal'
   });
-  
+  // display dialogue (character hints) corresponding to each stage of the story (storyStage). 
   if (storyStage === 'holding') drawCharacterHint('Let the kite take flight (click figure). ');
   if (storyStage === 'released') drawCharacterHint("One click, Let's take this kite up to the sky!");
   if (storyStage === 'arrival') drawCharacterHint('Click character to continue flying kites');
