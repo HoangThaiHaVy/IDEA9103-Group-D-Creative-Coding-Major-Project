@@ -96,21 +96,38 @@ Instead of connecting the two characters using candy alone, the connection mecha
 
 # Story Progression:
 **Opening Scene**: The screen displays a landscape featuring a grassy field, mountain ranges, the sun, and clouds. A cursor icon in the shape of a hand appears; the user must click on this icon to begin the story.
+
 **Scene 2**: Once the user clicks "Start" (located below the text "Move Together Story"), a character gradually appears, and the narrative commences. (The story is introduced by a caption below the scene: "Let the kite take flight.")
 -> This caption helps the user identify where the story begins and serves as a narrative guide.
+
 **Scene 3**: The caption below the scene reads: "One click—let’s take the kite up to the sky!" The character begins to move, and a kite starts to soar in the sky.
+
 **Scene 4**: The character stops in the middle of the scene, but the kite continues to fly. The caption below changes to “Click the character to continue flying the kite,” at which point the kite soars even higher, and the wind begins to pick up.
+
 **Scene 5**: The caption updates to “Windy~ the kite floats higher,” and the character’s expression shifts to one of surprise (marking a turning point in the story).
+
 **Scene 6**: The character now looks sad, and the caption changes to “Oh no! My kite is gone!” Upon clicking the character, they bow their head, and a light rain begins to fall.
+
 **Scene 6 (continued)**: After clicking the character again, the caption below changes to “The rain is getting heavier…”
+
 **Scene 7**: Clicking the character once more causes them to turn to the left with an even sadder expression, while the rain continues to fall.
+
 **Scene 8**: When the character is clicked, they reach out a hand to catch the raindrops as the rain intensifies; the narrative progresses to: “Slowly reaching out a hand to catch the raindrops.”
+
 **Scene 9**: The user clicks on each blue circle, which transforms into a puddle on the grass—illustrating how the heavy rain has pooled on the ground.
-**Scene 10**: Once the user has clicked on all the blue circles, the next part of the story is revealed: “Now, click on the character to see how the story unfolds!” **Scene 11**: Click on the character again; the character’s state changes to a slumped, sitting position, completely drenched. The caption updates to: “...hoping the rain stops soon so I can go home…”
+
+**Scene 10**: Once the user has clicked on all the blue circles, the next part of the story is revealed: “Now, click on the character to see how the story unfolds!” 
+
+**Scene 11**: Click on the character again; the character’s state changes to a slumped, sitting position, completely drenched. The caption updates to: “...hoping the rain stops soon so I can go home…”
+
 **Scene 12**: After a few seconds, the on-screen caption changes to: “Look to the left and click the pink dot.” The user clicks the pink dot that appears on the left side of the screen, at which point a second character enters, carrying an umbrella.
+
 **Scene 13**: The caption then reads: “Another person appeared, holding a white umbrella… (click the pink figure).” The user clicks on the second character, whose pose shifts so that their right arm points toward the first character, who is still sitting.
+
 **Scene 14**: The caption changes to: “Who is sitting over there in the rain? (Click on the green character).”
+
 **Scene 15**: When the user clicks on the first character, the second character walks over, and the caption displays: “Character approaches Character 1 (click the pink figure to continue).”
+
 **Scene 16**: The user clicks on the second character, who then hands the umbrella to the first character.
 
 At this point, the sequence transitions into a time-based mechanic to connect the two characters.
