@@ -253,9 +253,6 @@ if (character2Walking) {
 }
 
 
-
-
-
 function mousePressed(event) {
   // Keep microphone-button clicks separate from story clicks on the canvas.
   if (event && event.target && event.target.tagName !== 'CANVAS') return;
@@ -1030,11 +1027,11 @@ function drawPinkSparkleDot() {
 
   fill('#ea0088');
   circle(x, y, 26); 
-  // Chấm hồng
+  // Pink Dot
 
   fill('#fff4fb');
   circle(x - 5, y - 5, 7); 
-  // Điểm phản sáng
+  // Hight light point
 
   stroke('#ffd5ef');
   strokeWeight(3);
