@@ -164,7 +164,8 @@ if (
   if (storyStage === 'rainFace') {
   const allRainDropsClicked = rainDrops.every(drop => drop.clicked);
   
-
+//AI knowledge: Use AI Codex to help
+// I want This code snippet follows `if (storyStage === 'rainFace')`. It uses a nested ternary operator to change the character's dialogue based on the player's interaction state.
   drawCharacterHint(
     allRainDropsClicked
       ? 'Now, click on the figure to see how the story unfolds!'
@@ -252,6 +253,8 @@ if (character2Walking) {
   // which already draws the kite; calling them here caused a ReferenceError.
 }
 
+// HIGHLIGHT: Canvas clicks advance the story; microphone and audio-scene
+// clicks are handled separately before the story-stage transitions below.
 
 function mousePressed(event) {
   // Keep microphone-button clicks separate from story clicks on the canvas.
@@ -366,7 +369,7 @@ function mousePressed(event) {
 }
 }
 
-
+// A function used to determine whether the player has clicked on a character or a dialogue area (character hint).
 function clickOnCharacter() {
   const clickedCharacter =
     abs(mouseX - characterX) < 55 &&
@@ -392,7 +395,7 @@ function clickOnCharacter2() {
 }
 
 
-
+//Draw pink hand control at the beginning. 
 function drawClickArrow() {
   const handBob = sin(frameCount * 0.04) * 4;
   push();
@@ -461,7 +464,7 @@ function drawClickArrow() {
   
 }
  
-
+//Create click "start"
 function drawStartPrompt() {
   noStroke();
   fill('#252525');
@@ -523,7 +526,7 @@ function drawCharacterHint(label) {
   pop();
 }
 
-
+//These images are used to convey the movement, emotions, and evolution of the characters throughout the different stages of the story.
 function preloadCharacterImages() {
   standingImage = loadImage(
     'assets/user input/stand.png',
@@ -684,7 +687,7 @@ function drawCharacterAndKite(x, groundY, time, options = {}) {
 }
 }
 
-
+// AI knowledge: Use Code improve visual of kite design 
 function drawKite(x, y, time, handX, handY, tethered, kiteScale = 1) {
   const sway = sin(time * 2.2) * (tethered ? 4 : 7);
   const kx = x + sway;
@@ -782,6 +785,7 @@ function drawFallbackCharacter(x, y, fade = 1) {
   pop();
 }
 
+// AI knowledge: Use Code improve visual of wind design 
 function drawWind(time, stronger = false) {
   push();
   noFill();
@@ -876,7 +880,7 @@ function drawLightning(time) {
   pop();
 }
 
-
+// Create light for character, help user now need click character to move and emotion of character
 function drawCharacterGlow(x, y, time, fade = 1, stage = '') {
 
   const purpleGlow = [
@@ -1046,6 +1050,7 @@ function drawPinkSparkleDot() {
   pop();
 }
 
+//A function that selects the appropriate image to display for the second pink character (Character 2) based on its current movement state and action.
 function drawPinkCharacterReveal(appear) {
   if (!character2PinkImageReady) return;
   let imageToDraw = character2PinkImage;
